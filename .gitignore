@@ -1,0 +1,22 @@
+# Virtual Environment
+venv/
+env/
+.env/
+.venv/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# MacOS
+.DS_Store
+.DS_Store?
+._*
+
+airflow-co-apt.pem
+AWSCLIV2.pkg
