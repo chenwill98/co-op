@@ -3,6 +3,8 @@ venv/
 env/
 .env/
 .venv/
+airflow_env/
+.airflow_env/
 
 # Jupyter Notebooks
 .ipynb_checkpoints
@@ -18,5 +20,11 @@ __pycache__/
 .DS_Store?
 ._*
 
+# Airflow related items
+airflow/airflow-webserver.pid
+airflow/airflow.db
+airflow/logs
+webserver_config.py
 airflow-co-apt.pem
 AWSCLIV2.pkg
+nohup.out
