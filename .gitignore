@@ -26,5 +26,8 @@ airflow/airflow.db
 airflow/logs
 webserver_config.py
 airflow-co-apt.pem
-AWSCLIV2.pkg
 nohup.out
+
+# AWS
+AWSCLIV2.pkg
+.aws-sam/

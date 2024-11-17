@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  GenericAPISQSProducer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: GenericAPISQSProducer
+      Handler: producer.lambda_handler
+      Runtime: python3.11
+      CodeUri: ./src/lambda/generic_api_sqs_producer/
+      MemorySize: 128
+      Timeout: 10
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
+  PropertiesAPISQSConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: PropertiesAPISQSConsumer
+      Handler: consumer.lambda_handler
+      Runtime: python3.11
+      CodeUri: ./src/lambda/properties_api_sqs_consumer/
+      MemorySize: 128
+      Timeout: 10
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
+  PropertyDetailsAPISQSConsumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ApiFetcherFunction
+      Handler: consumer.lambda_handler
+      Runtime: python3.11
+      CodeUri: ./src/lambda/property_details_api_sqs_consumer/
+      MemorySize: 128
+      Timeout: 10
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
