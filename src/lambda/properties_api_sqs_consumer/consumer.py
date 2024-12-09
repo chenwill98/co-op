@@ -1,57 +1,85 @@
 import json
 import requests
-from sqlalchemy import create_engine, Table, MetaData
+from aws_utils import generate_RDS_connection, logger
 
-# Configure RDS connection
-DB_URI = "postgresql://username:password@your-rds-endpoint:5432/yourdatabase"  # Replace with your RDS details
-engine = create_engine(DB_URI)
-
-# Load the existing table
-metadata = MetaData()
-metadata.reflect(bind=engine)
-properties_table = Table("properties", metadata, autoload_with=engine, schema="real_estate")
-
-def process_message(message_body):
+def upsert_properties(connection, listings):
     """
-    Processes a single message from the queue.
+    Upsert a batch of listings into the real_estate.properties table.
     """
-    try:
-        api_url = message_body.get("api_url")
-        response = requests.get(api_url)
-        response.raise_for_status()
-        data = response.json()
-
-        with engine.begin() as conn:
-            for item in data:
-                conn.execute(
-                    properties_table.insert().values(
-                        id=item["id"],
-                        price=item["price"],
-                        type=item["type"],
-                        longitude=item["longitude"],
-                        latitude=item["latitude"],
-                        url=item["url"]
-                    ).on_conflict_do_update(
-                        index_elements=["id"],
-                        set_={
-                            "price": item["price"],
-                            "type": item["type"],
-                            "longitude": item["longitude"],
-                            "latitude": item["latitude"],
-                            "url": item["url"]
-                        }
-                    )
+    with connection.cursor() as cursor:
+        for listing in listings:
+            cursor.execute(
+                """
+                INSERT INTO real_estate.fct_properties (id, price, longitude, latitude, url, entered_at)
+                VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (id) DO UPDATE SET
+                    price = EXCLUDED.price,
+                    longitude = EXCLUDED.longitude,
+                    latitude = EXCLUDED.latitude,
+                    url = EXCLUDED.url,
+                    entered_at = EXCLUDED.entered_at;
+                """,
+                (
+                    listing["id"],
+                    listing["price"],
+                    listing["longitude"],
+                    listing["latitude"],
+                    listing["url"],
                 )
-        print(f"Processed data: {data}")
-    except Exception as e:
-        print(f"Error processing message: {e}")
+            )
+    connection.commit()
+
+
+def fetch_and_store_data(message_list):
+    """
+    Fetch data from the given API URL, handle pagination, and store results in RDS.
+    """
+    connection = generate_RDS_connection()
+    
+    for i, message in enumerate(message_list):
+        logger.info(f"Processing message {i} of {len(message_list)}")
+        try:
+            offset = 0
+            while True:
+                params = message['params']
+                params['offset'] = offset
+
+                logger.info(f"Making call with {params['areas']}")
+                response = requests.get(message['endpoint'], headers=message['headers'], params=params)
+                response.raise_for_status()
+                data = response.json()
+
+                listings = data.get("listings", [])
+                if listings:
+                    logger.info(f"Inserting {len(listings)} into real_estate.properties Table")
+                    upsert_properties(connection, listings)
+
+                pagination = data.get("pagination", {})
+                next_offset = pagination.get("nextOffset")
+
+                # If there's no nextOffset or no new offset to move to, break the loop
+                if not next_offset or next_offset <= offset:
+                    break
+                logger.info(f"Setting offset to {next_offset}")
+                offset = next_offset
+
+        except Exception as e:
+            logger.info(f"Error processing {message}: {e}")
+            raise
+    
+    connection.close()
+
 
 def lambda_handler(event, context):
     """
-    AWS Lambda handler function.
-    Triggered by SQS messages.
+    AWS Lambda handler, triggered by SQS messages.
     """
-    for record in event['Records']:
-        message_body = json.loads(record['body'])
-        process_message(message_body)
+    message_list = []
+    for record in event["Records"]:
+        message_body = json.loads(record["body"])
+        message_list.append(message_body)
+    
+    logger.info(f"{len(message_list)} messages received. Processing:")
+    fetch_and_store_data(message_list)
+
     return {"statusCode": 200, "body": "Messages processed successfully"}

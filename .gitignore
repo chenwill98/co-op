@@ -12,6 +12,7 @@ airflow_env/
 
 # Python
 __pycache__/
+.vscode/
 *.py[cod]
 *$py.class
 
@@ -31,3 +32,4 @@ nohup.out
 # AWS
 AWSCLIV2.pkg
 .aws-sam/
+tests/

@@ -2,6 +2,25 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 Resources:
+  AWSUtilsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: AWSUtilsLayer
+      ContentUri: ./src/lambda/layers/aws_utils
+      CompatibleRuntimes:
+        - python3.11
+    Metadata:
+      BuildMethod: python3.11
+  PropertiesAPIQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PropertiesAPIQueue
+      VisibilityTimeout: 125
+  PropertyDetailsAPIQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PropertyDetailsAPIQueue
+      VisibilityTimeout: 125
   GenericAPISQSProducer:
     Type: AWS::Serverless::Function
     Properties:
@@ -9,9 +28,14 @@ Resources:
       Handler: producer.lambda_handler
       Runtime: python3.11
       CodeUri: ./src/lambda/generic_api_sqs_producer/
-      MemorySize: 128
-      Timeout: 10
+      Timeout: 120
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
+      Layers:
+        - !Ref AWSUtilsLayer
+      Environment:
+        Variables:
+          PROPERTIES_API_URL: !Ref PropertiesAPIQueue
+          PROPERTY_DETAILS_API_URL: !Ref PropertyDetailsAPIQueue
   PropertiesAPISQSConsumer:
     Type: AWS::Serverless::Function
     Properties:
@@ -19,16 +43,25 @@ Resources:
       Handler: consumer.lambda_handler
       Runtime: python3.11
       CodeUri: ./src/lambda/properties_api_sqs_consumer/
-      MemorySize: 128
-      Timeout: 10
+      Timeout: 120
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
+      Layers:
+        - !Ref AWSUtilsLayer
+      Events:
+        MyQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PropertiesAPIQueue.Arn
+            BatchSize: 10 # Process 10 messages at a time
+            MaximumBatchingWindowInSeconds: 2
   PropertyDetailsAPISQSConsumer:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: ApiFetcherFunction
+      FunctionName: PropertyDetailsAPISQSConsumer
       Handler: consumer.lambda_handler
       Runtime: python3.11
       CodeUri: ./src/lambda/property_details_api_sqs_consumer/
-      MemorySize: 128
-      Timeout: 10
+      Timeout: 120
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
+      Layers:
+        - !Ref AWSUtilsLayer

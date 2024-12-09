@@ -4,6 +4,13 @@ stack_name = "co-apt-stack"
 resolve_s3 = true
 s3_prefix = "co-apt-stack"
 region = "us-east-2"
-confirm_changeset = true
-capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 image_repositories = []
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-yw7ujcmlls1t"
+
+[default.build.parameters]
+template_file = "/Users/willchen/Documents/co-op/template.yml"
+cached = true
+parallel = true
+use_container = true
