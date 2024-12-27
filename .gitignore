@@ -36,3 +36,8 @@ tests/
 
 # Testing
 scripts
+
+
+# Web Stuff
+node_modules/
+.vercel
