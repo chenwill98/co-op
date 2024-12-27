@@ -1,7 +1,13 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 120
+
 Resources:
+  # AWS Layers
   AWSUtilsLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -11,24 +17,43 @@ Resources:
         - python3.11
     Metadata:
       BuildMethod: python3.11
+
+  # SQS Queues
   PropertiesAPIQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: PropertiesAPIQueue
       VisibilityTimeout: 125
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt PropertiesAPIDeadLetterQueue.Arn
+        maxReceiveCount: 2  # Retry each message up to 2 times before sending to DLQ
+
+  PropertiesAPIDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PropertiesAPIDeadLetterQueue
+
   PropertyDetailsAPIQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: PropertyDetailsAPIQueue
       VisibilityTimeout: 125
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt PropertyDetailsAPIDeadLetterQueue.Arn
+        maxReceiveCount: 2  # Retry each message up to 2 times before sending to DLQ
+
+  PropertyDetailsAPIDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PropertyDetailsAPIDeadLetterQueue
+
+  # Lambda Functions
   GenericAPISQSProducer:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: GenericAPISQSProducer
       Handler: producer.lambda_handler
-      Runtime: python3.11
       CodeUri: ./src/lambda/generic_api_sqs_producer/
-      Timeout: 120
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer
@@ -36,14 +61,13 @@ Resources:
         Variables:
           PROPERTIES_API_URL: !Ref PropertiesAPIQueue
           PROPERTY_DETAILS_API_URL: !Ref PropertyDetailsAPIQueue
+
   PropertiesAPISQSConsumer:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: PropertiesAPISQSConsumer
       Handler: consumer.lambda_handler
-      Runtime: python3.11
       CodeUri: ./src/lambda/properties_api_sqs_consumer/
-      Timeout: 120
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer
@@ -54,14 +78,65 @@ Resources:
             Queue: !GetAtt PropertiesAPIQueue.Arn
             BatchSize: 10 # Process 10 messages at a time
             MaximumBatchingWindowInSeconds: 2
+
   PropertyDetailsAPISQSConsumer:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: PropertyDetailsAPISQSConsumer
       Handler: consumer.lambda_handler
-      Runtime: python3.11
       CodeUri: ./src/lambda/property_details_api_sqs_consumer/
-      Timeout: 120
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer
+      # ReservedConcurrentExecutions: 5  # Limit to 5 concurrent instances
+      Events:
+        MyQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PropertyDetailsAPIQueue.Arn
+            BatchSize: 25 # Process 100 messages at a time
+            MaximumBatchingWindowInSeconds: 5
+
+  APIRouter:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: APIRouter
+      Handler: router.lambda_handler
+      CodeUri: ./src/lambda/api_router/
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForAPIRouterLambda
+      Layers:
+        - !Ref AWSUtilsLayer
+      Events:
+        HttpApiEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: ANY
+
+  # Gateway API
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: Prod
+
+  # DynamoDB Table
+  PropertyMediaDetailsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PropertyMediaDetails
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S  # 'S' for String (unique identifier for each property)
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH    # Partition key
+      BillingMode: PROVISIONED  # Use provisioned capacity to utilize the Free Tier
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5   # Keep this low to stay within the Free Tier
+        WriteCapacityUnits: 5  # Keep this low to stay within the Free Tier
+      SSESpecification: 
+        SSEEnabled: true  # Enable server-side encryption for data security
+      Tags:
+        - Key: Environment
+          Value: Production

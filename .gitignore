@@ -33,3 +33,6 @@ nohup.out
 AWSCLIV2.pkg
 .aws-sam/
 tests/
+
+# Testing
+scripts

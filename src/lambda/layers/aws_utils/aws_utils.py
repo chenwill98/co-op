@@ -1,20 +1,10 @@
 import boto3
 import json
 import psycopg2
-# import pandas as pd
-import logging
+from psycopg2 import pool
+from aws_lambda_powertools import Logger
 
-# Configure logging
-logger = logging.getLogger()
-if not logger.hasHandlers():  # Ensure logging is configured only once
-    logger.setLevel(logging.INFO)  # Set global log level (e.g., INFO)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
-# Export the logger for use in other modules
-logger = logging.getLogger(__name__)
+logger = Logger(service="coapt_lambda_functions")
 
 def get_secret(secret_name, region_name="us-east-2"):
     """
@@ -51,11 +41,11 @@ def generate_iam_auth_token(host, port, user, region_name="us-east-2"):
         logger.error(f"Error generating IAM auth token: {e}")
         raise
     
-def generate_RDS_connection(db_name='coapt'):
+
+def init_RDS_connection(db_name='coapt'):
     """
     Fetch connection to an RDS database.
     """
-    # Fetches all top neighborhood categories for each borough to query API
     logger.info("Fetching RDS Config details from Secrets Manager")
     aws_rds_config = get_secret(secret_name='COAPTRDSConfig')
     db_host = aws_rds_config.get('db_host')
@@ -80,4 +70,41 @@ def generate_RDS_connection(db_name='coapt'):
         return connection
     except Exception as e:
         logger.error(f"Error generating connection to RDS Database {db_name}: {e}")
+        raise
+
+
+def get_RDS_pool():
+    # Singleton-like pattern, ensures one pool is created and reused
+    if not hasattr(get_RDS_pool, "_db_pool"):
+        get_RDS_pool._db_pool = init_RDS_pool()
+    return get_RDS_pool._db_pool
+
+
+def init_RDS_pool(db_name='coapt'):
+    """Initialize the database connection pool if not already initialized."""
+    logger.info("Fetching RDS Config details from Secrets Manager")
+    aws_rds_config = get_secret(secret_name='COAPTRDSConfig')
+    db_host = aws_rds_config.get('db_host')
+    db_user = aws_rds_config.get('db_user')
+    port = 5432
+
+    try:
+        logger.info('Generating IAM Token')
+        auth_token = generate_iam_auth_token(host=db_host, port=port, user=db_user)
+
+        db_pool = pool.SimpleConnectionPool(
+            minconn=1,
+            maxconn=10,  # Adjust this based on your workload
+            host=db_host,
+            dbname=db_name,
+            user=db_user,
+            password=auth_token,
+            port=port,
+            sslmode='require'
+        )
+
+        return db_pool
+    
+    except Exception as e:
+        logger.error(f"Error generating connection pool to RDS Database {db_name}: {e}")
         raise
