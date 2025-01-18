@@ -41,3 +41,4 @@ scripts
 # Web Stuff
 node_modules/
 .vercel
+.next

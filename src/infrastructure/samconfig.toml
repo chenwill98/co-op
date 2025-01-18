@@ -1,0 +1,18 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "co-op"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-XXXXXXXXXXXX"
+s3_prefix = "co-op"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+template_file = "template.yml"
+
+[default.build]
+[default.build.parameters]
+cached = true
+parallel = true
+use_container = true
