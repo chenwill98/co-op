@@ -1,22 +1,28 @@
-import './globals.css'
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-
-const inter = Inter({ subsets: ['latin'] })
+import type { Metadata } from "next";
+import { geistSans, geistMono } from "@/app/ui/fonts";
+import "./globals.css";
+import Navbar from "@/app/ui/navbar";
 
 export const metadata: Metadata = {
-  title: 'Next.js App',
-  description: 'Created with Next.js',
-}
+  title: "Co-Apt",
+  description: "Find your perfect home with ease.",
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" data-theme="corporate">
+      <body
+        className={`${geistSans.className} ${geistMono.className} antialiased min-h-screen flex flex-col`}
+      >
+        <Navbar />
+        <div className="flex-grow bg-base-200">
+          {children}
+        </div>
+      </body>
     </html>
-  )
+  );
 }

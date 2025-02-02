@@ -1,35 +1,115 @@
-export default function Home() {
+'use client';
+
+import { SparklesIcon, AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
+import TypingInput from '@/app/ui/search/TypingInput';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
+export default function Page() {
+  const router = useRouter();
+
+  // Local state for each filter
+  const [searchText, setSearchText] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [brokerFee, setBrokerFee] = useState('Any');
+  const [filtersVisible, setFiltersVisible] = useState(false);
+
+  const handleSearch = () => {
+    // Build query params
+    const params = new URLSearchParams({
+      text: searchText,
+      neighborhood,
+      minPrice,
+      maxPrice,
+      brokerFee,
+    });
+
+    // Navigate to /listings with those params (redirect)
+    router.push(`/listings?${params.toString()}`);
+  };
+
+  const toggleFilters = () => {
+    setFiltersVisible(!filtersVisible);
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-      </div>
-
-      <div className="relative flex place-items-center">
-        <h1 className="text-4xl font-bold">Welcome to Next.js</h1>
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+    <main className="flex h-[calc(100vh-64px)] flex-col items-center justify-center bg-base-200 p-20" 
+      style={{ backgroundImage: 'url(/bg-2.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="card-bordered border-primary bg-base-100 w-4/5 shadow-xl m-6">
+        <div className="card-body">
+          <div className="flex items-center gap-4">
+            <TypingInput onValueChange={(val) => setSearchText(val)} />
+            <button className="btn btn-primary text-white" onClick={handleSearch}>
+              Search
+              <SparklesIcon className="h-4 w-4" />
+            </button>
+            <button className="btn btn-secondary text-white" onClick={toggleFilters}>
+              <AdjustmentsHorizontalIcon className="h-4 w-4" />
+            </button>
+          </div>
+          <div
+            className={`transition-all duration-500 ease-in-out overflow-hidden ${filtersVisible ? 'max-h-40' : 'max-h-0'}`}
+          >
+            <div className="grid grid-cols-5 gap-4 mt-4">
+              <div className="col-span-2">
+                <label className="label">
+                  <span className="label-text text-gray-400">Neighborhood</span>
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Brooklyn" 
+                  className="input input-bordered w-full" 
+                  value={neighborhood}
+                  onChange={(e) => setNeighborhood(e.target.value)}
+                />
+              </div>
+              <div className="col-span-1">
+                <label className="label">
+                  <span className="label-text text-gray-400">Min Price</span>
+                </label>
+                <input 
+                  type="number" 
+                  placeholder="2000" 
+                  className="input input-bordered w-full" 
+                  step="100" 
+                  min="0"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                />
+              </div>
+              <div className="col-span-1">
+                <label className="label">
+                  <span className="label-text text-gray-400">Max Price</span>
+                </label>
+                <input 
+                  type="number" 
+                  placeholder="5000" 
+                  className="input input-bordered w-full" 
+                  step="100" 
+                  min="0"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label">
+                  <span className="label-text text-gray-400">Broker Fees</span>
+                </label>
+                <select 
+                  className="select select-bordered w-full" 
+                  value={brokerFee} 
+                  onChange={(e) => setBrokerFee(e.target.value)}>
+                  <option>Any</option>
+                  <option>No Fee</option>
+                  <option>Low Fee (Less than 10%)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
-  )
+  );
 }

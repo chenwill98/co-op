@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.734.0",
+    "@aws-sdk/lib-dynamodb": "^3.734.0",
+    "@heroicons/react": "^2.2.0",
+    "@redis/client": "^1.6.0",
+    "redis": "^4.7.0",
+    "use-debounce": "^10.0.4"
+  }
+}
