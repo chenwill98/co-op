@@ -1,20 +1,23 @@
-import { useState } from 'react';
-import { tagCategories } from '@/app/lib/definitions';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useState } from "react";
+import { tagCategories } from "@/app/lib/definitions";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface TagsFilterProps {
   selectedTags: string[];
   setSelectedTags: (tags: string[]) => void;
 }
 
-export default function TagsFilter({ selectedTags, setSelectedTags }: TagsFilterProps) {
+export default function TagsFilter({
+  selectedTags,
+  setSelectedTags,
+}: TagsFilterProps) {
   const [checkedTags, setCheckedTags] = useState<string[]>([]);
-  const [filterText, setFilterText] = useState('');
+  const [filterText, setFilterText] = useState("");
 
   // Toggle a tag in the list of checkboxes
   const toggleTag = (tag: string) => {
     setCheckedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   };
 
@@ -29,25 +32,28 @@ export default function TagsFilter({ selectedTags, setSelectedTags }: TagsFilter
   };
 
   // Filter the tag categories by the text entered
-  const filteredCategories = Object.entries(tagCategories).reduce((acc, [category, tags]) => {
-    const filtered = tags.filter((tag) =>
-      tag.toLowerCase().includes(filterText.toLowerCase())
-    );
-    if (filtered.length > 0) {
-      acc[category] = filtered;
-    }
-    return acc;
-  }, {} as Record<string, string[]>);
+  const filteredCategories = Object.entries(tagCategories).reduce(
+    (acc, [category, tags]) => {
+      const filtered = tags.filter((tag) =>
+        tag.toLowerCase().includes(filterText.toLowerCase()),
+      );
+      if (filtered.length > 0) {
+        acc[category] = filtered;
+      }
+      return acc;
+    },
+    {} as Record<string, string[]>,
+  );
 
   const noTagsFound = Object.keys(filteredCategories).length === 0;
 
   // Flatten the categories and tags into one array.
   // This creates a list where a category header is followed by its tag items.
-  const flattenedItems: { type: 'category' | 'tag'; text: string }[] = [];
+  const flattenedItems: { type: "category" | "tag"; text: string }[] = [];
   for (const [category, tags] of Object.entries(filteredCategories)) {
-    flattenedItems.push({ type: 'category', text: category });
+    flattenedItems.push({ type: "category", text: category });
     for (const tag of tags) {
-      flattenedItems.push({ type: 'tag', text: tag });
+      flattenedItems.push({ type: "tag", text: tag });
     }
   }
 
@@ -71,7 +77,7 @@ export default function TagsFilter({ selectedTags, setSelectedTags }: TagsFilter
           ) : (
             <div className="columns-2 md:columns-3 gap-4 space-y-2">
               {flattenedItems.map((item, index) =>
-                item.type === 'category' ? (
+                item.type === "category" ? (
                   <div
                     key={index}
                     className="font-bold border-b pb-1 break-inside-avoid"
@@ -91,7 +97,7 @@ export default function TagsFilter({ selectedTags, setSelectedTags }: TagsFilter
                     />
                     <span className="text-sm">{item.text}</span>
                   </div>
-                )
+                ),
               )}
             </div>
           )}

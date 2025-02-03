@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useRef, useState } from 'react';
-import { VideoCameraIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import React, { useRef, useState } from "react";
+import { VideoCameraIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 
 export default function ImageCarousel({
   mediaItems,
@@ -15,16 +15,18 @@ export default function ImageCarousel({
   const [activeSlide, setActiveSlide] = useState(1);
 
   // Handles all navigation (arrows and thumbnails)
-  const goToSlide = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+  const goToSlide = (
+    event: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+  ) => {
     event.preventDefault();
     const carousel = carouselRef.current;
     if (!carousel) return;
 
-    const href = event.currentTarget.getAttribute('href');
+    const href = event.currentTarget.getAttribute("href");
     if (!href) return;
 
     // "#slide2" => extract numeric part to get the index
-    const slideNumber = Number(href.replace('#slide', ''));
+    const slideNumber = Number(href.replace("#slide", ""));
     if (isNaN(slideNumber)) return;
 
     // Smoothly scroll the carousel container to that slide
@@ -32,7 +34,7 @@ export default function ImageCarousel({
     if (!target) return;
 
     const left = target.offsetLeft;
-    carousel.scrollTo({ left, behavior: 'smooth' });
+    carousel.scrollTo({ left, behavior: "smooth" });
 
     // Update activeSlide so the correct thumbnail is highlighted
     setActiveSlide(slideNumber);
@@ -58,13 +60,13 @@ export default function ImageCarousel({
               id={`slide${currentSlide}`}
               className="carousel-item relative w-full"
             >
-              {item.type === 'image' ? (
+              {item.type === "image" ? (
                 <img
                   src={item.url}
                   alt={`Image ${currentSlide}`}
                   className="w-full h-full object-cover"
                 />
-              ) : item.type === 'video' ? (
+              ) : item.type === "video" ? (
                 <video controls className="w-full h-full object-cover">
                   <source src={item.url} type="video/mp4" />
                   Your browser does not support the video tag.
@@ -122,17 +124,17 @@ export default function ImageCarousel({
               className={`flex-shrink-0 border border-primary cursor-pointer 
                 ${
                   activeSlide === slideNumber
-                    ? 'ring-1 ring-primary ring-offset-2'
-                    : ''
+                    ? "ring-1 ring-primary ring-offset-2"
+                    : ""
                 }`}
             >
-              {item.type === 'image' ? (
+              {item.type === "image" ? (
                 <img
                   src={item.url}
                   alt={`Thumbnail ${slideNumber}`}
                   className="w-15 h-10 object-cover"
                 />
-              ) : item.type === 'video' ? (
+              ) : item.type === "video" ? (
                 <div className="w-10 h-10 flex items-center justify-center bg-primary">
                   <VideoCameraIcon className="w-4 h-4 text-white" />
                 </div>

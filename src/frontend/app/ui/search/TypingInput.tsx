@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, ChangeEvent, FC } from 'react';
+import React, { useState, useEffect, ChangeEvent, FC } from "react";
 
 interface TypingInputProps {
-  onValueChange?: (val: string) => void; 
+  onValueChange?: (val: string) => void;
 }
 
 const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const phrases = [
-    'Pre-war 2 bedroom apartments in Bed-Stuy',
-    'Charming 1 bedroom apartment that allows pets in Queens',
-    'Modern studios near the 6 line'
+    "Pre-war 2 bedroom apartments in Bed-Stuy",
+    "Charming 1 bedroom apartment that allows pets in Queens",
+    "Modern studios near the 6 line",
   ];
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
@@ -33,7 +33,7 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
       setText(
         isDeleting
           ? fullText.substring(0, text.length - 1)
-          : fullText.substring(0, text.length + 1)
+          : fullText.substring(0, text.length + 1),
       );
 
       // If you want different speeds for typing vs deleting, change them:
@@ -41,7 +41,7 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
 
       if (!isDeleting && text === fullText) {
         setTimeout(() => setIsDeleting(true), 500);
-      } else if (isDeleting && text === '') {
+      } else if (isDeleting && text === "") {
         setIsDeleting(false);
         setLoopNum(loopNum + 1);
       }
@@ -55,8 +55,8 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
   // Handle focus -> user starts typing
   // -----------------------
   const handleFocus = () => {
-    setIsEditable(true);    // Stop auto-typing
-    setText('');            // Clear any auto-typed text
+    setIsEditable(true); // Stop auto-typing
+    setText(""); // Clear any auto-typed text
     setUserHasClicked(true);
   };
 
@@ -80,7 +80,7 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
       type="text"
       className="input input-bordered w-full"
       value={text}
-      placeholder={userHasClicked ? 'Search anything...' : ''}
+      placeholder={userHasClicked ? "Search anything..." : ""}
       onFocus={handleFocus}
       onChange={handleChange}
     />
