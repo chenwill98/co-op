@@ -4,6 +4,7 @@
     "@aws-sdk/lib-dynamodb": "^3.734.0",
     "@heroicons/react": "^2.2.0",
     "@redis/client": "^1.6.0",
+    "daisyui": "^4.12.23",
     "redis": "^4.7.0",
     "use-debounce": "^10.0.4"
   }
