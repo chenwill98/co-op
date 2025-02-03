@@ -46,7 +46,13 @@ export default function ListingsGrid({ listings, listingDetails, listingTags, so
                                 <Link href={`/listings/${property.id}`}>
                                         <h2 className="hover:text-primary transition-colors">{property.address}</h2>
                                 </Link>
-                                <div className="text-gray-500 text-sm">{property.bedrooms} {property.bedrooms === 1 ? 'bed' : 'beds'} | {property.bathrooms} {property.bathrooms === 1 ? 'bath' : 'baths'} | {property.sqft === null ? 'N/A' : property.sqft} ft<sup>2</sup></div>
+                                <div className="text-gray-500 text-sm space-x-1">
+                                  <span>{property.bedrooms} {property.bedrooms === 1 ? 'bed' : 'beds'}</span>
+                                  <span>|</span>
+                                  <span>{property.bathrooms} {property.bathrooms === 1 ? 'bath' : 'baths'}</span>
+                                  <span>|</span>
+                                  <span>{property.sqft === null ? 'N/A' : property.sqft} ft<sup>2</sup></span>
+                                </div>
                             </div>
                             <BookmarkIcon/>
                         </div>

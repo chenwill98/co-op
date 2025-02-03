@@ -12,7 +12,7 @@ export default function ListingsContainer({ listings, listingDetails, listingTag
 
     return (
         <div className="flex flex-row w-full">
-            <div className="w-2/4">
+            <div className="min-w-72">
                 <ListingFilters sortOrder={sortOrder} onSortChange={setSortOrder} selectedTags={selectedTags} setSelectedTags={setSelectedTags} />
             </div>
             <div className="flex-grow">

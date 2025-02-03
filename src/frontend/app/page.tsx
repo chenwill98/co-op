@@ -37,9 +37,9 @@ export default function Page() {
   return (
     <main className="flex h-[calc(100vh-64px)] flex-col items-center justify-center bg-base-200 p-20" 
       style={{ backgroundImage: 'url(/bg-2.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
-      <div className="card-bordered border-primary bg-base-100 w-4/5 shadow-xl m-6">
+      <div className="card-bordered border-primary bg-base-100 w-4/5 shadow-xl">
         <div className="card-body">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-row items-center gap-4 m-2">
             <TypingInput onValueChange={(val) => setSearchText(val)} />
             <button className="btn btn-primary text-white" onClick={handleSearch}>
               Search
@@ -52,7 +52,7 @@ export default function Page() {
           <div
             className={`transition-all duration-500 ease-in-out overflow-hidden ${filtersVisible ? 'max-h-40' : 'max-h-0'}`}
           >
-            <div className="grid grid-cols-5 gap-4 mt-4">
+            <div className="grid grid-cols-5 gap-4 m-2">
               <div className="col-span-2">
                 <label className="label">
                   <span className="label-text text-gray-400">Neighborhood</span>

@@ -573,9 +573,9 @@ export async function fetchPropertyPage(id: string): Promise<CombinedPropertyDet
     // Filter list of property dictionaries by id
     const property = properties.find((p: Property) => p.id === id);
 
-    const propertyGrades = await fetchPropertyGradesById([id]);
-    const propertyDetails = await fetchPropertyDetailsById([id]);
-    const propertyCombined = {...propertyDetails, ...propertyGrades, ...property};
+    const propertyTags = await fetchPropertyTagsById([id]).then(data => data[id]);
+    const propertyDetails = await fetchPropertyDetailsById([id]).then(data => data[id]);
+    const propertyCombined = {...propertyDetails, ...propertyTags, ...property};
     return propertyCombined;
     
   } catch (error) {

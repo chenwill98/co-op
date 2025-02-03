@@ -64,7 +64,7 @@ export default function TagsFilter({ selectedTags, setSelectedTags }: TagsFilter
         />
         <div
           tabIndex={0}
-          className="dropdown-content p-4 shadow bg-base-100 rounded-box w-[800px] max-h-[450px] mt-1 overflow-auto z-[9999]"
+          className="dropdown-content p-4 shadow bg-base-100 rounded-box w-[800px] max-h-[480px] mt-1 overflow-auto z-10"
         >
           {noTagsFound ? (
             <div className="p-2 text-gray-500">No tags found</div>
