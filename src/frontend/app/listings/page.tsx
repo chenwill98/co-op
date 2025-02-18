@@ -2,6 +2,7 @@ import {
   fetchProperties,
   fetchPropertyDetailsById,
   fetchPropertyTagsById,
+  fetchPropertiesRDS
 } from "@/app/lib/data";
 import { Property } from "@/app/lib/definitions";
 import ListingsContainer from "@/app/ui/listings/ListingsContainer";
@@ -30,6 +31,7 @@ export default async function Page({ searchParams }: { searchParams: any }) {
   };
 
   const listings: Property[] = await fetchProperties(params);
+  // const listings: Property[] = await fetchPropertiesRDS(params);
   const listingIds = listings.map((listing) => listing.id);
   const listingDetails = await fetchPropertyDetailsById(listingIds);
   const listingTags = await fetchPropertyTagsById(listingIds);

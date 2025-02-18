@@ -26,7 +26,7 @@ Resources:
       VisibilityTimeout: 125
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt PropertiesAPIDeadLetterQueue.Arn
-        maxReceiveCount: 2  # Retry each message up to 2 times before sending to DLQ
+        maxReceiveCount: 2 # Retry each message up to 2 times before sending to DLQ
 
   PropertiesAPIDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -40,7 +40,7 @@ Resources:
       VisibilityTimeout: 125
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt PropertyDetailsAPIDeadLetterQueue.Arn
-        maxReceiveCount: 2  # Retry each message up to 2 times before sending to DLQ
+        maxReceiveCount: 2 # Retry each message up to 2 times before sending to DLQ
 
   PropertyDetailsAPIDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -127,16 +127,16 @@ Resources:
       TableName: PropertyMediaDetails
       AttributeDefinitions:
         - AttributeName: id
-          AttributeType: S  # 'S' for String (unique identifier for each property)
+          AttributeType: S # 'S' for String (unique identifier for each property)
       KeySchema:
         - AttributeName: id
-          KeyType: HASH    # Partition key
-      BillingMode: PROVISIONED  # Use provisioned capacity to utilize the Free Tier
+          KeyType: HASH # Partition key
+      BillingMode: PROVISIONED # Use provisioned capacity to utilize the Free Tier
       ProvisionedThroughput:
-        ReadCapacityUnits: 5   # Keep this low to stay within the Free Tier
-        WriteCapacityUnits: 5  # Keep this low to stay within the Free Tier
-      SSESpecification: 
-        SSEEnabled: true  # Enable server-side encryption for data security
+        ReadCapacityUnits: 5 # Keep this low to stay within the Free Tier
+        WriteCapacityUnits: 5 # Keep this low to stay within the Free Tier
+      SSESpecification:
+        SSEEnabled: true # Enable server-side encryption for data security
       Tags:
         - Key: Environment
           Value: Production

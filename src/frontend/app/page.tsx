@@ -49,7 +49,7 @@ export default function Page() {
       <div className="card-bordered border-primary bg-base-100 w-4/5 shadow-xl">
         <div className="card-body">
           <div className="join join-horizontal m-2">
-          <button
+            <button
               className="btn btn-secondary text-white"
               onClick={toggleFilters}
             >

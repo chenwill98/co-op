@@ -62,11 +62,7 @@ export default function ListingsGrid({
                 <p className="text-gray-500 text-xs">
                   Rental unit in {listing.neighborhood}
                 </p>
-                <Link href={`/listings/${listing.id}`}>
-                  <h2 className="hover:text-primary transition-colors">
-                    {listing.address}
-                  </h2>
-                </Link>
+                <h2 className="hover:text-primary transition-colors">{listing.address}</h2>
                 <div className="text-gray-500 text-sm space-x-1">
                   <span>
                     {listing.bedrooms}{" "}

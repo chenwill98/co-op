@@ -1,11 +1,73 @@
 // Import your database client/ORM here, e.g. Prisma
-import { prisma } from '@/app/lib/prisma';
+import { PrismaClient } from '@prisma/client';
 import { Property, PropertyDetails, CombinedPropertyDetails, PropertyTags } from './definitions';
 import { BatchGetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from './dynamodb';
 import { callClaudeHaikuAPI } from '@/app/lib/claude';
 // Import the redis client that points to ElastiCache
 // import { redis } from '@/app/lib/redis';
+
+const prisma = new PrismaClient();
+
+export async function fetchPropertiesRDS(params: {text: string; neighborhood: string; minPrice: string; maxPrice: string; brokerFee: string}) {
+  const limit = 10;
+  const page = 1;
+  const skip = (page - 1) * limit;
+
+  // Destructure parameters
+  const { neighborhood, minPrice, maxPrice, brokerFee } = params;
+
+  // Build the where condition based on provided filters
+  const whereCondition: any = {};
+
+  if (neighborhood) {
+    whereCondition.neighborhood = {
+      equals: neighborhood,
+      mode: 'insensitive'
+    };
+  }
+
+  if (minPrice || maxPrice) {
+    whereCondition.price = {};
+    if (minPrice) {
+      whereCondition.price.gte = Number(minPrice);
+    }
+    if (maxPrice) {
+      whereCondition.price.lte = Number(maxPrice);
+    }
+  }
+
+  // if (brokerFee) {
+  //   whereCondition.brokerFee = {
+  //     equals: brokerFee,
+  //     mode: 'insensitive'
+  //   };
+  // }
+
+  try {
+    const properties = await prisma.dim_property_details.findMany({
+      where: whereCondition,
+      take: limit,
+      skip: skip,
+    });
+
+    const formattedProperties = properties.map(property => ({
+      ...property,
+      price: property.price ? property.price.toNumber() : 0,
+      latitude: property.latitude ? String(property.latitude) : 0,
+      longitude: property.longitude ? String(property.longitude) : 0,
+      listed_at: property.listed_at ? property.listed_at.toDateString() : '',
+      closed_at: property.closed_at ? property.closed_at.toDateString() : '',
+      available_from: property.available_from ? property.available_from.toDateString() : '',
+      entered_at: property.entered_at ? property.entered_at.toDateString() : '',
+    }))
+
+    return formattedProperties as Property[];
+  } catch (error) {
+    console.error('Error fetching properties with Prisma:', error);
+    throw error;
+  }
+}
 
 export async function fetchProperties(params: { text: string; neighborhood: string; minPrice: string; maxPrice: string; brokerFee: string }) {
     try {
@@ -27,8 +89,8 @@ export async function fetchProperties(params: { text: string; neighborhood: stri
             bedrooms: 2,
             bathrooms: 1,
             type: 'Sale',
-            latitude: 40.7142700,
-            longitude: -73.9614800,
+            latitude: '40.7142700',
+            longitude: '-73.9614800',
             amenities: 'Elevator, Doorman, Gym, Roof Deck, In-Unit Laundry',
             built_in: '2015',
             building_id: 'bldg_001',
@@ -223,7 +285,7 @@ export async function fetchProperties(params: { text: string; neighborhood: stri
         }
     
         // 5) Cache miss - query the DB
-        const listings = await prisma.dim_property_details.findMany({
+        const listings = await prisma.property.findMany({
           where: whereClause,
           take: 50, // limit results if desired
         });
