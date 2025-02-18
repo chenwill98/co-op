@@ -1,7 +1,6 @@
 import {
   fetchProperties,
   fetchPropertyDetailsById,
-  fetchPropertyGradesById,
   fetchPropertyTagsById,
 } from "@/app/lib/data";
 import { Property } from "@/app/lib/definitions";

@@ -20,7 +20,7 @@ export default function ListingsContainer({
 
   return (
     <div className="flex flex-row w-full">
-      <div className="min-w-72">
+      <div className="min-w-72 z-10">
         <ListingFilters
           sortOrder={sortOrder}
           onSortChange={setSortOrder}

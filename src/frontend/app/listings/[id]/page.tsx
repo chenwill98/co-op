@@ -3,6 +3,12 @@ import { fetchPropertyPage } from "@/app/lib/data";
 import BookmarkIcon from "@/app/ui/icons/BookmarkIcon";
 import Link from "next/link";
 import ImageCarousel from "@/app/ui/listingspage/ImageCarousel";
+import ListingsDetailsPanel from "@/app/ui/listingspage/ListingsDetailsPanel";
+import ListingsPricingPanel from "@/app/ui/listingspage/ListingsPricingPanel";
+import ListingsAmenitiesPanel from "@/app/ui/listingspage/ListingsAmentitiesPanel";
+import ListingsLocationPanel from "@/app/ui/listingspage/ListingsLocationPanel";
+import ListingsTransportationPanel from "@/app/ui/listingspage/ListingsTransportationPanel";
+import ListingsDescriptionPanel from "@/app/ui/listingspage/ListingsDescriptionPanel";
 
 interface PropertyPageProps {
   params: { id: string };
@@ -10,7 +16,8 @@ interface PropertyPageProps {
 
 export default async function PropertyPage({ params }: PropertyPageProps) {
   // Fetch the combined property details (property, details, tags, etc.)
-  const listingDetails = await fetchPropertyPage(params.id);
+  const pageParams = await params;
+  const listingDetails = await fetchPropertyPage(pageParams.id);
   console.log(listingDetails);
 
   // Combine images, videos, and floorplans into one array
@@ -50,77 +57,39 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
       </div>
 
       {/* Two-Column Layout for Property Details */}
-      <div className="grid grid-cols-2 gap-8">
+      <div className="grid grid-cols-2 gap-20">
         {/* Carousel Section */}
         <div className="flex flex-col">
           <ImageCarousel mediaItems={mediaItems} />
           {/* Description Section */}
           <div className="border-t border-gray-200 mt-4 pt-4">
-            <h2 className="text-2xl font-bold text-gray-800">
-              Description Summary ✨
-            </h2>
-            <p className="mt-2 text-gray-700 leading-relaxed">
-              {listingDetails.description}
-            </p>
+            <ListingsDescriptionPanel listingDetails={listingDetails} />
+          </div>
+          {/* Amenities */}
+          <div className="border-t border-gray-200 mt-4 pt-4">
+            <ListingsAmenitiesPanel listingDetails={listingDetails} />
           </div>
         </div>
         {/* Right Column: Main Property Details */}
         <div className="flex flex-col">
-          <div className="flex flex-col items-start">
-            <h1 className="text-3xl font-bold text-gray-800">
-              {listingDetails.address}
-            </h1>
-            <p className="mt-1 text-sm text-gray-600">
-              {listingDetails.property_type} in {listingDetails.neighborhood},{" "}
-              {listingDetails.borough} &mdash; {listingDetails.zipcode}
-            </p>
-            <div className="text-gray-500 text-sm space-x-1">
-              <span>
-                {listingDetails.bedrooms}{" "}
-                {listingDetails.bedrooms === 1 ? "bed" : "beds"}
-              </span>
-              <span>|</span>
-              <span>
-                {listingDetails.bathrooms}{" "}
-                {listingDetails.bathrooms === 1 ? "bath" : "baths"}
-              </span>
-              <span>|</span>
-              <span>
-                {listingDetails.sqft === null ? "N/A" : listingDetails.sqft} ft
-                <sup>2</sup>
-              </span>
-              <span>|</span>
-              <span>
-                $
-                {listingDetails.sqft === null
-                  ? "N/A"
-                  : (listingDetails.price / listingDetails.sqft).toFixed(
-                      2,
-                    )}{" "}
-                per ft<sup>2</sup>
-              </span>
-            </div>
-          </div>
+          {/* Property Title */}
+          <ListingsDetailsPanel listingDetails={listingDetails} />
 
           {/* Price and Basic Stats */}
-          <div className="">
-            <div>
-              <p className="text-2xl font-semibold text-gray-800">
-                ${listingDetails.price.toLocaleString()}
-              </p>
-              {!listingDetails.no_fee && (
-                <p className="mt-1 text-lg text-gray-700">
-                  Net effective rent: $
-                  {(
-                    listingDetails.price -
-                    listingDetails.price * 0.15
-                  ).toLocaleString()}
-                </p>
-              )}
-            </div>
+          <div className="border-t border-gray-200 mt-4 pt-4">
+            <ListingsPricingPanel listingDetails={listingDetails} />
           </div>
 
-          {/* Additional sections (Property Details, Amenities, Agents, Tags, etc.) can follow here */}
+          {/* Transportation Info */}
+          <div className="border-t border-gray-200 mt-4 pt-4">
+            <ListingsTransportationPanel listingDetails={listingDetails} />
+          </div>
+
+          {/* Location Info */}
+          <div className="border-t border-gray-200 mt-4 pt-4">
+            <ListingsLocationPanel listingDetails={listingDetails} />
+          </div>
+
         </div>
       </div>
     </div>

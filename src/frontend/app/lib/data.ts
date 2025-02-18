@@ -1,6 +1,6 @@
 // Import your database client/ORM here, e.g. Prisma
 import { prisma } from '@/app/lib/prisma';
-import { Property, PropertyDetails, PropertyGrades, CombinedPropertyDetails, PropertyTags } from './definitions';
+import { Property, PropertyDetails, CombinedPropertyDetails, PropertyTags } from './definitions';
 import { BatchGetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from './dynamodb';
 import { callClaudeHaikuAPI } from '@/app/lib/claude';
@@ -395,84 +395,6 @@ export async function fetchPropertyDetailsById(ids: string[]): Promise<{ [key: s
   } catch (error) {
     console.error('Failed to fetch listing details:', error);
     throw new Error('Failed to fetch listing details');
-  }
-}
-
-// Function that fetches a property's property grades based on the property's id
-export async function fetchPropertyGradesById(ids: string[]): Promise<Record<string, PropertyGrades>> {
-  try {
-    const dummyPropertyGrades = {
-      '1': {
-        id: '1',
-        price_grade: 'Fair',
-        size_grade: 'Poor',
-        subways_grade: 'Fair',
-        amenities_grade: 'Great',
-        building_grade: 'Fair',
-        overall_grade: 'Good'
-      },
-      '2': {
-        id: '2',
-        price_grade: 'Great',
-        size_grade: 'Poor',
-        subways_grade: 'Great',
-        amenities_grade: 'Fair',
-        building_grade: 'Great',
-        overall_grade: 'Fair'
-      },
-      '3': {
-        id: '3',
-        price_grade: 'Fair',
-        size_grade: 'Good',
-        subways_grade: 'Fair',
-        amenities_grade: 'Good',
-        building_grade: 'Good',
-        overall_grade: 'Fair'
-      },
-      '4': {
-        id: '4',
-        price_grade: 'Fair',
-        size_grade: 'Good',
-        subways_grade: 'Fair',
-        amenities_grade: 'Poor',
-        building_grade: 'Fair',
-        overall_grade: 'Great'
-      },
-      '5': {
-        id: '5',
-        price_grade: 'Poor',
-        size_grade: 'Fair',
-        subways_grade: 'Poor',
-        amenities_grade: 'Fair',
-        building_grade: 'Fair',
-        overall_grade: 'Fair'
-      }
-    }
-    const repeatedData = Object.values(dummyPropertyGrades).reduce((acc, item, index) => {
-      // Start with the original item
-      acc[item.id] = item;
-      
-      // Create two more copies with continuing numbers
-      for (let i = 1; i < 3; i++) {
-        const newId = String(5 + (index * 2) + i);
-        acc[newId] = {
-          ...item,
-          id: newId
-        };
-      }
-      return acc;
-    }, {} as { [key: string]: PropertyGrades });
-
-    // Filter the dummy data to only include the IDs in the listing IDs
-    const filteredData = Object.values(repeatedData).filter(item => ids.includes(item.id));
-
-    return filteredData.reduce((acc, item) => {
-      acc[item.id] = item;
-      return acc;
-    }, {} as { [key: string]: PropertyGrades });
-  } catch (error) {
-    console.error(`Failed to fetch property grades for id ${ids}:`, error);
-    throw new Error(`Failed to fetch property grades for id ${ids}`);
   }
 }
 

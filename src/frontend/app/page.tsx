@@ -48,7 +48,13 @@ export default function Page() {
     >
       <div className="card-bordered border-primary bg-base-100 w-4/5 shadow-xl">
         <div className="card-body">
-          <div className="flex flex-row items-center gap-4 m-2">
+          <div className="join join-horizontal m-2">
+          <button
+              className="btn btn-secondary text-white"
+              onClick={toggleFilters}
+            >
+              <AdjustmentsHorizontalIcon className="h-4 w-4" />
+            </button>
             <TypingInput onValueChange={(val) => setSearchText(val)} />
             <button
               className="btn btn-primary text-white"
@@ -57,12 +63,7 @@ export default function Page() {
               Search
               <SparklesIcon className="h-4 w-4" />
             </button>
-            <button
-              className="btn btn-secondary text-white"
-              onClick={toggleFilters}
-            >
-              <AdjustmentsHorizontalIcon className="h-4 w-4" />
-            </button>
+            
           </div>
           <div
             className={`transition-all duration-500 ease-in-out overflow-hidden ${filtersVisible ? "max-h-40" : "max-h-0"}`}

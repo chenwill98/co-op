@@ -34,30 +34,20 @@ export type PropertyDetails = {
     videos: string[];
   }
 
-export type PropertyGrades = {
-  id: string;
-  price_grade: Grading;
-  size_grade: Grading;
-  subways_grade: Grading;
-  amenities_grade: Grading;
-  building_grade: Grading;
-  overall_grade: Grading;
-}
-
 export type PropertyTags = {
   id: string;
   tags: string[];
 };
 
 export const tagCategories = {
-  Price: [
+  'Price': [
     'Price Drop 📉',
     'Great Deal 💰',
     'Price 📈',
     'Discounted 🔖',
     'Underpriced 🤫'
   ],
-  Features: [
+  'Features': [
     'Luxury 💎',
     'Renovated 🔨',
     'Open House 🏠',
@@ -67,20 +57,20 @@ export const tagCategories = {
     'Spacious 🏡',
     'Cozy 🔥'
   ],
-  Location: [
+  'Location': [
     'Near Subway 🚇',
     'Park View 🌳',
     'City Center 🏙️',
     'Quiet Neighborhood 🤫',
     'Waterfront 🌊'
   ],
-  Popularity: [
+  'Popularity': [
     'New ✨',
     'Popular 🔥',
     'Short Term 🕒',
     'Trending 📈'
   ],
-  Amenities: [
+  'Amenities': [
     'Solar Powered ☀️',
     'Eco Friendly 🌿',
     'Modern Design 🆕',
@@ -89,7 +79,7 @@ export const tagCategories = {
     'Rooftop Access 🚀',
     'Concierge Service 🤵'
   ],
-  Transportation: [
+  'Transportation': [
     'Walk Score High 🚶',
     'Close to Bus Stop 🚌',
     'Close to Train Station 🚉',
@@ -97,8 +87,6 @@ export const tagCategories = {
   ]
 };
 
-export type CombinedPropertyDetails = Property & PropertyDetails & PropertyGrades;
-
-export type Grading = 'Poor' | 'Fair' | 'Good' | 'Great';
+export type CombinedPropertyDetails = Property & PropertyDetails & PropertyTags;
 
 export type SortOrder = 'none' | 'asc' | 'desc';
