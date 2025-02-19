@@ -13,13 +13,13 @@ def upsert_property_details_to_rds(connection, listings):
             id, status, listed_at, closed_at, days_on_market, available_from,
             address, price, borough, neighborhood, zipcode, property_type,
             sqft, bedrooms, bathrooms, type, latitude, longitude, amenities,
-            built_in, building_id, agents, no_fee, entered_at
+            built_in, building_id, agents, no_fee, thumbnail_image
         )
         VALUES (
             %s, %s, %s, %s, %s, %s,
             %s, %s, %s, %s, %s, %s,
             %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, CURRENT_TIMESTAMP
+            %s, %s, %s, %s, %s, %s
         )
         ON CONFLICT (id) DO UPDATE SET
             status = EXCLUDED.status,
@@ -44,7 +44,7 @@ def upsert_property_details_to_rds(connection, listings):
             building_id = EXCLUDED.building_id,
             agents = EXCLUDED.agents,
             no_fee = EXCLUDED.no_fee,
-            entered_at = EXCLUDED.entered_at;
+            thumbnail_image = EXCLUDED.thumbnail_image;
     """
 
     data_list = []
@@ -73,6 +73,7 @@ def upsert_property_details_to_rds(connection, listings):
             listing["building"]["id"],
             listing["agents"],
             listing["noFee"],
+            listing["images"][0],
         )
         data_list.append(data_tuple)
 
@@ -93,7 +94,7 @@ def upsert_property_media_details_to_dynamodb(listings):
                 'images': listing['images'],
                 'videos': listing['videos'],
                 'floorplans': listing['floorplans'],
-                'entered_at': datetime.now(timezone.utc).isoformat()
+                'loaded_datetime': datetime.now(timezone.utc).isoformat()
             }
         )
 

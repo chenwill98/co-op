@@ -6,16 +6,20 @@ def upsert_properties_to_rds(connection, listings):
     """
     Upsert a batch of listings into the real_estate.properties table.
     """
+    delete_query = """
+        DELETE FROM real_estate.fct_properties
+        WHERE "date" = CURRENT_DATE;
+    """
+
     upsert_query = """
-        INSERT INTO real_estate.fct_properties (id, price, longitude, latitude, url, entered_at)
-        VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-        ON CONFLICT (id) DO UPDATE SET
+        INSERT INTO real_estate.fct_properties (id, price, longitude, latitude, url, "date")
+        VALUES (%s, %s, %s, %s, %s, CURRENT_DATE)
+        ON CONFLICT (id, "date") DO UPDATE SET
             price = EXCLUDED.price,
             longitude = EXCLUDED.longitude,
             latitude = EXCLUDED.latitude,
-            url = EXCLUDED.url,
-            entered_at = EXCLUDED.entered_at;
-        """
+            url = EXCLUDED.url;
+    """
 
     data_list = []
     for listing in listings:
@@ -29,6 +33,11 @@ def upsert_properties_to_rds(connection, listings):
         data_list.append(data_tuple)
 
     with connection.cursor() as cursor:
+        # logger.info(f"Deleting same day data from real_estate.properties Table")
+        # cursor.execute(delete_query)
+        # connection.commit()
+
+        logger.info(f"Inserting {len(data_list)} into real_estate.properties Table")
         cursor.executemany(upsert_query, data_list)
         connection.commit()
 
@@ -41,7 +50,7 @@ def fetch_and_store_data(message_list):
 
     properties_list = []
     for i, message in enumerate(message_list):
-        logger.info(f"Processing message {i} of {len(message_list)}")
+        logger.info(f"Processing message {i+1} of {len(message_list)}")
         try:
             offset = 0
             while True:
@@ -54,8 +63,9 @@ def fetch_and_store_data(message_list):
                 data = response.json()
 
                 listings = data.get("listings", [])
+                logger.info(f"Fetched {len(listings)} listings")
                 if listings:
-                    properties_list.append(listings)
+                    properties_list.extend(listings)
                     
 
                 pagination = data.get("pagination", {})
@@ -95,6 +105,8 @@ def lambda_handler(event, context):
     for record in event["Records"]:
         message_body = json.loads(record["body"])
         message_list.append(message_body)
+
+    logger.info(message_list)
     
     try:
         logger.info(f"{len(message_list)} messages received. Processing:")

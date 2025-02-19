@@ -82,14 +82,14 @@ def generate_api_property_ids():
 
         # Query the test_table
         with connection.cursor() as cursor:
+            # Finds properties that either have no details, details that are a week old, or details that are out of date
             cursor.execute("""SELECT
-                            fct.id
-                            FROM real_estate.fct_properties fct
-                            LEFT JOIN real_estate.dim_property_details dim
-                            ON fct.id = dim.id
-                            WHERE dim.id IS NULL
-                            OR dim.entered_at < NOW() - INTERVAL '7 days'
-                            LIMIT 100;""")
+                            fct_id
+                            FROM real_estate.latest_property_details_view
+                            WHERE id IS NULL
+                            OR loaded_datetime < NOW() - INTERVAL '7 days'
+                            OR price <> fct_price
+                            LIMIT 500;""")
             rows = cursor.fetchall()
 
         return [n[0] for n in rows]
