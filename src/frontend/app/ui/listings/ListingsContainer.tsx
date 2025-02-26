@@ -8,19 +8,15 @@ import ListingsGrid from "@/app/ui/listings/ListingsGrid";
 
 export default function ListingsContainer({
   listings,
-  listingDetails,
-  listingTags,
 }: {
   listings: Property[];
-  listingDetails: Record<string, any>;
-  listingTags: Record<string, any>;
 }) {
   const [sortOrder, setSortOrder] = useState<SortOrder>("none");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   return (
     <div className="flex flex-row w-full">
-      <div className="min-w-72 z-10">
+      <div className="min-w-72 max-w-72 z-10">
         <ListingFilters
           sortOrder={sortOrder}
           onSortChange={setSortOrder}
@@ -31,8 +27,6 @@ export default function ListingsContainer({
       <div className="flex-grow">
         <ListingsGrid
           listings={listings}
-          listingDetails={listingDetails}
-          listingTags={listingTags}
           sortOrder={sortOrder}
           selectedTags={selectedTags}
         />

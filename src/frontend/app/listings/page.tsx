@@ -1,11 +1,13 @@
 import {
-  fetchProperties,
-  fetchPropertyDetailsById,
-  fetchPropertyTagsById,
   fetchPropertiesRDS
 } from "@/app/lib/data";
 import { Property } from "@/app/lib/definitions";
 import ListingsContainer from "@/app/ui/listings/ListingsContainer";
+
+function getParam(value: string | string[] | undefined, defaultValue = ""): string {
+  if (!value) return defaultValue;
+  return Array.isArray(value) ? value[0] : value;
+}
 
 export default async function Page({ searchParams }: { searchParams: any }) {
   // Await searchParams if it's a promise
@@ -13,35 +15,20 @@ export default async function Page({ searchParams }: { searchParams: any }) {
 
   // Extract query parameters
   const params = {
-    text: Array.isArray(resolvedSearchParams.text)
-      ? resolvedSearchParams.text[0]
-      : resolvedSearchParams.text || "",
-    neighborhood: Array.isArray(resolvedSearchParams.neighborhood)
-      ? resolvedSearchParams.neighborhood[0]
-      : resolvedSearchParams.neighborhood || "",
-    minPrice: Array.isArray(resolvedSearchParams.minPrice)
-      ? resolvedSearchParams.minPrice[0]
-      : resolvedSearchParams.minPrice || "",
-    maxPrice: Array.isArray(resolvedSearchParams.maxPrice)
-      ? resolvedSearchParams.maxPrice[0]
-      : resolvedSearchParams.maxPrice || "",
-    brokerFee: Array.isArray(resolvedSearchParams.brokerFee)
-      ? resolvedSearchParams.brokerFee[0]
-      : resolvedSearchParams.brokerFee || "Any",
+    text: getParam(resolvedSearchParams.text),
+    neighborhood: getParam(resolvedSearchParams.neighborhood),
+    minPrice: getParam(resolvedSearchParams.minPrice),
+    maxPrice: getParam(resolvedSearchParams.maxPrice),
+    brokerFee: getParam(resolvedSearchParams.brokerFee, "Any"),
   };
 
-  const listings: Property[] = await fetchProperties(params);
-  // const listings: Property[] = await fetchPropertiesRDS(params);
-  const listingIds = listings.map((listing) => listing.id);
-  const listingDetails = await fetchPropertyDetailsById(listingIds);
-  const listingTags = await fetchPropertyTagsById(listingIds);
+  // const listings: Property[] = await fetchProperties(params);
+  const listings: Property[] = await fetchPropertiesRDS(params);
 
   return (
     <main className="z-0">
       <ListingsContainer
         listings={listings}
-        listingDetails={listingDetails}
-        listingTags={listingTags}
       />
     </main>
   );

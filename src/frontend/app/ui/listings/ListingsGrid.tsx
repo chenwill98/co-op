@@ -8,14 +8,10 @@ import BookmarkIcon from "@/app/ui/icons/BookmarkIcon";
 
 export default function ListingsGrid({
   listings,
-  listingDetails,
-  listingTags,
   sortOrder,
   selectedTags,
 }: {
   listings: Property[];
-  listingDetails: Record<string, any>;
-  listingTags: Record<string, any>;
   sortOrder: SortOrder;
   selectedTags: string[];
 }) {
@@ -23,10 +19,10 @@ export default function ListingsGrid({
     if (selectedTags.length === 0) return listings;
 
     return listings.filter((property) => {
-      const tags = listingTags[property.id]?.tags || [];
+      const tags = property.tag_list || [];
       return selectedTags.every((tag) => tags.includes(tag));
     });
-  }, [listings, listingTags, selectedTags]);
+  }, [listings, selectedTags]);
 
   const sortedListings = useMemo(() => {
     if (!sortOrder || sortOrder === "none") return filteredListings;
@@ -39,18 +35,19 @@ export default function ListingsGrid({
     });
   }, [filteredListings, sortOrder]);
 
+
   return (
-    <div className="grid grid-cols-3 gap-3 p-4">
+    <div className="grid grid-cols-3 gap-3 p-4 w-full">
       <ListingsSummaryCard listings={sortedListings} sortOrder={sortOrder} />
       {sortedListings.map((listing: Property) => (
         <Link
           href={`/listings/${listing.id}`}
           key={listing.id}
-          className="group card-bordered border-primary bg-base-100 hover:bg-base-200 shadow-xl hover:shadow-2xl transform transition-transform duration-300"
+          className="group card-bordered border-primary bg-base-100 h-[60vh] hover:bg-base-200 shadow-xl hover:shadow-2xl transform transition-transform duration-300"
         >
           <figure className="h-2/5 overflow-hidden">
           <img
-            src={listingDetails[listing.id]?.images[0]}
+            src={listing.thumbnail_image}
             alt={listing.address}
             className="thumbnail object-cover w-full h-full outline outline-1 outline-primary 
                       transform transition-transform duration-300 group-hover:scale-105 z-0"
@@ -109,7 +106,7 @@ export default function ListingsGrid({
             </div>
             <div className="flex flex-col mt-auto gap-2">
               <div className="flex flex-wrap gap-1">
-                {(listingTags[listing.id]?.tags || []).map((tag: string) => (
+                {(listing.tag_list || []).map((tag: string) => (
                   <div
                     key={tag}
                     className="badge badge-primary rounded-full badge-outline text-xs"

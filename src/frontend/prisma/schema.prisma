@@ -48,9 +48,54 @@ model fct_properties {
   @@id([id, date], map: "fct_properties_composite_pk")
 }
 
+model latest_property_details_view {
+  id              String?   @db.VarChar(20)
+  status          String?   @db.VarChar(50)
+  listed_at       DateTime? @db.Date
+  closed_at       DateTime? @db.Date
+  days_on_market  Int?
+  available_from  DateTime? @db.Date
+  address         String?
+  price           Decimal?  @db.Decimal(10, 2)
+  borough         String?   @db.VarChar(50)
+  neighborhood    String?   @db.VarChar(100)
+  zipcode         String?   @db.VarChar(10)
+  property_type   String?   @db.VarChar(50)
+  sqft            Int?
+  bedrooms        Int?
+  bathrooms       Int?
+  type            String?   @db.VarChar(50)
+  latitude        Decimal?  @db.Decimal(9, 6)
+  longitude       Decimal?  @db.Decimal(9, 6)
+  amenities       String[]
+  built_in        Int?
+  building_id     String?   @db.VarChar(20)
+  agents          String[]
+  no_fee          Boolean?
+  thumbnail_image String?
+  tag_list        String[]
+  loaded_datetime DateTime? @default(now()) @db.Timestamp(6)
+  url             String?   @db.VarChar(255)
+  date            DateTime  @default(now()) @db.Date
+  fct_id          String    @id @db.VarChar(100)
+  fct_price       Int?
+
+  @@map("latest_property_details_view") 
+}
+
 model neighborhoods {
   id        Int     @id
   name      String  @db.VarChar(255)
   group     String? @db.VarChar(255)
   parent_id Int?
+}
+
+model neighborhoods_enhanced_view {
+  id              Int     @id
+  name            String  @db.VarChar(255)
+  group           String? @db.VarChar(255)
+  parent_id     Int?
+  parent_name   String
+  hierarchy_path String
+  level         Int
 }

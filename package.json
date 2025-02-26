@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.734.0",
-    "@aws-sdk/lib-dynamodb": "^3.734.0",
+    "@aws-sdk/lib-dynamodb": "^3.751.0",
     "@heroicons/react": "^2.2.0",
     "@redis/client": "^1.6.0",
     "daisyui": "^4.12.23",

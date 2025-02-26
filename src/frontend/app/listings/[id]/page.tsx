@@ -1,6 +1,9 @@
 // /app/listings/[id]/page.tsx
 import { fetchPropertyPage } from "@/app/lib/data";
 import BookmarkIcon from "@/app/ui/icons/BookmarkIcon";
+import {
+  LinkIcon
+} from "@heroicons/react/24/solid";
 import Link from "next/link";
 import ImageCarousel from "@/app/ui/listingspage/ImageCarousel";
 import ListingsDetailsPanel from "@/app/ui/listingspage/ListingsDetailsPanel";
@@ -18,7 +21,6 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   // Fetch the combined property details (property, details, tags, etc.)
   const pageParams = await params;
   const listingDetails = await fetchPropertyPage(pageParams.id);
-  console.log(listingDetails);
 
   // Combine images, videos, and floorplans into one array
   const mediaItems = [
@@ -52,12 +54,14 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             <li>{listingDetails.address}</li>
           </ul>
         </nav>
-
-        <BookmarkIcon />
+        <div className="flex flex-row gap-2 items-center">
+          <BookmarkIcon />
+          <a href={listingDetails.url} className="btn btn-outline btn-primary" target="_blank" rel="noopener noreferrer">StreetEasy <LinkIcon className="h-6 w-6 text-primary"/></a>
+        </div>
       </div>
 
       {/* Two-Column Layout for Property Details */}
-      <div className="grid grid-cols-2 gap-20">
+      <div className="grid grid-cols-2 gap-20 mt-4">
         {/* Carousel Section */}
         <div className="flex flex-col">
           <ImageCarousel mediaItems={mediaItems} />

@@ -17,7 +17,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
             Location
             </h2>
             <div className="flex flex-wrap gap-1">
-                <TagList category="Location" tags={listingDetails.tags || []} />
+                <TagList category="Location" tags={listingDetails.tag_list || []} />
             </div>
             {/* Pass state and toggle handler to the ExpandButton */}
             <div className="">

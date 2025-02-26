@@ -9,9 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.3",
     "@aws-sdk/credential-providers": "^3.734.0",
+    "@aws-sdk/lib-dynamodb": "^3.751.0",
     "@heroicons/react": "^2.2.0",
     "@prisma/client": "^6.2.1",
+    "anthropic-ai": "^0.0.10",
     "daisyui": "^4.12.23",
     "next": "15.1.5",
     "react": "^19.0.0",

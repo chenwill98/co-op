@@ -59,8 +59,8 @@ export default function ListingsTransportationPanel({
       if (stop.location_type !== 1) return false;
       const [stopLon, stopLat] = stop.geometry.coordinates;
       const distance = getDistanceFromLatLonInMeters(
-        listingDetails.latitude,
-        listingDetails.longitude,
+        Number(listingDetails.latitude),
+        Number(listingDetails.longitude),
         stopLat,
         stopLon
       );
@@ -73,8 +73,8 @@ export default function ListingsTransportationPanel({
       const line = extractLine(stop.stop_id);
       const [stopLon, stopLat] = stop.geometry.coordinates;
       const distance = getDistanceFromLatLonInMeters(
-        listingDetails.latitude,
-        listingDetails.longitude,
+        Number(listingDetails.latitude),
+        Number(listingDetails.longitude),
         stopLat,
         stopLon
       );
@@ -95,7 +95,7 @@ export default function ListingsTransportationPanel({
     <div className="flex flex-col gap-2">
       <h2 className="text-2xl font-semibold text-gray-800">Transportation</h2>
       <div className="flex flex-wrap gap-1">
-        <TagList category="Transportation" tags={listingDetails.tags || []} />
+        <TagList category="Transportation" tags={listingDetails.tag_list || []} />
       </div>
       <div className="">
         <label htmlFor="walkingDistance">Walking Distance (minutes): </label>

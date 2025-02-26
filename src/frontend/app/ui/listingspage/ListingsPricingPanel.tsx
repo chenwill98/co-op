@@ -19,7 +19,7 @@ export default function ListingsPricingPanel({
   return (
     <div className="flex flex-col gap-2">
       <h2 className="text-2xl font-semibold text-gray-800">Price</h2>
-      <TagList category="Price" tags={listingDetails.tags || []} />
+      <TagList category="Price" tags={listingDetails.tag_list || []} />
       <div>
         <div className="text-2xl font-bold">
           ${listingDetails.price.toLocaleString()}

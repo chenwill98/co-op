@@ -1,11 +1,11 @@
 // Import your database client/ORM here, e.g. Prisma
 import { PrismaClient } from '@prisma/client';
-import { Property, PropertyDetails, CombinedPropertyDetails, PropertyTags } from './definitions';
-import { BatchGetCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from './dynamodb';
-import { callClaudeHaikuAPI } from '@/app/lib/claude';
-// Import the redis client that points to ElastiCache
-// import { redis } from '@/app/lib/redis';
+import { Property, PropertyDetails, CombinedPropertyDetails, tagCategories, propertyString } from './definitions';
+import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import Anthropic from "@anthropic-ai/sdk";
+// Import the parser properly using ES module syntax
+import { parseClaudeResultsToPrismaQuery } from './claudeQueryParser';
 
 const prisma = new PrismaClient();
 
@@ -20,14 +20,46 @@ export async function fetchPropertiesRDS(params: {text: string; neighborhood: st
   // Build the where condition based on provided filters
   const whereCondition: any = {};
 
-  if (neighborhood) {
+  // Get Claude results if text search is provided
+  if (params.text) {
+    try {
+      const claudeResults = await fetchClaudeSearchResult(params.text)
+        .then((results) => {
+          console.log('Claude results:', results);
+          // Ensure we're getting a proper object, not a string
+          const dbSchema = results?.content?.[1]?.input?.database_schema;
+          console.log('dbSchema:', dbSchema);
+          if (typeof dbSchema === 'string') {
+            try {
+              return JSON.parse(dbSchema);
+            } catch (parseError) {
+              console.error('Error parsing Claude results string:', parseError);
+              return {};
+            }
+          }
+          return dbSchema ?? {};
+        });
+      
+      // Parse claudeResults into Prisma filters - properly await the async function
+      const claudeFilters = await parseClaudeResultsToPrismaQuery(claudeResults);
+      
+      // Merge Claude filters with whereCondition
+      Object.assign(whereCondition, claudeFilters);
+    } catch (error) {
+      console.error('Error processing Claude search results:', error);
+      // Continue with empty whereCondition if Claude search fails
+    }
+  }
+
+  // Apply manual filters (these will override Claude filters if there's a conflict)
+  if (neighborhood && !whereCondition.neighborhood) {
     whereCondition.neighborhood = {
       equals: neighborhood,
       mode: 'insensitive'
     };
   }
 
-  if (minPrice || maxPrice) {
+  if ((minPrice || maxPrice) && !whereCondition.price) {
     whereCondition.price = {};
     if (minPrice) {
       whereCondition.price.gte = Number(minPrice);
@@ -37,15 +69,23 @@ export async function fetchPropertiesRDS(params: {text: string; neighborhood: st
     }
   }
 
-  // if (brokerFee) {
-  //   whereCondition.brokerFee = {
-  //     equals: brokerFee,
-  //     mode: 'insensitive'
-  //   };
-  // }
+  // Handle broker fee filter if needed
+  if (brokerFee === 'true' && !whereCondition.no_fee) {
+    whereCondition.no_fee = true;
+  }
+
+  whereCondition.id = { not: null };
+
+  console.log('Query conditions (raw):', whereCondition);
+  console.log('Query conditions type:', typeof whereCondition);
+  console.log('Query conditions (stringified):', JSON.stringify(whereCondition, null, 2));
 
   try {
-    const properties = await prisma.dim_property_details.findMany({
+    if (typeof whereCondition !== 'object' || Array.isArray(whereCondition) || whereCondition === null) {
+      throw new Error('Invalid whereCondition: expected an object');
+    }
+
+    const properties = await prisma.latest_property_details_view.findMany({
       where: whereCondition,
       take: limit,
       skip: skip,
@@ -54,13 +94,14 @@ export async function fetchPropertiesRDS(params: {text: string; neighborhood: st
     const formattedProperties = properties.map(property => ({
       ...property,
       price: property.price ? property.price.toNumber() : 0,
-      latitude: property.latitude ? String(property.latitude) : 0,
-      longitude: property.longitude ? String(property.longitude) : 0,
+      latitude: property.latitude ? String(property.latitude) : '0',
+      longitude: property.longitude ? String(property.longitude) : '0',
       listed_at: property.listed_at ? property.listed_at.toDateString() : '',
       closed_at: property.closed_at ? property.closed_at.toDateString() : '',
       available_from: property.available_from ? property.available_from.toDateString() : '',
-      entered_at: property.entered_at ? property.entered_at.toDateString() : '',
-    }))
+      loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
+      date: property.date ? property.date.toDateString() : '',
+    }));
 
     return formattedProperties as Property[];
   } catch (error) {
@@ -69,501 +110,195 @@ export async function fetchPropertiesRDS(params: {text: string; neighborhood: st
   }
 }
 
-export async function fetchProperties(params: { text: string; neighborhood: string; minPrice: string; maxPrice: string; brokerFee: string }) {
-    try {
-      const dummyData: Property[] = [
-        {
-            id: '1',
-            status: 'Available',
-            listed_at: '2025-01-01T10:00:00Z',
-            closed_at: '',
-            days_on_market: 10,
-            available_from: '2025-02-01T00:00:00Z',
-            address: '123 Main St #4B',
-            price: 5000,
-            borough: 'Brooklyn',
-            neighborhood: 'Williamsburg',
-            zipcode: '11211',
-            property_type: 'Condo',
-            sqft: 850,
-            bedrooms: 2,
-            bathrooms: 1,
-            type: 'Sale',
-            latitude: '40.7142700',
-            longitude: '-73.9614800',
-            amenities: 'Elevator, Doorman, Gym, Roof Deck, In-Unit Laundry',
-            built_in: '2015',
-            building_id: 'bldg_001',
-            agents: 'John Smith, Sarah Johnson',
-            no_fee: false,
-            entered_at: '2025-01-01T09:00:00Z'
-        },
-        {
-            id: '2',
-            status: 'In Contract',
-            listed_at: '2025-01-15T14:30:00Z',
-            closed_at: '',
-            days_on_market: 5,
-            available_from: '2025-03-01T00:00:00Z',
-            address: '456 Park Ave #12A',
-            price: 3000,
-            borough: 'Manhattan',
-            neighborhood: 'Upper East Side',
-            zipcode: '10021',
-            property_type: 'Co-op',
-            sqft: 1200,
-            bedrooms: 3,
-            bathrooms: 2,
-            type: 'Sale',
-            latitude: 40.7681800,
-            longitude: -73.9645100,
-            amenities: 'Full-Time Doorman, Concierge, Private Storage, Bike Room, Pet Spa',
-            built_in: '1925',
-            building_id: 'bldg_002',
-            agents: 'Michael Brown',
-            no_fee: true,
-            entered_at: '2025-01-15T13:00:00Z'
-        },
-        {
-            id: '3',
-            status: 'Available',
-            listed_at: '2025-01-20T09:15:00Z',
-            closed_at: '',
-            days_on_market: 7,
-            available_from: '2025-02-15T00:00:00Z',
-            address: '789 Broadway #3C',
-            price: 4500,
-            borough: 'Manhattan',
-            neighborhood: 'Greenwich Village',
-            zipcode: '10003',
-            property_type: 'Rental',
-            sqft: 750,
-            bedrooms: 1,
-            bathrooms: 1,
-            type: 'Rental',
-            latitude: 40.7320100,
-            longitude: -73.9927400,
-            amenities: 'Elevator, Laundry in Building, Dishwasher, Central AC, Hardwood Floors',
-            built_in: '2000',
-            building_id: 'bldg_003',
-            agents: 'Emily Davis, Robert Wilson',
-            no_fee: false,
-            entered_at: '2025-01-20T08:00:00Z'
-        },
-        {
-            id: '4',
-            status: 'Available',
-            listed_at: '2025-01-18T11:45:00Z',
-            closed_at: '',
-            days_on_market: 9,
-            available_from: '2025-03-01T00:00:00Z',
-            address: '321 Court St #2F',
-            price: 6000,
-            borough: 'Brooklyn',
-            neighborhood: 'Cobble Hill',
-            zipcode: '11231',
-            property_type: 'Condo',
-            sqft: 925,
-            bedrooms: 2,
-            bathrooms: 2,
-            type: 'Sale',
-            latitude: 40.6882100,
-            longitude: -73.9959400,
-            amenities: 'Private Balcony, In-Unit Washer/Dryer, Storage Unit, Video Intercom',
-            built_in: '2018',
-            building_id: 'bldg_004',
-            agents: 'Lisa Anderson',
-            no_fee: true,
-            entered_at: '2025-01-18T10:30:00Z'
-        },
-        {
-            id: '5',
-            status: 'Available',
-            listed_at: '2025-01-22T13:20:00Z',
-            closed_at: '',
-            days_on_market: 5,
-            available_from: '2025-02-01T00:00:00Z',
-            address: '567 Vernon Blvd #8E',
-            price: 3200,
-            borough: 'Queens',
-            neighborhood: 'Long Island City',
-            zipcode: '11106',
-            property_type: 'Rental',
-            sqft: 680,
-            bedrooms: 1,
-            bathrooms: 1,
-            type: 'Rental',
-            latitude: 40.7559800,
-            longitude: -73.9403400,
-            amenities: 'Gym, Roof Deck, Package Room, Bike Storage, Pet Friendly',
-            built_in: '2020',
-            building_id: 'bldg_005',
-            agents: 'David Chen, Maria Rodriguez',
-            no_fee: false,
-            entered_at: '2025-01-22T12:00:00Z'
-        }
-    ];
 
+export async function fetchPropertiesRDSById(id: string): Promise<Property> {
 
-    // Repeat the data to create more listings
-    const repeatedData = Array(3).fill(dummyData).flat().map((item, index) => ({
-        ...item,
-        id: `${index + 1}`, // Use index + 1 for increasing numbers starting from 1
-        address: `${item.address} ${Math.floor(index / 5) + 1}`
-    }));
-        return repeatedData;
-
-        const {
-          text,
-          neighborhood,
-          minPrice,
-          maxPrice,
-          brokerFee,
-        } = params;
-    
-        // 1) Optionally parse user's text with Claude
-        let parsedText = text;
-        try {
-          parsedText = await callClaudeHaikuAPI(text);
-        } catch (err) {
-          console.error('Claude API error:', err);
-          // fallback: just use raw text
-        }
-    
-        // 2) Build the DB 'where' clause
-        const whereClause: any = {};
-    
-        if (neighborhood) {
-          whereClause.neighborhood = {
-            contains: neighborhood,
-            mode: 'insensitive',
-          };
-        }
-    
-        if (minPrice) {
-          whereClause.price = { gte: Number(minPrice) };
-        }
-    
-        if (maxPrice) {
-          whereClause.price = {
-            ...whereClause.price,
-            lte: Number(maxPrice),
-          };
-        }
-    
-        if (brokerFee && brokerFee !== 'Any') {
-          if (brokerFee === 'No Fee') {
-            whereClause.brokerFee = 0;
-          } else if (brokerFee.startsWith('Low Fee')) {
-            whereClause.brokerFee = { lt: 10 };
-          }
-          // ... handle other fee scenarios
-        }
-    
-        if (parsedText) {
-          whereClause.OR = [
-            { title: { contains: parsedText, mode: 'insensitive' } },
-            { description: { contains: parsedText, mode: 'insensitive' } },
-          ];
-        }
-    
-        // 3) Generate a cache key from the user’s search parameters
-        const cacheKey = `search:${JSON.stringify({
-          text: parsedText,
-          neighborhood,
-          minPrice,
-          maxPrice,
-          brokerFee,
-        })}`;
-    
-        // 4) Check the ElastiCache Redis for a cached result
-        const cachedData = await redis.get(cacheKey);
-        if (cachedData) {
-          // Cache hit - parse and return immediately
-          const cachedListings = JSON.parse(cachedData);
-          return cachedListings
-        }
-    
-        // 5) Cache miss - query the DB
-        const listings = await prisma.property.findMany({
-          where: whereClause,
-          take: 50, // limit results if desired
-        });
-    
-        // 6) Store results in Redis with an expiration (e.g. 5 min)
-        // await redis.set(cacheKey, JSON.stringify(listings), 'EX', 60 * 5);
-    
-        // 7) Return fresh results
-        
-        return listings;
-      } catch (error) {
-        console.error(error);
-        return [];
-      }
-}
-
-export async function fetchPropertyDetailsById(ids: string[]): Promise<{ [key: string]: PropertyDetails }> {
   try {
-    // For development/testing, return dummy data that matches the property IDs
-    const dummyMediaData: { [key: string]: PropertyDetails } = {
-      '1': {
-        id: '1',
-        description: 'Stunning Williamsburg condo with modern finishes and amazing views',
-        entered_at: '2025-01-01T09:00:00Z',
-        floorplans: [
-          'https://example.com/floorplans/1_1.pdf',
-          'https://example.com/floorplans/1_2.pdf'
-        ],
-        images: [
-          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop',
-          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&fp-y=.7',
-          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&fp-y=.3'
-        ],
-        videos: [
-          'https://example.com/videos/1_tour.mp4'
-        ]
-      },
-      '2': {
-        id: '2',
-        description: 'Luxurious Upper East Side co-op with park views and premium amenities',
-        entered_at: '2025-01-15T13:00:00Z',
-        floorplans: [
-          'https://example.com/floorplans/2_1.pdf',
-          'https://example.com/floorplans/2_2.pdf'
-        ],
-        images: [
-          'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop',
-          'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop&fp-y=.6',
-          'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop&fp-y=.2'
-        ],
-        videos: [
-          'https://example.com/videos/2_tour.mp4',
-          'https://example.com/videos/2_amenities.mp4'
-        ]
-      },
-      '3': {
-        id: '3',
-        description: 'Charming Greenwich Village rental with hardwood floors and high ceilings',
-        entered_at: '2025-01-20T08:00:00Z',
-        floorplans: [
-          'https://example.com/floorplans/3_1.pdf'
-        ],
-        images: [
-          'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop',
-          'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&fp-y=.8',
-          'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&fp-y=.4'
-        ],
-        videos: []
-      },
-      '4': {
-        id: '4',
-        description: 'Bright and spacious Cobble Hill condo with private outdoor space',
-        entered_at: '2025-01-18T10:30:00Z',
-        floorplans: [
-          'https://example.com/floorplans/4_1.pdf',
-          'https://example.com/floorplans/4_2.pdf'
-        ],
-        images: [
-          'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop',
-          'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop&fp-y=.7',
-          'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop&fp-y=.3'
-        ],
-        videos: [
-          'https://example.com/videos/4_tour.mp4'
-        ]
-      },
-      '5': {
-        id: '5',
-        description: 'Modern Long Island City rental with stunning Manhattan skyline views',
-        entered_at: '2025-01-22T12:00:00Z',
-        floorplans: [
-          'https://example.com/floorplans/5_1.pdf'
-        ],
-        images: [
-          'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&auto=format&fit=crop',
-          'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&auto=format&fit=crop&fp-y=.6',
-          'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&auto=format&fit=crop&fp-y=.2'
-        ],
-        videos: [
-          'https://example.com/videos/5_tour.mp4',
-          'https://example.com/videos/5_amenities.mp4'
-        ]
-      }
+    const property = await prisma.latest_property_details_view.findFirst({
+      where: { fct_id: id },
+    }); 
+
+    if (!property) {
+      throw new Error(`Property with fct_id ${id} not found.`);
+    }
+
+    const formattedProperty = {
+      ...property,
+      price: property.price ? property.price.toNumber() : 0,
+      latitude: property.latitude ? String(property.latitude) : '0',
+      longitude: property.longitude ? String(property.longitude) : '0',
+      listed_at: property.listed_at ? property.listed_at.toDateString() : '',
+      closed_at: property.closed_at ? property.closed_at.toDateString() : '',
+      available_from: property.available_from ? property.available_from.toDateString() : '',
+      loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
+      date: property.date ? property.date.toDateString() : '',
     };
-
-    // Repeat the data to create more listings
-    const repeatedData = Object.values(dummyMediaData).reduce((acc, item, index) => {
-      // Start with the original item
-      acc[item.id] = item;
-      
-      // Create two more copies with continuing numbers
-      for (let i = 1; i < 3; i++) {
-        const newId = String(5 + (index * 2) + i);
-        acc[newId] = {
-          ...item,
-          id: newId
-        };
-      }
-      return acc;
-    }, {} as { [key: string]: PropertyDetails });
-
-    // Filter the dummy data to only include the IDs in the listing IDs
-    const filteredData = Object.values(repeatedData).filter(item => ids.includes(item.id));
-
-    console.log(ids);
-
-    return filteredData.reduce((acc, item) => {
-      acc[item.id] = item;
-      return acc;
-    }, {} as { [key: string]: PropertyDetails });
-
-    // // Prepare the BatchGet command
-    // const batchGetCommand = new BatchGetCommand({
-    //   RequestItems: {
-    //     'property_media': {
-    //       Keys: ids.map(id => ({ id }))
-    //     }
-    //   }
-    // });
-
-    // // Execute the batch get operation
-    // const response = await docClient.send(batchGetCommand);
-
-    // if (!response.Responses || !response.Responses.property_media) {
-    //   throw new Error('No responses received from DynamoDB');
-    // }
-
-    // // Convert array of results to a map keyed by id
-    // const mediaDetailsMap = response.Responses.property_media.reduce((acc, item) => {
-    //   if (item) {
-    //     acc[item.id] = {
-    //       id: item.id,
-    //       description: item.description || '',
-    //       entered_at: item.entered_at || new Date().toISOString(),
-    //       floorplans: Array.isArray(item.floorplans) ? item.floorplans : [],
-    //       images: Array.isArray(item.images) ? item.images : [],
-    //       videos: Array.isArray(item.videos) ? item.videos : []
-    //     };
-    //   }
-    //   return acc;
-    // }, {} as { [key: string]: PropertyDetails });
-
-    // // Handle any unprocessed items if they exist
-    // if (response.UnprocessedKeys && Object.keys(response.UnprocessedKeys).length > 0) {
-    //   console.warn('Some items were not processed:', response.UnprocessedKeys);
-    // }
-
-    // return mediaDetailsMap;
+    return formattedProperty as Property;
   } catch (error) {
-    console.error('Failed to fetch listing details:', error);
-    throw new Error('Failed to fetch listing details');
+    console.error('Error fetching property:', error);
+    throw error;
   }
 }
 
+export async function fetchPropertyDetailsById(id: string): Promise<PropertyDetails | null> {
+  const client = new DynamoDBClient({
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    },
+  });
+  const ddbDocClient = DynamoDBDocumentClient.from(client);
 
-export async function fetchPropertyTagsById(ids: string[]): Promise<Record<string, PropertyTags>> {
+  const params = {
+    RequestItems: {
+      'PropertyMediaDetails': {
+        Keys: [{ id }]
+      }
+    }
+  };
+
   try {
-    const dummyPropertyTags = {
-      '1': { 
-        id: '1', 
-        tags: [
-          'New ✨', 
-          'Price Drop 📉', 
-          'Popular 🔥', 
-          'Modern Design 🆕', 
-          'Underpriced 🤫', 
-          'Waterfront 🌊'
-        ]
-      },
-      '2': { 
-        id: '2', 
-        tags: [
-          'Luxury 💎', 
-          'Great Deal 💰', 
-          'Park View 🌳', 
-          'Eco Friendly 🌿', 
-          'Discounted 🔖', 
-          'City Center 🏙️'
-        ]
-      },
-      '3': { 
-        id: '3', 
-        tags: [
-          'Renovated 🔨', 
-          'Pet Friendly 🐾', 
-          'Near Subway 🚇', 
-          'Modern Design 🆕', 
-          'Cozy 🔥', 
-          'Gym 💪'
-        ]
-      },
-      '4': { 
-        id: '4', 
-        tags: [
-          'Open House 🏠', 
-          'Price 📈', 
-          'Solar Powered ☀️', 
-          'Eco Friendly 🌿', 
-          'Concierge Service 🤵', 
-          'Bike Friendly 🚴'
-        ]
-      },
-      '5': { 
-        id: '5', 
-        tags: [
-          'Short Term 🕒', 
-          'Furnished 🛋️', 
-          'Home Office 💻', 
-          'Eco Friendly 🌿', 
-          'Modern Design 🆕', 
-          'Close to Train Station 🚉', 
-          'Walk Score High 🚶'
-        ]
-      }
-    };
-
-    const repeatedData = Object.values(dummyPropertyTags).reduce((acc, item, index) => {
-      acc[item.id] = item;
-      for (let i = 1; i < 3; i++) {
-        const newId = String(5 + (index * 2) + i);
-        acc[newId] = { ...item, id: newId, tags: [...item.tags, `Copy ${i} 🔄`] };
-      }
-      return acc;
-    }, {} as Record<string, PropertyTags>);
-
-    const filteredData = Object.values(repeatedData).filter(item => ids.includes(item.id));
-    
-    return filteredData.reduce((acc, item) => {
-      acc[item.id] = item;
-      return acc;
-    }, {} as Record<string, PropertyTags>);
+    const response = await ddbDocClient.send(new BatchGetCommand(params));
+    const items = response.Responses?.PropertyMediaDetails ?? [];
+    return items.length > 0 ? items[0] as PropertyDetails : null;
   } catch (error) {
-    console.error(`Failed to fetch property tags for ids ${ids}:`, error);
-    throw new Error(`Failed to fetch property tags for ids ${ids}`);
+    console.error('Error fetching property details:', error);
+    throw error;
   }
 }
-
 
 export async function fetchPropertyPage(id: string): Promise<CombinedPropertyDetails> {
   try {
-    // Fetch all relevant property details
-    const properties = await fetchProperties({
-      text: '',
-      neighborhood: '',
-      minPrice: '',
-      maxPrice: '',
-      brokerFee: 'Any',
-    } as { text: string; neighborhood: string; minPrice: string; maxPrice: string; brokerFee: string });
-    // Filter list of property dictionaries by id
-    const property = properties.find((p: Property) => p.id === id);
-
-    const propertyTags = await fetchPropertyTagsById([id]).then(data => data[id]);
-    const propertyDetails = await fetchPropertyDetailsById([id]).then(data => data[id]);
-    const propertyCombined = {...propertyDetails, ...propertyTags, ...property};
-    return propertyCombined;
+    const property = await fetchPropertiesRDSById(id);
+    const propertyDetails = await fetchPropertyDetailsById(id);
+    const propertyCombined = { ...propertyDetails, ...property };
+    return propertyCombined as CombinedPropertyDetails;
     
   } catch (error) {
     console.error(`Failed to fetch listing id ${id}:`, error);
     throw new Error(`Failed to fetch listing id ${id}`);
   }
+}
+
+export async function fetchClaudeSearchResult(text: string): Promise<Record<string, any>>{
+
+  const anthropic = new Anthropic({
+    // defaults to process.env["ANTHROPIC_API_KEY"]
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+
+  const model = "claude-3-5-haiku-20241022";
+  const max_tokens = 8192;
+  const temperature = 0;
+
+  
+  const TAG_LIST = JSON.stringify(tagCategories, null, 2);
+  const DATABASE_SCHEMA = propertyString;
+
+  const NEIGHBORHOODS = await prisma.neighborhoods_enhanced_view.findMany({
+    select: { name: true },
+    where: { level: { in: [3, 4, 5] } }
+  });
+
+  // Replace placeholders like {{DATABASE_SCHEMA}} with real values,
+  // because the SDK does not support variables.
+  try {
+    const msg = await anthropic.messages.create({
+      model: model,
+      max_tokens: max_tokens,
+      temperature: temperature,
+      system: "You are a system that takes in a natural language text search and processes it into search parameters values that can be used to query a SQL database. The appropriate values for certain columns like neighborhoods, tags, and the database schema will be provided, so make sure that the responses strictly follow those values. If the query is vague then don't make up a database schema or tag list and keep the responses reasonable in terms of how much data is queried. If the query is irrelevant to real estate or a provocation, then just return the object with empty values.",
+      messages: [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": `<examples>
+                        <example>
+                        <DATABASE_SCHEMA>
+                        ${DATABASE_SCHEMA}
+                        </DATABASE_SCHEMA>
+                        <TAG_LIST>
+                        ${TAG_LIST}
+                        </TAG_LIST>
+                        <ideal_output>
+                        process_search_query({
+                          "search_query": "2 bedroom apartments in a charming neighborhood that has a modern waterfront and costs less than $3000",
+                          "database_schema": {
+                            "price": {"min": null, "max":3000},
+                            "bedrooms": {"min": 2, "max":2},
+                            "property_type": "rental",
+                            "neighborhood": ["Williamsburg", "East Village", "Upper West Side"],
+                            "tag_list": [
+                            "Waterfront 🌊",
+                            "Modern Design 🆕"
+                          ]
+                        }
+                        })
+                        </ideal_output>
+                        </example>
+                        </examples>`        
+            },
+            {
+              "type": "text",
+              "text": `Query: ${text}`
+            }
+          ]
+        }
+      ],
+      tools: [
+        {
+          "name": "process_search_query",
+          "description": "Process a natural language text search into parameters that can be used to query a database. The system uses the provided database schema and tag list to generate the search filters.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "search_query": {
+                "type": "string",
+                "description": "The natural language text search query to be processed into SQL query parameters."
+              },
+              "database_schema": {
+                "type": "object",
+                "description": `The SQL database schema detailing columns and their corresponding types are defined in ${DATABASE_SCHEMA}. 
+                If the field is followed by a type, then that's kind of value that can be used to filter the search. Dates should be in YYYY-MM-DD format. 
+                Number type columns should contain max and min values, and if it's an exact value then just have the min and max as the same. 
+                If it's followed by a list type, then that's a list of values that can be used to filter the search, with the exceptions of tag_list and neighborhood. 
+                The available tags for filtering in tag_list are defined in ${TAG_LIST}. The neighborhood values are defined in ${NEIGHBORHOODS}. The neighborhood values should always be a list. 
+                Make sure the output is a valid JSON object with the same keys as the database schema.`
+              }
+            },
+            "required": [
+              "search_query",
+              "database_schema"
+            ]
+          }
+        }
+      ]
+    });
+    return msg;
+  }
+  catch (e) {
+    console.error(e);
+    return {};
+  } 
+}
+
+export async function getAllChildNeighborhoods(parentName: string) {
+  const results = await prisma.$queryRaw`
+    WITH parent_neighborhood AS (
+      SELECT id, name, hierarchy_path
+      FROM "real_estate"."neighborhoods_enhanced_view"
+      WHERE name = ${parentName}
+    )
+    
+    SELECT child.name
+    FROM "real_estate"."neighborhoods_enhanced_view" AS child
+    JOIN parent_neighborhood AS parent
+      ON child.hierarchy_path LIKE (parent.hierarchy_path || '%')
+    ORDER BY child.level, child.name;
+  `;
+  
+  return results;
 }
