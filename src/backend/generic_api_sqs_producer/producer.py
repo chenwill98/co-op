@@ -2,9 +2,11 @@ import boto3
 import json
 import os
 from urllib.parse import urljoin
-from aws_utils import get_secret, logger, get_RDS_pool
+from sqlalchemy import text
+from typing import Literal
+from aws_utils import get_secret, logger, get_db_session, execute_query
 
-def generate_api_payloads(api_type, listing_type='rentals'):
+def generate_api_payloads(api_type, listing_type: Literal['sales', 'rentals'] = 'rentals'):
 
     base_url = "https://streeteasy-api.p.rapidapi.com"
     headers = get_secret(secret_name='RapidAPIKey')
@@ -39,18 +41,18 @@ def generate_api_payloads(api_type, listing_type='rentals'):
 def generate_api_neighorhood_strings():
     """
     Establishes a connection to the RDS table, and selects all neighborhoods that are just one level below
-    the borough
+    the borough using SQLAlchemy.
     """
-    connection = None
     try:
-        logger.info("Attempting to get connection from pool")
-        db_pool = get_RDS_pool()
-        connection = db_pool.getconn()
-        logger.info("Successfully got connection from pool")
-        # Query the test_table
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT name FROM real_estate.neighborhoods_enhanced_view WHERE level=3;")
-            rows = cursor.fetchall()
+        # Get a SQLAlchemy session
+        logger.info("Creating SQLAlchemy session")
+        session = get_db_session()
+        
+        # Query the neighborhoods table
+        logger.info("Querying neighborhoods data")
+        query = "SELECT name FROM real_estate.neighborhoods_enhanced_view WHERE level=3;"
+        result = execute_query(session, query)
+        rows = result.fetchall()
 
         # Splits into large and small groups
         neighborhoods_list = [n[0].lower().replace(' ', '-').replace('.', '') for n in rows]
@@ -64,45 +66,41 @@ def generate_api_neighorhood_strings():
     except Exception as e:
         raise Exception(f"Error fetching neighborhood data from RDS: {e}")
     finally:
-        if connection:
-            logger.info("Returning connection to pool")
-            db_pool = get_RDS_pool()
-            db_pool.putconn(connection)
+        if 'session' in locals():
+            logger.info("Closing SQLAlchemy session")
+            session.close()
 
 
 def generate_api_property_ids():
     """
     Establishes a connection to the RDS table, then fetches all property ids from fct_properties that either
-    are missing details or have details that are a week old.
+    are missing details or have details that are a week old using SQLAlchemy.
     """
-    connection = None
     try:
-        logger.info("Attempting to get connection from pool")
-        db_pool = get_RDS_pool()
-        connection = db_pool.getconn()
-        logger.info("Successfully got connection from pool")
+        # Get a SQLAlchemy session
+        logger.info("Creating SQLAlchemy session")
+        session = get_db_session()
 
-        # Query the test_table
-        with connection.cursor() as cursor:
-            # Finds properties that either have no details, details that are a week old, or details that are out of date
-            cursor.execute("""SELECT
-                            fct_id
-                            FROM real_estate.latest_property_details_view
-                            WHERE id IS NULL
-                            OR loaded_datetime < NOW() - INTERVAL '7 days'
-                            OR price <> fct_price
-                            LIMIT 500;""")
-            rows = cursor.fetchall()
+        # Query the properties table
+        logger.info("Querying property IDs that need details")
+        query = """SELECT
+                    fct_id
+                    FROM real_estate.latest_property_details_view
+                    WHERE id IS NULL
+                    OR loaded_datetime < NOW() - INTERVAL '7 days'
+                    OR price <> fct_price
+                    LIMIT 500;"""
+        result = execute_query(session, query)
+        rows = result.fetchall()
 
         return [n[0] for n in rows]
 
     except Exception as e:
         raise Exception(f"Error fetching IDs with old or without details data from RDS: {e}")
     finally:
-        if connection:
-            logger.info("Returning connection to pool")
-            db_pool = get_RDS_pool()
-            db_pool.putconn(connection)
+        if 'session' in locals():
+            logger.info("Closing SQLAlchemy session")
+            session.close()
 
 
 def lambda_handler(event, context):

@@ -2,11 +2,12 @@ import json
 import requests
 import boto3
 from datetime import datetime, timezone
-from aws_utils import logger, get_RDS_pool
+from sqlalchemy import text
+from aws_utils import logger, get_db_session, execute_query
 
-def upsert_property_details_to_rds(connection, listings):
+def upsert_property_details_to_rds(session, listings):
     """
-    Upsert a batch of listings into the real_estate.properties table.
+    Upsert a batch of listings into the real_estate.dim_property_details table.
     """
     upsert_query = """
         INSERT INTO real_estate.dim_property_details (
@@ -16,10 +17,10 @@ def upsert_property_details_to_rds(connection, listings):
             built_in, building_id, agents, no_fee, thumbnail_image
         )
         VALUES (
-            %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, %s
+            :id, :status, :listed_at, :closed_at, :days_on_market, :available_from,
+            :address, :price, :borough, :neighborhood, :zipcode, :property_type,
+            :sqft, :bedrooms, :bathrooms, :type, :latitude, :longitude,
+            :amenities, :built_in, :building_id, :agents, :no_fee, :thumbnail_image
         )
         ON CONFLICT (id) DO UPDATE SET
             status = EXCLUDED.status,
@@ -47,39 +48,44 @@ def upsert_property_details_to_rds(connection, listings):
             thumbnail_image = EXCLUDED.thumbnail_image;
     """
 
-    data_list = []
-    for listing in listings:
-        data_tuple = (
-            listing["id"],
-            listing["status"],
-            listing["listedAt"],
-            listing["closedAt"],
-            listing["daysOnMarket"],
-            listing["availableFrom"],
-            listing["address"],
-            listing["price"],
-            listing["borough"],
-            listing["neighborhood"],
-            listing["zipcode"],
-            listing["propertyType"],
-            listing["sqft"],
-            listing["bedrooms"],
-            listing["bathrooms"],
-            listing["type"],
-            listing["latitude"],
-            listing["longitude"],
-            listing["amenities"],
-            listing["builtIn"],
-            listing["building"]["id"],
-            listing["agents"],
-            listing["noFee"],
-            listing["images"][0],
-        )
-        data_list.append(data_tuple)
-
-    with connection.cursor() as cursor:
-        cursor.executemany(upsert_query, data_list)
-        connection.commit()
+    try:
+        for listing in listings:
+            data_dict = {
+                'id': listing["id"],
+                'status': listing["status"],
+                'listed_at': listing["listedAt"],
+                'closed_at': listing["closedAt"],
+                'days_on_market': listing["daysOnMarket"],
+                'available_from': listing["availableFrom"],
+                'address': listing["address"],
+                'price': listing["price"],
+                'borough': listing["borough"],
+                'neighborhood': listing["neighborhood"],
+                'zipcode': listing["zipcode"],
+                'property_type': listing["propertyType"],
+                'sqft': listing["sqft"],
+                'bedrooms': listing["bedrooms"],
+                'bathrooms': listing["bathrooms"],
+                'type': listing["type"],
+                'latitude': listing["latitude"],
+                'longitude': listing["longitude"],
+                'amenities': json.dumps(listing["amenities"]),
+                'built_in': listing["builtIn"],
+                'building_id': listing["building"]["id"],
+                'agents': json.dumps(listing["agents"]),
+                'no_fee': listing["noFee"],
+                'thumbnail_image': listing["images"][0],
+            }
+            
+            # Use the execute_query helper function
+            execute_query(session, upsert_query, data_dict)
+        
+        session.commit()
+        logger.info(f"Successfully upserted {len(listings)} listings to dim_property_details")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error upserting to dim_property_details: {e}")
+        raise
 
 
 def upsert_property_media_details_to_dynamodb(listings):
@@ -102,8 +108,6 @@ def fetch_and_store_data(message_list):
     """
     Fetch data from the given API URL, handle pagination, and store results in RDS.
     """
-    connection = None
-
     property_details_list = []
     for i, message in enumerate(message_list):
         logger.info(f"Processing message {i} of {len(message_list)}")
@@ -120,13 +124,12 @@ def fetch_and_store_data(message_list):
             raise
 
     try:
-        logger.info("Attempting to get connection from pool")
-        db_pool = get_RDS_pool()
-        connection = db_pool.getconn()
-        logger.info("Successfully got connection from pool")
-
+        # Get a SQLAlchemy session
+        logger.info("Creating SQLAlchemy session")
+        session = get_db_session()
+        
         logger.info(f"Inserting {len(property_details_list)} messages into dim_property_details")
-        upsert_property_details_to_rds(connection, property_details_list)
+        upsert_property_details_to_rds(session, property_details_list)
 
         logger.info(f"Inserting {len(property_details_list)} messages into DynamoDB table PropertyMediaDetails")
         upsert_property_media_details_to_dynamodb(property_details_list)
@@ -136,10 +139,9 @@ def fetch_and_store_data(message_list):
         raise
     
     finally:
-        if connection:
-            logger.info("Returning connection to pool")
-            db_pool = get_RDS_pool()
-            db_pool.putconn(connection)
+        if 'session' in locals():
+            logger.info("Closing SQLAlchemy session")
+            session.close()
 
 
 def lambda_handler(event, context):

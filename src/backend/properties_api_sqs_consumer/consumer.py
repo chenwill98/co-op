@@ -1,19 +1,21 @@
 import json
 import requests
-from aws_utils import logger, get_RDS_pool
+from sqlalchemy import text
+from aws_utils import logger, get_db_session, execute_query
 
-def upsert_properties_to_rds(connection, listings):
+def upsert_properties_to_rds(session, listings):
     """
-    Upsert a batch of listings into the real_estate.properties table.
+    Upsert a batch of listings into the real_estate.fct_properties table.
     """
-    delete_query = """
-        DELETE FROM real_estate.fct_properties
-        WHERE "date" = CURRENT_DATE;
-    """
+    # Delete query (commented out in original)
+    # delete_query = """
+    #     DELETE FROM real_estate.fct_properties
+    #     WHERE "date" = CURRENT_DATE;
+    # """
 
     upsert_query = """
         INSERT INTO real_estate.fct_properties (id, price, longitude, latitude, url, "date")
-        VALUES (%s, %s, %s, %s, %s, CURRENT_DATE)
+        VALUES (:id, :price, :longitude, :latitude, :url, CURRENT_DATE)
         ON CONFLICT (id, "date") DO UPDATE SET
             price = EXCLUDED.price,
             longitude = EXCLUDED.longitude,
@@ -21,32 +23,36 @@ def upsert_properties_to_rds(connection, listings):
             url = EXCLUDED.url;
     """
 
-    data_list = []
-    for listing in listings:
-        data_tuple = (
-            listing["id"],
-            listing["price"],
-            listing["longitude"],
-            listing["latitude"],
-            listing["url"],
-        )
-        data_list.append(data_tuple)
-
-    with connection.cursor() as cursor:
-        # logger.info(f"Deleting same day data from real_estate.properties Table")
-        # cursor.execute(delete_query)
-        # connection.commit()
-
-        logger.info(f"Inserting {len(data_list)} into real_estate.properties Table")
-        cursor.executemany(upsert_query, data_list)
-        connection.commit()
+    try:
+        # Uncomment if needed
+        # execute_query(session, delete_query)
+        # session.commit()
+        
+        logger.info(f"Inserting {len(listings)} into real_estate.fct_properties Table")
+        
+        for listing in listings:
+            data_dict = {
+                'id': listing["id"],
+                'price': listing["price"],
+                'longitude': listing["longitude"],
+                'latitude': listing["latitude"],
+                'url': listing["url"],
+            }
+            
+            # Use the execute_query helper function
+            execute_query(session, upsert_query, data_dict)
+        
+        session.commit()
+        logger.info(f"Successfully upserted {len(listings)} listings to fct_properties")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error upserting to fct_properties: {e}")
+        raise
 
 def fetch_and_store_data(message_list):
     """
     Fetch data from the given API URL, handle pagination, and store results in RDS.
     """
-    connection = None
-
     properties_list = []
     for i, message in enumerate(message_list):
         logger.info(f"Processing message {i+1} of {len(message_list)}")
@@ -81,24 +87,21 @@ def fetch_and_store_data(message_list):
             raise
 
     try:
-        logger.info("Attempting to get connection from pool")
-        db_pool = get_RDS_pool()
-        connection = db_pool.getconn()
-        logger.info("Successfully got connection from pool")
+        # Get a SQLAlchemy session
+        logger.info("Creating SQLAlchemy session")
+        session = get_db_session()
 
-        logger.info(f"Inserting {len(properties_list)} into real_estate.properties Table")
-        upsert_properties_to_rds(connection, properties_list)
+        logger.info(f"Inserting {len(properties_list)} into real_estate.fct_properties Table")
+        upsert_properties_to_rds(session, properties_list)
 
     except Exception as e:
         logger.info(f"Error upserting properties: {e}")
         raise
     
     finally:
-        if connection:
-            logger.info("Returning connection to pool")
-            db_pool = get_RDS_pool()
-            db_pool.putconn(connection)
-
+        if 'session' in locals():
+            logger.info("Closing SQLAlchemy session")
+            session.close()
 
 def lambda_handler(event, context):
     message_list = []
@@ -106,12 +109,10 @@ def lambda_handler(event, context):
         message_body = json.loads(record["body"])
         message_list.append(message_body)
     
-    logger.info(message_list)
-    
     try:
         logger.info(f"{len(message_list)} messages received. Processing:")
         fetch_and_store_data(message_list)
         return {"statusCode": 200, "body": "Messages processed successfully"}
     except Exception as e:
-        logger.error(f"Error processing property details messages: {e}")
+        logger.error(f"Error processing messages: {e}")
         raise
