@@ -1,6 +1,6 @@
 import json
 import requests
-from aws_utils import init_RDS_connection, logger
+from aws_utils import logger, get_RDS_pool
 
 def upsert_properties_to_rds(connection, listings):
     """
@@ -40,7 +40,6 @@ def upsert_properties_to_rds(connection, listings):
         logger.info(f"Inserting {len(data_list)} into real_estate.properties Table")
         cursor.executemany(upsert_query, data_list)
         connection.commit()
-
 
 def fetch_and_store_data(message_list):
     """
@@ -82,7 +81,10 @@ def fetch_and_store_data(message_list):
             raise
 
     try:
-        connection = init_RDS_connection()
+        logger.info("Attempting to get connection from pool")
+        db_pool = get_RDS_pool()
+        connection = db_pool.getconn()
+        logger.info("Successfully got connection from pool")
 
         logger.info(f"Inserting {len(properties_list)} into real_estate.properties Table")
         upsert_properties_to_rds(connection, properties_list)
@@ -93,19 +95,17 @@ def fetch_and_store_data(message_list):
     
     finally:
         if connection:
-            logger.info("Closing RDS connection")
-            connection.close()
+            logger.info("Returning connection to pool")
+            db_pool = get_RDS_pool()
+            db_pool.putconn(connection)
 
 
 def lambda_handler(event, context):
-    """
-    AWS Lambda handler, triggered by SQS messages.
-    """
     message_list = []
     for record in event["Records"]:
         message_body = json.loads(record["body"])
         message_list.append(message_body)
-
+    
     logger.info(message_list)
     
     try:

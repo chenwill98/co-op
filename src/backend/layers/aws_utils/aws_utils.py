@@ -1,6 +1,7 @@
 import boto3
 import json
 import psycopg2
+import time
 from psycopg2 import pool
 from aws_lambda_powertools import Logger
 
@@ -64,7 +65,8 @@ def init_RDS_connection(db_name='coapt'):
             user=db_user,
             password=auth_token,
             port=port,
-            sslmode='require'
+            sslmode='require',
+            connect_timeout=10  # Add a 10-second connection timeout
         )
 
         return connection
@@ -74,37 +76,110 @@ def init_RDS_connection(db_name='coapt'):
 
 
 def get_RDS_pool():
+    """
+    Get a connection pool to the RDS database.
+    Implements a singleton pattern to ensure only one pool is created and reused.
+    Also validates the pool to ensure connections are still valid.
+    """
     # Singleton-like pattern, ensures one pool is created and reused
     if not hasattr(get_RDS_pool, "_db_pool"):
+        logger.info("Creating new RDS connection pool")
         get_RDS_pool._db_pool = init_RDS_pool()
+    else:
+        # Test if the pool is still valid by getting and returning a connection
+        try:
+            logger.debug("Testing existing connection pool")
+            conn = get_RDS_pool._db_pool.getconn()
+            # Simple query to test connection
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT 1")
+            get_RDS_pool._db_pool.putconn(conn)
+            logger.debug("Connection pool is valid")
+        except Exception as e:
+            logger.warning(f"Connection pool is invalid, recreating: {e}")
+            # Close the old pool if it exists
+            try:
+                if hasattr(get_RDS_pool, "_db_pool"):
+                    get_RDS_pool._db_pool.closeall()
+            except:
+                pass
+            # Create a new pool
+            get_RDS_pool._db_pool = init_RDS_pool()
+    
     return get_RDS_pool._db_pool
 
 
-def init_RDS_pool(db_name='coapt'):
-    """Initialize the database connection pool if not already initialized."""
-    logger.info("Fetching RDS Config details from Secrets Manager")
-    aws_rds_config = get_secret(secret_name='COAPTRDSConfig')
-    db_host = aws_rds_config.get('db_host')
-    db_user = aws_rds_config.get('db_user')
-    port = 5432
-
-    try:
-        logger.info('Generating IAM Token')
-        auth_token = generate_iam_auth_token(host=db_host, port=port, user=db_user)
-
-        db_pool = pool.SimpleConnectionPool(
-            minconn=1,
-            maxconn=10,  # Adjust this based on your workload
-            host=db_host,
-            dbname=db_name,
-            user=db_user,
-            password=auth_token,
-            port=port,
-            sslmode='require'
-        )
-
-        return db_pool
+def init_RDS_pool(db_name='coapt', max_retries=3, backoff_base=2):
+    """
+    Initialize the database connection pool if not already initialized.
     
-    except Exception as e:
-        logger.error(f"Error generating connection pool to RDS Database {db_name}: {e}")
-        raise
+    Args:
+        db_name: Name of the database to connect to
+        max_retries: Maximum number of retry attempts
+        backoff_base: Base for exponential backoff calculation
+        
+    Returns:
+        SimpleConnectionPool: A connection pool object
+    """
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Fetching RDS Config details from Secrets Manager (attempt {attempt + 1}/{max_retries})")
+            aws_rds_config = get_secret(secret_name='COAPTRDSConfig')
+            db_host = aws_rds_config.get('db_host')
+            db_user = aws_rds_config.get('db_user')
+            port = 5432
+
+            logger.info('Generating IAM Token')
+            auth_token = generate_iam_auth_token(host=db_host, port=port, user=db_user)
+
+            logger.info(f"Creating connection pool (attempt {attempt + 1}/{max_retries})")
+            db_pool = pool.SimpleConnectionPool(
+                minconn=1,
+                maxconn=10,  # Adjust this based on your workload
+                host=db_host,
+                dbname=db_name,
+                user=db_user,
+                password=auth_token,
+                port=port,
+                sslmode='require',
+                connect_timeout=10  # Add a 10-second connection timeout
+            )
+            
+            # Test the connection with a simple query
+            connection = None
+            try:
+                connection = db_pool.getconn()
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT 1")
+                    result = cursor.fetchone()
+                    logger.info(f"Database connection test result: {result}")
+                
+                # Return the connection to the pool
+                db_pool.putconn(connection)
+                return db_pool  # Connection successful
+            except Exception as e:
+                logger.error(f"Error testing database connection: {e}")
+                # Close the pool and retry
+                if connection:
+                    try:
+                        db_pool.putconn(connection)
+                    except:
+                        pass
+                try:
+                    db_pool.closeall()
+                except:
+                    pass
+                raise  # Re-raise to trigger retry
+        
+        except Exception as e:
+            logger.error(f"Error initializing connection pool (attempt {attempt + 1}): {e}")
+            
+            # Don't sleep after the last attempt
+            if attempt < max_retries - 1:
+                backoff_time = backoff_base ** attempt
+                logger.info(f"Retrying in {backoff_time} seconds...")
+                time.sleep(backoff_time)
+    
+    # All attempts failed
+    logger.error(f"Failed to initialize RDS pool after {max_retries} attempts")
+    raise Exception(f"Failed to initialize RDS pool after {max_retries} attempts")

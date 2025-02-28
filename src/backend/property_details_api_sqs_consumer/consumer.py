@@ -2,7 +2,7 @@ import json
 import requests
 import boto3
 from datetime import datetime, timezone
-from aws_utils import init_RDS_connection, logger
+from aws_utils import logger, get_RDS_pool
 
 def upsert_property_details_to_rds(connection, listings):
     """
@@ -98,7 +98,6 @@ def upsert_property_media_details_to_dynamodb(listings):
             }
         )
 
-
 def fetch_and_store_data(message_list):
     """
     Fetch data from the given API URL, handle pagination, and store results in RDS.
@@ -121,7 +120,10 @@ def fetch_and_store_data(message_list):
             raise
 
     try:
-        connection = init_RDS_connection()
+        logger.info("Attempting to get connection from pool")
+        db_pool = get_RDS_pool()
+        connection = db_pool.getconn()
+        logger.info("Successfully got connection from pool")
 
         logger.info(f"Inserting {len(property_details_list)} messages into dim_property_details")
         upsert_property_details_to_rds(connection, property_details_list)
@@ -135,14 +137,12 @@ def fetch_and_store_data(message_list):
     
     finally:
         if connection:
-            logger.info("Closing RDS connection")
-            connection.close()
+            logger.info("Returning connection to pool")
+            db_pool = get_RDS_pool()
+            db_pool.putconn(connection)
 
 
 def lambda_handler(event, context):
-    """
-    AWS Lambda handler, triggered by SQS messages.
-    """
     message_list = []
     for record in event["Records"]:
         message_body = json.loads(record["body"])
@@ -155,4 +155,3 @@ def lambda_handler(event, context):
     except Exception as e:
         logger.error(f"Error processing property details messages: {e}")
         raise
-

@@ -1,11 +1,8 @@
 import boto3
 import json
-import requests
-import logging
 import os
 from urllib.parse import urljoin
-from aws_utils import init_RDS_connection, get_secret, logger
-
+from aws_utils import get_secret, logger, get_RDS_pool
 
 def generate_api_payloads(api_type, listing_type='rentals'):
 
@@ -29,7 +26,6 @@ def generate_api_payloads(api_type, listing_type='rentals'):
                             "limit":"500"}}
                 for fees in ['false', 'true']
                 for neighborhoods in neighborhoods_list]
-    
     elif api_type == "property_details":
         property_ids = generate_api_property_ids()
 
@@ -47,9 +43,10 @@ def generate_api_neighorhood_strings():
     """
     connection = None
     try:
-        logger.info("Attempting to connect to RDS")
-        connection = init_RDS_connection()
-        logger.info("Successfully connected to RDS")
+        logger.info("Attempting to get connection from pool")
+        db_pool = get_RDS_pool()
+        connection = db_pool.getconn()
+        logger.info("Successfully got connection from pool")
         # Query the test_table
         with connection.cursor() as cursor:
             cursor.execute("SELECT name FROM real_estate.neighborhoods_enhanced_view WHERE level=3;")
@@ -61,14 +58,16 @@ def generate_api_neighorhood_strings():
         large_neighborhoods_list = [n for n in neighborhoods_list if 'all-' in n or '-all' in n]
         small_neighborhoods_list = [n for n in neighborhoods_list if 'all-' not in n and '-all' not in n]
         api_neighborhoods_list = large_neighborhoods_list + [','.join(small_neighborhoods_list[i:i+10]) for i in range(0, len(small_neighborhoods_list), 10)]
+        logger.info(f"Generated {len(api_neighborhoods_list)} neighborhood batches")
         return api_neighborhoods_list
 
     except Exception as e:
         raise Exception(f"Error fetching neighborhood data from RDS: {e}")
     finally:
         if connection:
-            logger.info("Closing RDS connection")
-            connection.close()
+            logger.info("Returning connection to pool")
+            db_pool = get_RDS_pool()
+            db_pool.putconn(connection)
 
 
 def generate_api_property_ids():
@@ -78,7 +77,10 @@ def generate_api_property_ids():
     """
     connection = None
     try:
-        connection = init_RDS_connection()
+        logger.info("Attempting to get connection from pool")
+        db_pool = get_RDS_pool()
+        connection = db_pool.getconn()
+        logger.info("Successfully got connection from pool")
 
         # Query the test_table
         with connection.cursor() as cursor:
@@ -98,23 +100,25 @@ def generate_api_property_ids():
         raise Exception(f"Error fetching IDs with old or without details data from RDS: {e}")
     finally:
         if connection:
-            logger.info("Closing RDS connection")
-            connection.close()
+            logger.info("Returning connection to pool")
+            db_pool = get_RDS_pool()
+            db_pool.putconn(connection)
 
 
 def lambda_handler(event, context):
     api_type = event["api_type"]
-    payloads = generate_api_payloads(api_type)
-
-    sqs = boto3.client('sqs')
-    queue_endpoints_dict = {
-        'properties': os.getenv("PROPERTIES_API_URL"),
-        'property_details': os.getenv("PROPERTY_DETAILS_API_URL"),
-    }
     try:
+        payloads = generate_api_payloads(api_type)
+
+        sqs = boto3.client('sqs')
+        queue_endpoints_dict = {
+            'properties': os.getenv("PROPERTIES_API_URL"),
+            'property_details': os.getenv("PROPERTY_DETAILS_API_URL"),
+        }
+        
         for payload in payloads:
             sqs.send_message(QueueUrl=queue_endpoints_dict[api_type], MessageBody=json.dumps(payload))
         return {"statusCode": 200, "body": f"Processed API type {api_type}"}
     except Exception as e:
-        logger.error(f"Error loading data into SQS Queue Endpoint {queue_endpoints_dict[api_type]}: {e}")
+        logger.error(f"Error processing API type {api_type}: {e}")
         raise
