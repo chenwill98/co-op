@@ -57,6 +57,12 @@ Resources:
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-040038879922ffb79
+        SubnetIds:
+          - subnet-0139a1528a925e953  # us-east-2c subnet
+        Ipv6AllowedForDualStack: false
       Environment:
         Variables:
           PROPERTIES_API_URL: !Ref PropertiesAPIQueue
@@ -71,6 +77,12 @@ Resources:
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-040038879922ffb79
+        SubnetIds:
+          - subnet-0139a1528a925e953  # us-east-2c subnet
+        Ipv6AllowedForDualStack: false
       Events:
         MyQueueEvent:
           Type: SQS
@@ -88,13 +100,19 @@ Resources:
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-040038879922ffb79
+        SubnetIds:
+          - subnet-0139a1528a925e953  # us-east-2c subnet
+        Ipv6AllowedForDualStack: false
       # ReservedConcurrentExecutions: 5  # Limit to 5 concurrent instances
       Events:
         MyQueueEvent:
           Type: SQS
           Properties:
             Queue: !GetAtt PropertyDetailsAPIQueue.Arn
-            BatchSize: 25 # Process 100 messages at a time
+            BatchSize: 25 # Process 25 messages at a time
             MaximumBatchingWindowInSeconds: 5
 
   APIRouter:
