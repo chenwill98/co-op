@@ -29,7 +29,15 @@ export type Property = {
     date: string;
     fct_id: string;
     fct_price: number;
-  }
+}
+
+export interface Neighborhood {
+  id: number;
+  name: string;
+  level: number;
+  parent_id?: number | null;
+  hierarchy_path?: string | null;
+}
 
 // Slightly modified version of the Property type to incorporate max and min prices
 export const propertyString = `Property = {
@@ -77,6 +85,6 @@ export type PropertyDetails = {
     images: string[];
     videos: string[];
     tag_list?: string[];
-  }
+}
 
 export type CombinedPropertyDetails = Property & PropertyDetails;

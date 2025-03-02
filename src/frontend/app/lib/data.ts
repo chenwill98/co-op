@@ -1,12 +1,14 @@
 // Import your database client/ORM here, e.g. Prisma
 import { PrismaClient } from '@prisma/client';
-import { Property, PropertyDetails, CombinedPropertyDetails, propertyString } from './definitions';
+import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood } from './definitions';
 import { getSystemTag, tagCategories } from './tagUtils';
 import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import Anthropic from "@anthropic-ai/sdk";
 // Import the parser properly using ES module syntax
 import { parseClaudeResultsToPrismaQuery } from './claudeQueryParser';
+
+
 
 const prisma = new PrismaClient();
 
@@ -251,6 +253,12 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
     where: { level: { in: [3, 4, 5] } }
   });
 
+  // // Get neighborhoods from cache or fetch them
+  // const allNeighborhoods = await getCachedNeighborhoods();
+  // const NEIGHBORHOODS = allNeighborhoods
+  //   .filter((n: Neighborhood) => [3, 4, 5].includes(n.level))
+  //   .map((n: Neighborhood) => ({ name: n.name }));
+
   // Replace placeholders like {{DATABASE_SCHEMA}} with real values,
   // because the SDK does not support variables.
   try {
@@ -351,4 +359,40 @@ export async function getAllChildNeighborhoods(parentName: string) {
   `;
   
   return results;
+}
+
+// Fetch neighborhoods from RDS and cache in sessionStorage
+export async function getCachedNeighborhoods(): Promise<Neighborhood[]> {
+  // Check if neighborhoods are already stored in sessionStorage
+  const cachedData = sessionStorage.getItem('neighborhoods');
+  
+  if (cachedData) {
+    // Data exists in sessionStorage, parse and return it
+    return JSON.parse(cachedData);
+  }
+  
+  try {
+    // Fetch neighborhoods directly from the database
+    const neighborhoods = await prisma.neighborhoods_enhanced_view.findMany({
+      select: {
+        id: true,
+        name: true,
+        level: true,
+        parent_id: true,
+        hierarchy_path: true
+      },
+      orderBy: {
+        level: 'asc',
+        name: 'asc'
+      }
+    });
+    
+    // Store in sessionStorage
+    sessionStorage.setItem('neighborhoods', JSON.stringify(neighborhoods));
+    
+    return neighborhoods;
+  } catch (error) {
+    console.error('Error fetching neighborhoods:', error);
+    return [] as Neighborhood[];
+  }
 }
