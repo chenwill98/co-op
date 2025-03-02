@@ -1,62 +1,83 @@
 "use client";
 
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TagsFilter from "./TagsFilter";
 
-type SortOrder = "none" | "asc" | "desc";
-
-interface ListingFiltersProps {
-  sortOrder: SortOrder;
-  onSortChange: (order: SortOrder) => void;
-  selectedTags: string[];
-  setSelectedTags: (tags: string[]) => void;
-}
-
-export default function ListingFilters({
-  sortOrder,
-  onSortChange,
-  selectedTags,
-  setSelectedTags,
-}: ListingFiltersProps) {
+export default function ListingFilters() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
 
+  // Initialize all filters from URL parameters including tags
   const [filters, setFilters] = useState({
     text: searchParams.get("text") || "",
     neighborhood: searchParams.get("neighborhood") || "",
     minPrice: searchParams.get("minPrice") || "",
     maxPrice: searchParams.get("maxPrice") || "",
     brokerFee: searchParams.get("brokerFee") || "Any",
+    sort: searchParams.get("sort") || "",
+    tags: searchParams.get("tags") ? searchParams.get("tags")!.split(',') : [],
   });
+  
+  // Update filters when URL parameters change
+  useEffect(() => {
+    setFilters({
+      text: searchParams.get("text") || "",
+      neighborhood: searchParams.get("neighborhood") || "",
+      minPrice: searchParams.get("minPrice") || "",
+      maxPrice: searchParams.get("maxPrice") || "",
+      brokerFee: searchParams.get("brokerFee") || "Any",
+      sort: searchParams.get("sort") || "",
+      tags: searchParams.get("tags") ? searchParams.get("tags")!.split(',') : [],
+    });
+  }, [searchParams]);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | string[]) => {
     setFilters((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const toggleSort = () => {
-    const newSort: SortOrder =
-      sortOrder === "none" ? "asc" : sortOrder === "asc" ? "desc" : "none";
-    onSortChange(newSort);
-  };
-
   const applyFilters = () => {
     const params = new URLSearchParams();
+    
+    // Handle all non-array filters
     Object.entries(filters).forEach(([key, value]) => {
-      if (value && value !== "Any") {
-        params.set(key, value);
+      if (key !== 'tags' && value && value !== "Any") {
+        params.set(key, value as string);
       }
     });
+    
+    // Handle tags separately since it's an array
+    if (filters.tags.length > 0) {
+      params.set('tags', (filters.tags as string[]).join(','));
+    }
+    
     replace(`${pathname}?${params.toString()}`);
   };
 
   return (
     <div className="card-bordered border-primary bg-base-100 shadow-lg sticky top-20 p-6 m-4 h-fit">
       <div className="flex flex-col gap-4">
+        {/* Sort Dropdown */}
+        <div className="col-span-1">
+          <label className="label">
+            <span className="label-text text-gray-400">Sort By</span>
+          </label>
+          <select
+            className="select select-bordered w-full"
+            value={filters.sort}
+            onChange={(e) => handleInputChange("sort", e.target.value)}
+          >
+            <option value="">No Sort</option>
+            <option value="newest">Newest First</option>
+            <option value="least_expensive">Least Expensive</option>
+            <option value="most_expensive">Most Expensive</option>
+          </select>
+        </div>
+
         <div className="col-span-1">
           <label className="label">
             <span className="label-text text-gray-400">Search</span>
@@ -133,24 +154,9 @@ export default function ListingFilters({
             <span className="label-text text-gray-400">Tags</span>
           </label>
           <TagsFilter
-            selectedTags={selectedTags}
-            setSelectedTags={setSelectedTags}
+            selectedTags={filters.tags as string[]}
+            setSelectedTags={(tags) => handleInputChange("tags", tags)}
           />
-        </div>
-
-        {/* Sort Toggle Button */}
-        <div className="col-span-1">
-          <button
-            onClick={toggleSort}
-            className={`btn btn-outline w-full ${sortOrder !== "none" ? "btn-primary" : ""}`}
-          >
-            Price Sort:{" "}
-            {sortOrder === "none"
-              ? "None"
-              : sortOrder === "asc"
-                ? "↑ Low to High"
-                : "↓ High to Low"}
-          </button>
         </div>
 
         {/* Apply Filters Button */}

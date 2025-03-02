@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { tagCategories } from "@/app/lib/definitions";
+import { tagCategories, getDisplayTag } from "@/app/lib/tagUtils";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface TagsFilterProps {
@@ -70,7 +70,7 @@ export default function TagsFilter({
         />
         <div
           tabIndex={0}
-          className="dropdown-content p-4 shadow bg-base-100 rounded-box w-[800px] max-h-[480px] mt-1 overflow-auto z-10"
+          className="dropdown-content outline outline-1 outline-primary p-4 shadow bg-base-100 w-[800px] max-h-[600px] overflow-auto z-10"
         >
           {noTagsFound ? (
             <div className="p-2 text-gray-500">No tags found</div>
@@ -95,7 +95,7 @@ export default function TagsFilter({
                       onChange={() => toggleTag(item.text)}
                       className="checkbox checkbox-xs checkbox-primary mr-2"
                     />
-                    <span className="text-sm">{item.text}</span>
+                    <span className="text-sm">{getDisplayTag(item.text)}</span>
                   </div>
                 ),
               )}
@@ -113,7 +113,7 @@ export default function TagsFilter({
             key={tag}
             className="badge badge-primary rounded-full badge-outline text-xs flex items-center"
           >
-            {tag}
+            {getDisplayTag(tag)}
             <XMarkIcon
               onClick={() => removeTag(tag)}
               className="h-4 w-4 cursor-pointer ml-1"

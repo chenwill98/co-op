@@ -1,6 +1,7 @@
 // Import your database client/ORM here, e.g. Prisma
 import { PrismaClient } from '@prisma/client';
-import { Property, PropertyDetails, CombinedPropertyDetails, tagCategories, propertyString } from './definitions';
+import { Property, PropertyDetails, CombinedPropertyDetails, propertyString } from './definitions';
+import { getSystemTag, tagCategories } from './tagUtils';
 import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import Anthropic from "@anthropic-ai/sdk";
@@ -9,13 +10,21 @@ import { parseClaudeResultsToPrismaQuery } from './claudeQueryParser';
 
 const prisma = new PrismaClient();
 
-export async function fetchPropertiesRDS(params: {text: string; neighborhood: string; minPrice: string; maxPrice: string; brokerFee: string}) {
+export async function fetchPropertiesRDS(params: {
+  text: string; 
+  neighborhood: string; 
+  minPrice: string; 
+  maxPrice: string; 
+  brokerFee: string; 
+  sort?: string;
+  tags?: string;
+}) {
   const limit = 10;
   const page = 1;
   const skip = (page - 1) * limit;
 
   // Destructure parameters
-  const { neighborhood, minPrice, maxPrice, brokerFee } = params;
+  const { neighborhood, minPrice, maxPrice, brokerFee, sort, tags } = params;
 
   // Build the where condition based on provided filters
   const whereCondition: any = {};
@@ -74,6 +83,16 @@ export async function fetchPropertiesRDS(params: {text: string; neighborhood: st
     whereCondition.no_fee = true;
   }
 
+  // Handle tag filtering
+  if (tags && !whereCondition.tag_list) {
+    const tagArray = tags.split(',');
+    if (tagArray.length > 0) {
+      whereCondition.tag_list = {
+        hasEvery: tagArray
+      };
+    }
+  }
+
   whereCondition.id = { not: null };
 
   console.log('Query conditions (raw):', whereCondition);
@@ -85,10 +104,31 @@ export async function fetchPropertiesRDS(params: {text: string; neighborhood: st
       throw new Error('Invalid whereCondition: expected an object');
     }
 
+    // Define orderBy based on sort parameter
+    let orderBy: any = undefined;
+    
+    if (sort) {
+      switch (sort) {
+        case 'newest':
+          orderBy = { listed_at: 'desc' };
+          break;
+        case 'least_expensive':
+          orderBy = { price: 'asc' };
+          break;
+        case 'most_expensive':
+          orderBy = { price: 'desc' };
+          break;
+        default:
+          // No sorting
+          break;
+      }
+    }
+
     const properties = await prisma.latest_property_details_view.findMany({
       where: whereCondition,
       take: limit,
       skip: skip,
+      orderBy: orderBy,
     });
 
     const formattedProperties = properties.map(property => ({
@@ -101,6 +141,8 @@ export async function fetchPropertiesRDS(params: {text: string; neighborhood: st
       available_from: property.available_from ? property.available_from.toDateString() : '',
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
+      // Convert any emoji tags to system tags
+      tag_list: property.tag_list ? property.tag_list.map(tag => getSystemTag(tag)) : [],
     }));
 
     return formattedProperties as Property[];
@@ -132,6 +174,8 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
       available_from: property.available_from ? property.available_from.toDateString() : '',
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
+      // Convert any emoji tags to system tags
+      tag_list: property.tag_list ? property.tag_list.map(tag => getSystemTag(tag)) : [],
     };
     return formattedProperty as Property;
   } catch (error) {
@@ -161,6 +205,12 @@ export async function fetchPropertyDetailsById(id: string): Promise<PropertyDeta
   try {
     const response = await ddbDocClient.send(new BatchGetCommand(params));
     const items = response.Responses?.PropertyMediaDetails ?? [];
+    
+    // Convert any item with tags to use system tags
+    if (items.length > 0 && items[0].tag_list) {
+      items[0].tag_list = items[0].tag_list.map((tag: string) => getSystemTag(tag));
+    }
+    
     return items.length > 0 ? items[0] as PropertyDetails : null;
   } catch (error) {
     console.error('Error fetching property details:', error);
@@ -232,8 +282,8 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
                             "property_type": "rental",
                             "neighborhood": ["Williamsburg", "East Village", "Upper West Side"],
                             "tag_list": [
-                            "Waterfront 🌊",
-                            "Modern Design 🆕"
+                            "waterfront",
+                            "modern-design"
                           ]
                         }
                         })

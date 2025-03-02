@@ -42,3 +42,6 @@ scripts
 node_modules/
 .vercel
 .next
+
+# IDE Stuff
+.windsurfrules

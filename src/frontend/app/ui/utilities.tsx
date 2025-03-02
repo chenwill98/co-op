@@ -1,11 +1,34 @@
-import { tagCategories } from '@/app/lib/definitions';
+import { tagCategories, getDisplayTag } from '@/app/lib/tagUtils';
 
-export function TagList({ category, tags }: { category: keyof typeof tagCategories; tags: string[] }) {
+/**
+ * Displays a list of tags for a specific category
+ * Uses the new hyphenated tag system and displays tags with emojis
+ * If category is null, all tags will be displayed without filtering
+ */
+export function TagList({ category, tags }: { category?: keyof typeof tagCategories; tags: string[] }) {
+  if (!tags || tags.length === 0) {
+    return null;
+  }
+  
+  // If category is provided, filter tags that belong to that category
+  // Otherwise, use all tags
+  const filteredTags = category 
+    ? tags.filter(tag => tagCategories[category].includes(tag))
+    : tags;
+  
+  if (filteredTags.length === 0) {
+    return null;
+  }
+  
   return (
     <div className="flex flex-wrap gap-1">
-      {tags.filter((tag) => tagCategories[category].includes(tag)).map((tag) => (
-        <div key={tag} className="badge badge-primary rounded-full badge-outline text-xs">
-          {tag}
+      {filteredTags.map(tag => (
+        <div 
+          key={tag} 
+          className="badge badge-primary rounded-full badge-outline text-xs"
+          title={tag} // Show the system tag on hover for debugging
+        >
+          {getDisplayTag(tag)}
         </div>
       ))}
     </div>

@@ -1,12 +1,29 @@
-import { Property, SortOrder } from "@/app/lib/definitions";
+"use client";
+
+import { Property } from "@/app/lib/definitions";
+import { useSearchParams } from "next/navigation";
 
 export default function ListingsSummaryCard({
   listings,
-  sortOrder,
 }: {
   listings: Property[];
-  sortOrder: SortOrder;
 }) {
+  const searchParams = useSearchParams();
+  const sort = searchParams.get("sort") || "";
+
+  const getSortText = () => {
+    switch (sort) {
+      case "newest":
+        return "Sorted by newest first";
+      case "least_expensive":
+        return "Sorted by price: Low to High";
+      case "most_expensive":
+        return "Sorted by price: High to Low";
+      default:
+        return "Showing all properties";
+    }
+  };
+
   return (
     <div className="card-bordered border-primary bg-base-100 shadow-xl col-span-3 p-6">
       <div className="flex items-center justify-between">
@@ -17,9 +34,7 @@ export default function ListingsSummaryCard({
               {listings.length === 1 ? "Property" : "Properties"} Found 🎉
             </h2>
             <p className="text-gray-500">
-              {sortOrder === "none"
-                ? "Showing all properties"
-                : `Sorted by price: ${sortOrder === "asc" ? "Low to High" : "High to Low"}`}
+              {getSortText()}
             </p>
           </div>
         </div>
