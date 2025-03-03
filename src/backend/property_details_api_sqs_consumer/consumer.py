@@ -50,6 +50,10 @@ def upsert_property_details_to_rds(session, listings):
 
     try:
         for listing in listings:
+            # Convert Python lists to PostgreSQL array format
+            amenities_array = "{" + ",".join(f'"{item}"' for item in listing["amenities"]) + "}" if listing["amenities"] else "{}"
+            agents_array = "{" + ",".join(f'"{item}"' for item in listing["agents"]) + "}" if listing["agents"] else "{}"
+            
             data_dict = {
                 'id': listing["id"],
                 'status': listing["status"],
@@ -69,10 +73,10 @@ def upsert_property_details_to_rds(session, listings):
                 'type': listing["type"],
                 'latitude': listing["latitude"],
                 'longitude': listing["longitude"],
-                'amenities': json.dumps(listing["amenities"]),
+                'amenities': amenities_array,
                 'built_in': listing["builtIn"],
                 'building_id': listing["building"]["id"],
-                'agents': json.dumps(listing["agents"]),
+                'agents': agents_array,
                 'no_fee': listing["noFee"],
                 'thumbnail_image': listing["images"][0],
             }

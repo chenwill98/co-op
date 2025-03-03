@@ -57,12 +57,6 @@ Resources:
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer
-      VpcConfig:
-        SecurityGroupIds:
-          - sg-040038879922ffb79
-        SubnetIds:
-          - subnet-0139a1528a925e953  # us-east-2c subnet
-        Ipv6AllowedForDualStack: false
       Environment:
         Variables:
           PROPERTIES_API_URL: !Ref PropertiesAPIQueue
@@ -77,12 +71,6 @@ Resources:
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer
-      VpcConfig:
-        SecurityGroupIds:
-          - sg-040038879922ffb79
-        SubnetIds:
-          - subnet-0139a1528a925e953  # us-east-2c subnet
-        Ipv6AllowedForDualStack: false
       Events:
         MyQueueEvent:
           Type: SQS
@@ -100,12 +88,6 @@ Resources:
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer
-      VpcConfig:
-        SecurityGroupIds:
-          - sg-040038879922ffb79
-        SubnetIds:
-          - subnet-0139a1528a925e953  # us-east-2c subnet
-        Ipv6AllowedForDualStack: false
       # ReservedConcurrentExecutions: 5  # Limit to 5 concurrent instances
       Events:
         MyQueueEvent:
@@ -115,28 +97,28 @@ Resources:
             BatchSize: 25 # Process 25 messages at a time
             MaximumBatchingWindowInSeconds: 5
 
-  APIRouter:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: APIRouter
-      Handler: router.lambda_handler
-      CodeUri: api_router
-      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForAPIRouterLambda
-      Layers:
-        - !Ref AWSUtilsLayer
-      Events:
-        HttpApiEvent:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: /{proxy+}
-            Method: ANY
+  # APIRouter:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: APIRouter
+  #     Handler: router.lambda_handler
+  #     CodeUri: api_router
+  #     Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForAPIRouterLambda
+  #     Layers:
+  #       - !Ref AWSUtilsLayer
+  #     Events:
+  #       HttpApiEvent:
+  #         Type: HttpApi
+  #         Properties:
+  #           ApiId: !Ref HttpApi
+  #           Path: /{proxy+}
+  #           Method: ANY
 
-  # Gateway API
-  HttpApi:
-    Type: AWS::Serverless::HttpApi
-    Properties:
-      StageName: Prod
+  # # Gateway API
+  # HttpApi:
+  #   Type: AWS::Serverless::HttpApi
+  #   Properties:
+  #     StageName: Prod
 
   # DynamoDB Table
   PropertyMediaDetailsTable:
