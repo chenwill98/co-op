@@ -6,18 +6,18 @@ import CoAptLogo from "./co-apt-logo";
 
 export default function Navbar() {
   // Keep the current theme in local state
-  const [theme, setTheme] = useState("corporate");
+  const [theme, setTheme] = useState("silk");
 
   // On mount, read the <html data-theme="...">
   useEffect(() => {
     const currentTheme =
-      document.documentElement.getAttribute("data-theme") || "corporate";
+      document.documentElement.getAttribute("data-theme") || "silk";
     setTheme(currentTheme);
   }, []);
 
   // Toggle theme between "corporate" and "autumn"
   function toggleTheme() {
-    const newTheme = theme === "corporate" ? "autumn" : "corporate";
+    const newTheme = theme === "silk" ? "autumn" : "silk";
     document.documentElement.setAttribute("data-theme", newTheme);
     setTheme(newTheme);
   }

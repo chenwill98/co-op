@@ -39,16 +39,12 @@ export default function Page() {
 
   return (
     <main
-      className="flex h-[calc(100vh-64px)] flex-col items-center justify-center bg-base-200 p-20"
-      style={{
-        backgroundImage: "url(/bg-2.jpg)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
+      className="flex h-[calc(100vh-64px)] flex-col items-center justify-center bg-base-200 nyc-emoji-bg"
     >
-      <div className="card-bordered border-primary bg-base-100 w-4/5 shadow-xl">
+      <div className="text-3xl mb-20 text-primary bg-base-100 p-6 rounded-2xl shadow-xl">AI powered analytics to help you find your next home.</div>
+      <div className="card bg-base-100 w-4/5 shadow-xl">
         <div className="card-body">
-          <div className="join join-horizontal m-2">
+          <div className="flex flex-row gap-2">
             <button
               className="btn btn-secondary text-white"
               onClick={toggleFilters}

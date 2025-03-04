@@ -55,9 +55,11 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
   // Handle focus -> user starts typing
   // -----------------------
   const handleFocus = () => {
+    if (!userHasClicked) {
+      setText(""); // Clear auto-typed text only on first interaction
+      setUserHasClicked(true);
+    }
     setIsEditable(true); // Stop auto-typing
-    setText(""); // Clear any auto-typed text
-    setUserHasClicked(true);
   };
 
   // -----------------------
