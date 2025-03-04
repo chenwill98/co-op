@@ -45,7 +45,7 @@ export default function ImageCarousel({
       {/* Carousel Container */}
       <div
         ref={carouselRef}
-        className="carousel w-full overflow-x-auto scroll-smooth relative outline outline-1 outline-primary"
+        className="carousel w-full h-[35vh] overflow-x-auto scroll-smooth relative outline outline-1 outline-primary"
       >
         {mediaItems.map((item, index) => {
           // Use 1-indexed slide numbers for DaisyUI-style anchors

@@ -17,7 +17,7 @@ export default function ListingsGrid({
       <ListingsSummaryCard listings={listings} />
       {listings.map((listing) => (
         <Link
-          href={`/property/${listing.id}`}
+          href={`/listings/${listing.id}`}
           key={listing.id}
           className="group card-bordered border-primary bg-base-100 h-[60vh] hover:bg-base-200 shadow-xl hover:shadow-2xl transform transition-transform duration-300"
         >

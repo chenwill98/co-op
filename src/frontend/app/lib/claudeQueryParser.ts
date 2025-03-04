@@ -78,7 +78,7 @@ export async function parseClaudeResultsToPrismaQuery(claudeResults: ClaudeRespo
       case 'bedrooms':
       case 'bathrooms':
       case 'built_in':
-      case 'days_on_market':
+      case 'live_days_on_market':
         whereCondition[key] = {};
         
         // If min and max are the same and not null, use equals

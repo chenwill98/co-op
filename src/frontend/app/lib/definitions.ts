@@ -29,6 +29,7 @@ export type Property = {
     date: string;
     fct_id: string;
     fct_price: number;
+    live_days_on_market: number | null;
 }
 
 export interface Neighborhood {
@@ -44,7 +45,6 @@ export const propertyString = `Property = {
     status: string;
     listed_at: string;
     closed_at: string;
-    days_on_market: number;
     available_from: string;
     address: string;
     price: number;
@@ -74,6 +74,7 @@ export const propertyString = `Property = {
     tag_list: string[];
     url: string;
     date: string;
+    live_days_on_market: number;
   }
 `
 

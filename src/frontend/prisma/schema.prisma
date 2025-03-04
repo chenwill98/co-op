@@ -79,6 +79,7 @@ model latest_property_details_view {
   date            DateTime  @default(now()) @db.Date
   fct_id          String    @id @db.VarChar(100)
   fct_price       Int?
+  live_days_on_market  Int?
 
   @@map("latest_property_details_view") 
 }
