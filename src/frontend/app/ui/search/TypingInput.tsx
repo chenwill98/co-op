@@ -80,7 +80,7 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
   return (
     <input
       type="text"
-      className="input input-bordered w-full"
+      className="input w-full"
       value={text}
       placeholder={userHasClicked ? "Search anything..." : ""}
       onFocus={handleFocus}

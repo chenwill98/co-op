@@ -59,7 +59,7 @@ export default function ListingFilters() {
   };
 
   return (
-    <div className="card-bordered border-primary bg-base-100 shadow-lg sticky top-20 p-6 m-4 h-fit">
+    <div className="card border-primary bg-base-100 shadow-lg sticky top-20 p-6 m-4 h-fit">
       <div className="flex flex-col gap-4">
         {/* Sort Dropdown */}
         <div className="col-span-1">
@@ -86,7 +86,7 @@ export default function ListingFilters() {
             type="text"
             id="search"
             placeholder="Search listings..."
-            className="input input-bordered w-full"
+            className="input w-full"
             value={filters.text}
             onChange={(e) => handleInputChange("text", e.target.value)}
           />
@@ -99,7 +99,7 @@ export default function ListingFilters() {
           <input
             type="text"
             placeholder="e.g. Brooklyn"
-            className="input input-bordered w-full"
+            className="input w-full"
             value={filters.neighborhood}
             onChange={(e) => handleInputChange("neighborhood", e.target.value)}
           />
@@ -114,7 +114,7 @@ export default function ListingFilters() {
             <input
               type="number"
               placeholder="Min"
-              className="input input-bordered w-full"
+              className="input w-full"
               step="100"
               min="0"
               value={filters.minPrice}
@@ -123,7 +123,7 @@ export default function ListingFilters() {
             <input
               type="number"
               placeholder="Max"
-              className="input input-bordered w-full"
+              className="input w-full"
               step="100"
               min="0"
               value={filters.maxPrice}

@@ -121,7 +121,7 @@ export default function ImageCarousel({
               onClick={goToSlide}
               href={`#slide${slideNumber}`}
               // If this thumbnail corresponds to the active slide, apply a ring outline
-              className={`flex-shrink-0 border border-primary cursor-pointer 
+              className={`shrink-0 border border-primary cursor-pointer 
                 ${
                   activeSlide === slideNumber
                     ? "ring-1 ring-primary ring-offset-2"

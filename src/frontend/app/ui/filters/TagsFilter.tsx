@@ -79,13 +79,13 @@ export default function TagsFilter({
         <input
           type="text"
           placeholder="Choose tags"
-          className="input input-bordered w-full"
+          className="input w-full"
           onClick={() => setIsOpen(true)}
           onChange={e => setFilterText(e.target.value)}
           onFocus={() => setIsOpen(true)}
         />
         
-        <div className="dropdown-content outline outline-1 outline-primary p-4 shadow bg-base-100 w-[800px] max-h-[600px] overflow-auto z-10">
+        <div className="dropdown-content outline outline-1 outline-primary p-4 shadow-sm bg-base-100 w-[800px] max-h-[600px] overflow-auto z-10">
           {Object.keys(filteredCategories).length === 0 ? (
             <div className="p-2 text-gray-500">No tags found</div>
           ) : (

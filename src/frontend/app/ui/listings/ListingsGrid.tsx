@@ -19,14 +19,14 @@ export default function ListingsGrid({
         <Link
           href={`/listings/${listing.id}`}
           key={listing.id}
-          className="group card-bordered border-primary bg-base-100 h-[60vh] hover:bg-base-200 shadow-xl hover:shadow-2xl transform transition-transform duration-300"
+          className="group card bg-base-100 h-[60vh] hover:bg-base-200 shadow-xl hover:shadow-2xl transform transition-all duration-300 hover:-translate-y-2"
         >
           <figure className="h-2/5 overflow-hidden">
           <img
             src={listing.thumbnail_image}
             alt={listing.address}
-            className="thumbnail object-cover w-full h-full outline outline-1 outline-primary 
-                      transform transition-transform duration-300 group-hover:scale-105 z-0"
+            className="thumbnail object-cover w-full h-full
+                      transform transition-transform duration-300 group-hover:scale-105 z-0 rounded-2xl"
           />
           </figure>
           <div className="card-body h-3/5 flex flex-col">

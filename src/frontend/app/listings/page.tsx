@@ -29,12 +29,12 @@ export default async function Page({ searchParams }: { searchParams: any }) {
   const listings: Property[] = await Promise.all([fetchPropertiesRDS(params)]).then(results => results[0]);
 
   return (
-    <main className="z-0">
+    <main className="z-0 nyc-emoji-bg">
       <div className="flex flex-row w-full">
         <div className="min-w-72 max-w-72 z-10">
           <ListingFilters />
         </div>
-        <div className="flex-grow">
+        <div className="grow">
           <ListingsGrid
             listings={listings}
           />

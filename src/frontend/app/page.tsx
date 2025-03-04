@@ -72,7 +72,7 @@ export default function Page() {
                 <input
                   type="text"
                   placeholder="e.g. Brooklyn"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   value={neighborhood}
                   onChange={(e) => setNeighborhood(e.target.value)}
                 />
@@ -84,7 +84,7 @@ export default function Page() {
                 <input
                   type="number"
                   placeholder="2000"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   step="100"
                   min="0"
                   value={minPrice}
@@ -98,7 +98,7 @@ export default function Page() {
                 <input
                   type="number"
                   placeholder="5000"
-                  className="input input-bordered w-full"
+                  className="input w-full"
                   step="100"
                   min="0"
                   value={maxPrice}

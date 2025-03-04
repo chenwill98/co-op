@@ -25,7 +25,7 @@ export default function ListingsSummaryCard({
   };
 
   return (
-    <div className="card-bordered border-primary bg-base-100 shadow-xl col-span-3 p-6">
+    <div className="card border-primary bg-base-100 shadow-xl col-span-3 p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>

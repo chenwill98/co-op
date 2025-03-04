@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="silk">
+    <html lang="en" data-theme="autumn">
       <body
         className={`${geistSans.className} ${geistMono.className} antialiased min-h-screen flex flex-col`}
       >
