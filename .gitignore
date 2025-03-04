@@ -28,6 +28,7 @@ airflow/logs
 webserver_config.py
 airflow-co-apt.pem
 nohup.out
+airflow-*
 
 # AWS
 AWSCLIV2.pkg

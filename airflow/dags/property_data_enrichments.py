@@ -1,6 +1,5 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.sensors.time_delta import TimeDeltaSensor
 from datetime import datetime, timedelta
 from pytz import timezone
 import boto3
@@ -14,7 +13,7 @@ def trigger_producer_lambda(api_type, **kwargs):
     Trigger the APIProducerLambda Lambda function with a given API type.
     """
     response = lambda_client.invoke(
-        FunctionName="GenericAPISQSProducer",
+        FunctionName="PropertyDataEnrichmentLoader",
         InvocationType="Event",
         Payload=json.dumps({"api_type": api_type}),
     )
@@ -40,32 +39,19 @@ default_args = {
 
 # Define the DAG
 with DAG(
-    'trigger_lambda_producer',
+    'property_data_enrichments',
     default_args=default_args,
-    description='Trigger APIProducerLambda based on API type',
-    schedule_interval='0 7 * * *',  # Run at 7 AM EST every day
+    description='Trigger property data enrichment Lambda functions',
+    schedule_interval='0 8 * * *',  # Run at 8 AM EST every day
     start_date=datetime(2025, 3, 4, tzinfo=timezone('America/New_York')),
     catchup=False,
 ) as dag:
     # Define the first Airflow task - properties API
-    trigger_properties_api = PythonOperator(
-        task_id='trigger_properties_api',
+    trigger_properties_enrichment = PythonOperator(
+        task_id='trigger_properties_enrichment',
         python_callable=trigger_producer_lambda,
-        op_args=['properties'],
+        op_args=['lambda_enrichments'],
     )
     
-    # Add a 5-minute pause between tasks
-    wait_five_minutes = TimeDeltaSensor(
-        task_id='wait_five_minutes',
-        delta=timedelta(minutes=5),
-    )
-    
-    # Define the second Airflow task - property details API
-    trigger_property_details_api = PythonOperator(
-        task_id='trigger_property_details_api',
-        python_callable=trigger_producer_lambda,
-        op_args=['property_details'],
-    )
-    
-    # Set task dependencies - property_details should run after properties with a 5-minute pause
-    trigger_properties_api >> wait_five_minutes >> trigger_property_details_api
+    # Set task dependencies - property_details should run after properties
+    trigger_properties_enrichment
