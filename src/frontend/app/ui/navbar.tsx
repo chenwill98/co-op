@@ -31,12 +31,14 @@ export default function Navbar() {
         </Link>
       </div>
       <div className="flex-none">
-        <button className="btn btn-outline mr-2" onClick={toggleTheme}>
+        <Link href="/saved">
+          <button className="btn btn-primary mr-2">
+          Saved
+          </button>
+        </Link>
+        <button className="btn btn-primary mr-2" onClick={toggleTheme}>
           Swap Theme
         </button>
-        <Link className="btn btn-outline" href="/login">
-          Login
-        </Link>
       </div>
     </div>
   );

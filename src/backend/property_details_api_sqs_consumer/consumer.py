@@ -45,7 +45,8 @@ def upsert_property_details_to_rds(session, listings):
             building_id = EXCLUDED.building_id,
             agents = EXCLUDED.agents,
             no_fee = EXCLUDED.no_fee,
-            thumbnail_image = EXCLUDED.thumbnail_image;
+            thumbnail_image = EXCLUDED.thumbnail_image,
+            loaded_datetime = EXCLUDED.loaded_datetime;
     """
 
     try:
@@ -78,7 +79,7 @@ def upsert_property_details_to_rds(session, listings):
                 'building_id': listing["building"]["id"],
                 'agents': agents_array,
                 'no_fee': listing["noFee"],
-                'thumbnail_image': listing["images"][0],
+                'thumbnail_image': listing["images"][0] if listing["images"] and len(listing["images"]) > 0 else None,
             }
             
             # Use the execute_query helper function

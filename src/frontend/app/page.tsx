@@ -64,7 +64,7 @@ export default function Page() {
           <div
             className={`transition-all duration-500 ease-in-out overflow-hidden ${filtersVisible ? "max-h-40" : "max-h-0"}`}
           >
-            <div className="grid grid-cols-5 gap-4 m-2">
+            <div className="grid grid-cols-5 gap-4">
               <div className="col-span-2">
                 <label className="label">
                   <span className="label-text text-gray-400">Neighborhood</span>

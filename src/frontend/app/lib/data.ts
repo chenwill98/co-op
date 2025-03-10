@@ -266,27 +266,29 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
       model: model,
       max_tokens: max_tokens,
       temperature: temperature,
-      system: "You are a system that takes in a natural language text search and processes it into search parameters values that can be used to query a SQL database. The appropriate values for certain columns like neighborhoods, tags, and the database schema will be provided, so make sure that the responses strictly follow those values. If the query is vague then don't make up a database schema or tag list and keep the responses reasonable in terms of how much data is queried. If the query is irrelevant to real estate or a provocation, then just return the object with empty values.",
+      // cache_prompt: true,
+      // system: "You are a system that takes in a natural language text search and processes it into search parameters values that can be used to query a SQL database. Your job is to extract specific search criteria from user queries and map them to the appropriate database fields.\n\n" +
+      //     "Rules:\n" +
+      //     "1. Only use values from the provided neighborhoods, tags, and database schema\n" +
+      //     "2. For numeric ranges, set both min and max when possible (e.g., {\"min\": 2, \"max\": 2} for exactly 2 bedrooms)\n" +
+      //     "3. For open-ended ranges, use null for the unbounded side (e.g., {\"min\": null, \"max\": 3000} for less than $3000)\n" +
+      //     "4. If a query is vague, only include parameters that are explicitly mentioned or strongly implied\n" +
+      //     "5. For irrelevant or inappropriate queries, return an object with empty or null values for all fields\n" +
+      //     "6. Always include property_type as either \"rental\" or \"sale\" based on context",
+      system: "You are a system that takes in a natural language text search and processes it into search parameters values that can be used to query a SQL database. Your job is to extract specific search criteria from user queries and map them to the appropriate database fields. The appropriate values for certain columns like neighborhoods, tags, and the database schema will be provided, so make sure that the responses strictly follow those values. If the query is vague then don't make up a database schema or tag list and keep the responses reasonable in terms of how much data is queried. If the query is irrelevant to real estate or a provocation, then just return the object with empty values.",
       messages: [
         {
           "role": "user",
           "content": [
             {
               "type": "text",
-              "text": `<examples>
-                        <example>
-                        <DATABASE_SCHEMA>
-                        ${DATABASE_SCHEMA}
-                        </DATABASE_SCHEMA>
-                        <TAG_LIST>
-                        ${TAG_LIST}
-                        </TAG_LIST>
+              "text": `<example>
                         <ideal_output>
                         process_search_query({
                           "search_query": "2 bedroom apartments in a charming neighborhood that has a modern waterfront and costs less than $3000",
                           "database_schema": {
-                            "price": {"min": null, "max":3000},
-                            "bedrooms": {"min": 2, "max":2},
+                            "price": {"min": null, "max": 3000},
+                            "bedrooms": {"min": 2, "max": 2},
                             "property_type": "rental",
                             "neighborhood": ["Williamsburg", "East Village", "Upper West Side"],
                             "tag_list": [
@@ -296,8 +298,7 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
                         }
                         })
                         </ideal_output>
-                        </example>
-                        </examples>`        
+                        </example>`        
             },
             {
               "type": "text",
@@ -319,11 +320,11 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
               },
               "database_schema": {
                 "type": "object",
-                "description": `The SQL database schema detailing columns and their corresponding types are defined in ${DATABASE_SCHEMA}. 
-                If the field is followed by a type, then that's kind of value that can be used to filter the search. Dates should be in YYYY-MM-DD format. 
+                "description": `The SQL database schema detailing columns and their corresponding types are defined in <DATABASE_SCHEMA>${DATABASE_SCHEMA}</DATABASE_SCHEMA>. 
+                If the field is followed by a type (e.g. string), then that is the value type that can be used to filter the search. Dates should be in YYYY-MM-DD format. 
                 Number type columns should contain max and min values, and if it's an exact value then just have the min and max as the same. 
                 If it's followed by a list type, then that's a list of values that can be used to filter the search, with the exceptions of tag_list and neighborhood. 
-                The available tags for filtering in tag_list are defined in ${TAG_LIST}. The neighborhood values are defined in ${NEIGHBORHOODS}. The neighborhood values should always be a list. 
+                The available tags for filtering in tag_list are defined in <TAG_LIST>${TAG_LIST}</TAG_LIST>. The neighborhood values are defined in <NEIGHBORHOODS>${NEIGHBORHOODS}</NEIGHBORHOODS>. The neighborhood values should always be a list. 
                 Make sure the output is a valid JSON object with the same keys as the database schema.`
               }
             },
@@ -396,3 +397,4 @@ export async function getCachedNeighborhoods(): Promise<Neighborhood[]> {
     return [] as Neighborhood[];
   }
 }
+

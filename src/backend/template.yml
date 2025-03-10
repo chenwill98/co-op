@@ -4,7 +4,7 @@ Transform: AWS::Serverless-2016-10-31
 Globals:
   Function:
     Runtime: python3.11
-    Timeout: 120
+    Timeout: 200
 
 Resources:
   # AWS Layers
@@ -23,10 +23,10 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: PropertiesAPIQueue
-      VisibilityTimeout: 125
+      VisibilityTimeout: 250
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt PropertiesAPIDeadLetterQueue.Arn
-        maxReceiveCount: 2 # Retry each message up to 2 times before sending to DLQ
+        maxReceiveCount: 1 # Retry each message up to 1 time before sending to DLQ
 
   PropertiesAPIDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -37,10 +37,10 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: PropertyDetailsAPIQueue
-      VisibilityTimeout: 125
+      VisibilityTimeout: 250
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt PropertyDetailsAPIDeadLetterQueue.Arn
-        maxReceiveCount: 2 # Retry each message up to 2 times before sending to DLQ
+        maxReceiveCount: 1 # Retry each message up to 1 time before sending to DLQ
 
   PropertyDetailsAPIDeadLetterQueue:
     Type: AWS::SQS::Queue
@@ -94,9 +94,28 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt PropertyDetailsAPIQueue.Arn
-            BatchSize: 25 # Process 25 messages at a time
-            MaximumBatchingWindowInSeconds: 5
+            BatchSize: 100 # Process 50 messages at a time
+            MaximumBatchingWindowInSeconds: 20
 
+  PropertyDataEnhancementLoader:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: PropertyDataEnhancementLoader
+      Handler: loader.lambda_handler
+      CodeUri: property_data_enhancement_loader
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
+      Layers:
+        - !Ref AWSUtilsLayer
+
+  DataProcessChecker:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: DataProcessChecker
+      Handler: checker.lambda_handler
+      CodeUri: data_process_checker
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
+      Layers:
+        - !Ref AWSUtilsLayer
   # APIRouter:
   #   Type: AWS::Serverless::Function
   #   Properties:

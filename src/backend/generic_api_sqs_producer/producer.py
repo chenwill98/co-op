@@ -6,7 +6,7 @@ from sqlalchemy import text
 from typing import Literal
 from aws_utils import get_secret, logger, get_db_session, execute_query
 
-def generate_api_payloads(api_type, listing_type: Literal['sales', 'rentals'] = 'rentals'):
+def fetch_api_payloads(api_type, listing_type: Literal['sales', 'rentals'] = 'rentals'):
 
     base_url = "https://streeteasy-api.p.rapidapi.com"
     headers = get_secret(secret_name='RapidAPIKey')
@@ -18,7 +18,7 @@ def generate_api_payloads(api_type, listing_type: Literal['sales', 'rentals'] = 
 
     # Add logic for each API type
     if api_type == "properties":
-        neighborhoods_list = generate_api_neighorhood_strings()
+        neighborhoods_list = fetch_api_neighorhood_strings()
         properties_url = urljoin(listing_type_url, 'search')
         
         return [{"endpoint": properties_url, 
@@ -29,7 +29,7 @@ def generate_api_payloads(api_type, listing_type: Literal['sales', 'rentals'] = 
                 for fees in ['false', 'true']
                 for neighborhoods in neighborhoods_list]
     elif api_type == "property_details":
-        property_ids = generate_api_property_ids()
+        property_ids = fetch_api_property_ids()
 
         return [{"endpoint": urljoin(listing_type_url, id), 
                  "headers":headers}
@@ -38,7 +38,7 @@ def generate_api_payloads(api_type, listing_type: Literal['sales', 'rentals'] = 
         raise ValueError(f"Unsupported API type: {api_type}")
     
 
-def generate_api_neighorhood_strings():
+def fetch_api_neighorhood_strings():
     """
     Establishes a connection to the RDS table, and selects all neighborhoods that are just one level below
     the borough using SQLAlchemy.
@@ -60,7 +60,7 @@ def generate_api_neighorhood_strings():
         large_neighborhoods_list = [n for n in neighborhoods_list if 'all-' in n or '-all' in n]
         small_neighborhoods_list = [n for n in neighborhoods_list if 'all-' not in n and '-all' not in n]
         api_neighborhoods_list = large_neighborhoods_list + [','.join(small_neighborhoods_list[i:i+10]) for i in range(0, len(small_neighborhoods_list), 10)]
-        logger.info(f"Generated {len(api_neighborhoods_list)} neighborhood batches")
+        logger.info(f"fetchd {len(api_neighborhoods_list)} neighborhood batches")
         return api_neighborhoods_list
 
     except Exception as e:
@@ -71,7 +71,7 @@ def generate_api_neighorhood_strings():
             session.close()
 
 
-def generate_api_property_ids():
+def fetch_api_property_ids():
     """
     Establishes a connection to the RDS table, then fetches all property ids from fct_properties that either
     are missing details or have details that are a week old using SQLAlchemy.
@@ -87,8 +87,7 @@ def generate_api_property_ids():
                     fct_id
                     FROM real_estate.latest_property_details_view
                     WHERE id IS NULL
-                    OR loaded_datetime < NOW() - INTERVAL '7 days'
-                    OR price <> fct_price
+                    OR (loaded_datetime < NOW() - INTERVAL '7 days' AND price <> fct_price)
                     LIMIT 500;"""
         result = execute_query(session, query)
         rows = result.fetchall()
@@ -106,7 +105,7 @@ def generate_api_property_ids():
 def lambda_handler(event, context):
     api_type = event["api_type"]
     try:
-        payloads = generate_api_payloads(api_type)
+        payloads = fetch_api_payloads(api_type)
 
         sqs = boto3.client('sqs')
         queue_endpoints_dict = {
