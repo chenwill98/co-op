@@ -1,7 +1,6 @@
 'use client';
 
 import { CombinedPropertyDetails } from "@/app/lib/definitions";
-import { TagList } from "@/app/ui/utilities";
 import { useState } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 
@@ -16,7 +15,7 @@ export default function ListingsDescriptionPanel({ listingDetails }: { listingDe
               About Summary ✨
             </h2>
             <p className="mt-2 text-gray-700 leading-relaxed">
-              {listingDetails.description}
+              {listingDetails.description_summary}
             </p>
             {/* Pass state and toggle handler to the ExpandButton */}
             <div className="">
@@ -29,7 +28,7 @@ export default function ListingsDescriptionPanel({ listingDetails }: { listingDe
                 }`}
             >
                 <p className="mt-2 text-gray-700">
-                This is some additional dummy information that is revealed when the button is clicked.
+                {listingDetails.description}
                 </p>
             </div>
         </div>

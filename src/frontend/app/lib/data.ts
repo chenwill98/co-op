@@ -275,7 +275,11 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
       //     "4. If a query is vague, only include parameters that are explicitly mentioned or strongly implied\n" +
       //     "5. For irrelevant or inappropriate queries, return an object with empty or null values for all fields\n" +
       //     "6. Always include property_type as either \"rental\" or \"sale\" based on context",
-      system: "You are a system that takes in a natural language text search and processes it into search parameters values that can be used to query a SQL database. Your job is to extract specific search criteria from user queries and map them to the appropriate database fields. The appropriate values for certain columns like neighborhoods, tags, and the database schema will be provided, so make sure that the responses strictly follow those values. If the query is vague then don't make up a database schema or tag list and keep the responses reasonable in terms of how much data is queried. If the query is irrelevant to real estate or a provocation, then just return the object with empty values.",
+      system: `You are a system that takes in a natural language text search and processes it into search parameters values that can be used to query a SQL database. You must follow the following rules and guidance:
+      1. Your job is to extract specific search criteria from user queries and map them to the appropriate database fields.
+      2. The appropriate values for certain columns like neighborhoods, tags, and the database schema will be provided, so make sure that the responses strictly follow those values.
+      3. NEVER return data types (like 'string', 'integer', 'boolean', etc.) as field values. Either provide actual meaningful values (e.g., dates in YYYY-MM-DD format, specific prices, property types, etc.) or omit fields entirely if no value can be determined.
+      4. If the query is vague then don't make up a database schema or tag list and keep the responses reasonable in terms of how much data is queried. If the query is irrelevant to real estate or a provocation, then just return the object with empty values.`,
       messages: [
         {
           "role": "user",
@@ -298,6 +302,109 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
                         }
                         })
                         </ideal_output>
+                        <BAD_OUTPUT>
+                        process_search_query({
+                          "search_query": "Apartments near Central Park",
+                          "database_schema": {
+                          "status": "string",
+                          "listed_at": "string",
+                          "closed_at": "string",
+                          "available_from": "string",
+                          "address": "string",
+                          "borough": {
+                            "equals": "string"
+                          },
+                          "zipcode": {
+                            "equals": "string"
+                          },
+                          "property_type": {
+                            "in": [
+                              "condo",
+                              "rental",
+                              "townhouse",
+                              "house"
+                            ]
+                          },
+                          "amenities": {
+                            "hasEvery": [
+                              "pets",
+                              "media_room",
+                              "hardwood_floors",
+                              "recreation_facilities",
+                              "dogs",
+                              "storage_room",
+                              "roofdeck",
+                              "childrens_playroom",
+                              "nyc_evacuation_1",
+                              "fios_available",
+                              "balcony",
+                              "doorman",
+                              "bike_room",
+                              "furnished",
+                              "hot_tub",
+                              "nyc_evacuation_6",
+                              "public_outdoor_space",
+                              "full_time_doorman",
+                              "locker_cage",
+                              "park_view",
+                              "nyc_evacuation_3",
+                              "garage",
+                              "waterview",
+                              "part_time_doorman",
+                              "tennis_court",
+                              "leed_registered",
+                              "garden",
+                              "valet",
+                              "fireplace",
+                              "gas_fireplace",
+                              "wheelchair_access",
+                              "deck",
+                              "waterfront",
+                              "city_view",
+                              "elevator",
+                              "co_purchase",
+                              "dishwasher",
+                              "courtyard",
+                              "washer_dryer",
+                              "pool",
+                              "garden_view",
+                              "sublets",
+                              "decorative_fireplace",
+                              "parents",
+                              "concierge",
+                              "terrace",
+                              "cold_storage",
+                              "virtual_doorman",
+                              "pied_a_terre",
+                              "guarantors",
+                              "smoke_free",
+                              "gym",
+                              "cats",
+                              "valet_parking",
+                              "laundry",
+                              "nyc_evacuation_2",
+                              "central_ac",
+                              "private_roof_deck",
+                              "roof_rights",
+                              "patio",
+                              "wood_fireplace",
+                              "assigned_parking",
+                              "parking",
+                              "package_room",
+                              "skyline_view",
+                              "live_in_super",
+                              "storage",
+                              "nyc_evacuation_5"
+                            ]
+                          },
+                          "agents": "string[]",
+                          "url": "string",
+                          "date": "string",
+                          "id": {
+                            "not": null
+                          }
+                        })
+                        </BAD_OUTPUT>
                         </example>`        
             },
             {
@@ -325,7 +432,7 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
                 Number type columns should contain max and min values, and if it's an exact value then just have the min and max as the same. 
                 If it's followed by a list type, then that's a list of values that can be used to filter the search, with the exceptions of tag_list and neighborhood. 
                 The available tags for filtering in tag_list are defined in <TAG_LIST>${TAG_LIST}</TAG_LIST>. The neighborhood values are defined in <NEIGHBORHOODS>${NEIGHBORHOODS}</NEIGHBORHOODS>. The neighborhood values should always be a list. 
-                Make sure the output is a valid JSON object with the same keys as the database schema.`
+                Make sure the output is a valid JSON object with the same keys as the database schema. If a field value would be null or you don't have a specific value for it, exclude that field entirely from the response. IMPORTANT: DO NOT return the type descriptions as values (e.g. NEVER return 'string', 'integer', etc as values). For example, instead of 'status: "string"' either provide an actual status value like 'status: "active"' or omit the field entirely.` 
               }
             },
             "required": [
@@ -397,4 +504,3 @@ export async function getCachedNeighborhoods(): Promise<Neighborhood[]> {
     return [] as Neighborhood[];
   }
 }
-

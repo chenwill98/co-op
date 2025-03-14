@@ -87,12 +87,10 @@ def lambda_handler(event, context):
         # Fetch payloads or perform checks based on check_type
         result = run_checks(check_type)
         
-        # If result is returned (from check_fct_properties_updated), return it
+        # If result is returned (from check functions), return it
         if result is not None:
             return {"statusCode": 200, "body": result}
-        
-        # Otherwise return standard response
-        return {"statusCode": 200, "body": f"Processed check type {check_type}"}
+            
     except Exception as e:
         logger.error(f"Error processing check type {check_type}: {e}")
         raise

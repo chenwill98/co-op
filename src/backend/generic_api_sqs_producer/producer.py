@@ -88,7 +88,7 @@ def fetch_api_property_ids():
                     FROM real_estate.latest_property_details_view
                     WHERE id IS NULL
                     OR (loaded_datetime < NOW() - INTERVAL '7 days' AND price <> fct_price)
-                    LIMIT 500;"""
+                    LIMIT 2000;"""
         result = execute_query(session, query)
         rows = result.fetchall()
 

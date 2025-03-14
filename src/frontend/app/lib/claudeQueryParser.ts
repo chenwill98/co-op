@@ -113,6 +113,17 @@ export async function parseClaudeResultsToPrismaQuery(claudeResults: ClaudeRespo
         break;
         
       case 'borough':
+        if (typeof value === 'string') {
+          whereCondition[key] = { 
+            equals: value.toLowerCase()
+          };
+        } else if (Array.isArray(value) && value.length > 0) {
+          whereCondition[key] = {
+            in: value.map(item => typeof item === 'string' ? item.toLowerCase() : item)
+          };
+        }
+        break;
+
       case 'zipcode':
         if (typeof value === 'string') {
           whereCondition[key] = { 

@@ -4,7 +4,7 @@ Transform: AWS::Serverless-2016-10-31
 Globals:
   Function:
     Runtime: python3.11
-    Timeout: 200
+    Timeout: 600
 
 Resources:
   # AWS Layers
@@ -23,7 +23,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: PropertiesAPIQueue
-      VisibilityTimeout: 250
+      VisibilityTimeout: 660
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt PropertiesAPIDeadLetterQueue.Arn
         maxReceiveCount: 1 # Retry each message up to 1 time before sending to DLQ
@@ -37,7 +37,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: PropertyDetailsAPIQueue
-      VisibilityTimeout: 250
+      VisibilityTimeout: 660
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt PropertyDetailsAPIDeadLetterQueue.Arn
         maxReceiveCount: 1 # Retry each message up to 1 time before sending to DLQ
@@ -94,7 +94,7 @@ Resources:
           Type: SQS
           Properties:
             Queue: !GetAtt PropertyDetailsAPIQueue.Arn
-            BatchSize: 100 # Process 50 messages at a time
+            BatchSize: 50 # Process 50 messages at a time
             MaximumBatchingWindowInSeconds: 20
 
   PropertyDataEnhancementLoader:
@@ -113,6 +113,16 @@ Resources:
       FunctionName: DataProcessChecker
       Handler: checker.lambda_handler
       CodeUri: data_process_checker
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
+      Layers:
+        - !Ref AWSUtilsLayer
+        
+  AnthropicBatchProcessor:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: AnthropicBatchProcessor
+      Handler: processor.lambda_handler
+      CodeUri: anthropic_batch_processor
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer

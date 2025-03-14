@@ -86,6 +86,7 @@ export type PropertyDetails = {
     images: string[];
     videos: string[];
     tag_list?: string[];
+    description_summary: string;
 }
 
 export type CombinedPropertyDetails = Property & PropertyDetails;
