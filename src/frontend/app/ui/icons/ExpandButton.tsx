@@ -3,13 +3,20 @@ import { PlusIcon, MinusIcon } from "@heroicons/react/24/outline";
 type ExpandButtonProps = {
   isExpanded: boolean;
   onToggle: () => void;
+  expandedText?: string;
+  collapsedText?: string;
 };
 
-export default function ExpandButton({ isExpanded, onToggle }: ExpandButtonProps) {
+export default function ExpandButton({ 
+  isExpanded, 
+  onToggle, 
+  expandedText = "Less", 
+  collapsedText = "More" 
+}: ExpandButtonProps) {
   return (
     <div className="flex items-center gap-1">
       <label className="text-primary cursor-pointer text-sm" onClick={onToggle}>
-        {isExpanded ? "Less" : "More"}
+        {isExpanded ? expandedText : collapsedText}
       </label>
       <label className="swap swap-rotate">
       {/* Controlled checkbox */}

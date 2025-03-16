@@ -14,6 +14,11 @@ export default function ImageCarousel({
   // We default to 1 (first slide) or you can choose 0 if you prefer.
   const [activeSlide, setActiveSlide] = useState(1);
 
+  // Helper function to check if a URL is a PDF
+  const isPDF = (url: string): boolean => {
+    return url.toLowerCase().endsWith('.pdf');
+  };
+
   // Handles all navigation (arrows and thumbnails)
   const goToSlide = (
     event: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
@@ -60,19 +65,13 @@ export default function ImageCarousel({
               id={`slide${currentSlide}`}
               className="carousel-item relative w-full"
             >
-              {item.type === "image" ? (
-                <img
-                  src={item.url}
-                  alt={`Image ${currentSlide}`}
-                  className="w-full h-full object-cover"
-                />
-              ) : item.type === "video" ? (
+              {item.type === "video" ? (
                 <video controls className="w-full h-full object-cover">
                   <source src={item.url} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
-              ) : (
-                // For floorplans (PDFs), render a clickable panel that opens the PDF
+              ) : isPDF(item.url) ? (
+                // For PDFs, render a clickable panel that opens the PDF
                 <a
                   href={item.url}
                   target="_blank"
@@ -85,6 +84,13 @@ export default function ImageCarousel({
                     </span>
                   </div>
                 </a>
+              ) : (
+                // Default case: treat as image
+                <img
+                  src={item.url}
+                  alt={`Image ${currentSlide}`}
+                  className="w-full h-full object-cover"
+                />
               )}
 
               {/* DaisyUI-style Navigation Controls */}
@@ -128,20 +134,20 @@ export default function ImageCarousel({
                     : ""
                 }`}
             >
-              {item.type === "image" ? (
+              {item.type === "video" ? (
+                <div className="w-10 h-10 flex items-center justify-center bg-primary">
+                  <VideoCameraIcon className="w-4 h-4 text-white" />
+                </div>
+              ) : isPDF(item.url) ? (
+                <div className="w-10 h-10 flex items-center justify-center bg-primary">
+                  <DocumentTextIcon className="w-4 h-4 text-white" />
+                </div>
+              ) : (
                 <img
                   src={item.url}
                   alt={`Thumbnail ${slideNumber}`}
                   className="w-15 h-10 object-cover"
                 />
-              ) : item.type === "video" ? (
-                <div className="w-10 h-10 flex items-center justify-center bg-primary">
-                  <VideoCameraIcon className="w-4 h-4 text-white" />
-                </div>
-              ) : (
-                <div className="w-10 h-10 flex items-center justify-center bg-primary">
-                  <DocumentTextIcon className="w-4 h-4 text-white" />
-                </div>
               )}
             </a>
           );

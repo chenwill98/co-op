@@ -3,7 +3,7 @@ import { CombinedPropertyDetails } from "@/app/lib/definitions";
 export default function ListingsDetailsPanel({ listingDetails }: { listingDetails: CombinedPropertyDetails }) {
     return (
         <div className="flex flex-col items-start gap-1">
-            <h1 className="text-3xl font-bold text-gray-800">
+            <h1 className="text-3xl font-semibold text-gray-800">
               {listingDetails.address}
             </h1>
             <p className="mt-1 text-sm text-gray-600">
@@ -13,12 +13,12 @@ export default function ListingsDetailsPanel({ listingDetails }: { listingDetail
             <div className="text-gray-500 text-sm space-x-1">
               <span>
                 {listingDetails.bedrooms}{" "}
-                {listingDetails.bedrooms === 1 ? "bed" : "beds"}
+                {listingDetails.bedrooms && listingDetails.bedrooms % 1 === 0 ? (listingDetails.bedrooms === 1 ? "bed" : "beds") : "beds"}
               </span>
               <span>|</span>
               <span>
                 {listingDetails.bathrooms}{" "}
-                {listingDetails.bathrooms === 1 ? "bath" : "baths"}
+                {listingDetails.bathrooms && listingDetails.bathrooms % 1 === 0 ? (listingDetails.bathrooms === 1 ? "bath" : "baths") : "baths"}
               </span>
               <span>|</span>
               <span>

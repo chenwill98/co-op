@@ -57,6 +57,40 @@ def create_batch(**kwargs):
         logger.error(f"Error creating Anthropic batch: {e}")
         raise
 
+def trigger_enhancement_lambda(api_type, **kwargs):
+    """
+    Trigger the PropertyDataEnhancementLoader Lambda function for subway data.
+    
+    This function invokes the Lambda function with the subway API type to
+    process and enhance property data with subway information.
+    
+    Returns:
+        dict: Response information from the Lambda invocation
+    """
+    logger.info(f"Triggering PropertyDataEnhancementLoader Lambda for API type: {api_type}")
+    
+    try:
+        response = lambda_client.invoke(
+            FunctionName="PropertyDataEnhancementLoader",
+            InvocationType="Event",
+            Payload=json.dumps({"api_type": api_type}),
+        )
+        
+        response_info = {
+            'StatusCode': response.get('StatusCode'),
+            'RequestId': response.get('ResponseMetadata', {}).get('RequestId'),
+            'HTTPStatusCode': response.get('ResponseMetadata', {}).get('HTTPStatusCode'),
+            'api_type': api_type
+        }
+        
+        logger.info(f"Successfully triggered Lambda for API type: {api_type}. Status code: {response_info['StatusCode']}")
+        
+        # Return a serializable dictionary instead of the full response
+        return response_info
+    except Exception as e:
+        logger.error(f"Failed to trigger Lambda for API type: {api_type}. Error: {str(e)}")
+        raise
+
 def check_batch_complete(batch_id, **kwargs):
     """
     Check if an Anthropic batch processing job is complete.
@@ -149,6 +183,20 @@ with DAG(
         do_xcom_push=True,  # Push batch_id to XCom
     )
     
+    # Step 1 (parallel): Trigger subway data enhancement Lambda
+    trigger_subway_data = PythonOperator(
+        task_id='trigger_subway_data',
+        python_callable=trigger_enhancement_lambda,
+        op_kwargs={'api_type': 'subway'},
+    )
+
+    # Step 1 (parallel): Trigger map data enhancement Lambda
+    trigger_mapbox_data = PythonOperator(
+        task_id='trigger_mapbox_data',
+        python_callable=trigger_enhancement_lambda,
+        op_kwargs={'api_type': 'mapbox'},
+    )
+    
     # Step 2: Wait for Anthropic batch processing to complete
     wait_for_anthropic_batch = PythonSensor(
         task_id='wait_for_anthropic_batch',
@@ -165,5 +213,7 @@ with DAG(
     
     # Define the task dependencies
     wait_for_processing >> create_anthropic_batch >> wait_for_anthropic_batch
+    wait_for_processing >> trigger_subway_data
+    wait_for_processing >> trigger_mapbox_data
     
     logger.info("Property data enrichments DAG setup complete")

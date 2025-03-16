@@ -89,4 +89,25 @@ export type PropertyDetails = {
     description_summary: string;
 }
 
-export type CombinedPropertyDetails = Property & PropertyDetails;
+export type CombinedPropertyDetails = Property & PropertyDetails & PropertyAnalyticsDetails & {
+  closest_stations?: PropertyNearestStations[];
+};
+
+export type PropertyNearestStations = {
+  listing_id: string;
+  route_id: string;
+  walking_minutes: number;
+  route_short_name: string | null;
+  route_color: string | null;
+  stop_name: string | null;
+  peak: number | null;
+  off_peak: number | null;
+  late_night: number | null;
+};
+
+// PropertyAnalyticsDetails is kept separate from station data
+export type PropertyAnalyticsDetails = {
+  listing_id: string;
+  distinct_line_count: number;
+  subway_access_percentile: number;
+};

@@ -44,7 +44,7 @@ export default function ListingsGrid({
                   <span>|</span>
                   <span>
                     {listing.bathrooms}{" "}
-                    {listing.bathrooms === 1 ? "bath" : "baths"}
+                    {listing.bathrooms && listing.bathrooms % 1 === 0 ? (listing.bathrooms === 1 ? "bath" : "baths") : "baths"}
                   </span>
                   <span>|</span>
                   <span>

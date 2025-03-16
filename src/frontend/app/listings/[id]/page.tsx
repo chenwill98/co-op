@@ -21,6 +21,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   // Fetch the combined property details (property, details, tags, etc.)
   const pageParams = await params;
   const listingDetails = await fetchPropertyPage(pageParams.id);
+  console.log('Listing details:', listingDetails);
 
   // Combine images, videos, and floorplans into one array
   const mediaItems = [

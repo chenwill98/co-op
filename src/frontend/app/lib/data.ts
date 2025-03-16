@@ -1,6 +1,6 @@
 // Import your database client/ORM here, e.g. Prisma
 import { PrismaClient } from '@prisma/client';
-import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood } from './definitions';
+import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations } from './definitions';
 import { getSystemTag, tagCategories } from './tagUtils';
 import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -136,6 +136,7 @@ export async function fetchPropertiesRDS(params: {
     const formattedProperties = properties.map(property => ({
       ...property,
       price: property.price ? property.price.toNumber() : 0,
+      bathrooms: property.bathrooms ? property.bathrooms.toNumber() : null,
       latitude: property.latitude ? String(property.latitude) : '0',
       longitude: property.longitude ? String(property.longitude) : '0',
       listed_at: property.listed_at ? property.listed_at.toDateString() : '',
@@ -169,6 +170,7 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
     const formattedProperty = {
       ...property,
       price: property.price ? property.price.toNumber() : 0,
+      bathrooms: property.bathrooms ? property.bathrooms.toNumber() : null,
       latitude: property.latitude ? String(property.latitude) : '0',
       longitude: property.longitude ? String(property.longitude) : '0',
       listed_at: property.listed_at ? property.listed_at.toDateString() : '',
@@ -220,13 +222,77 @@ export async function fetchPropertyDetailsById(id: string): Promise<PropertyDeta
   }
 }
 
+/**
+ * Fetches nearest subway station data for a property by its ID
+ * @param id - The property's listing ID
+ * @returns Array of PropertyNearestStations with subway station information
+ */
+export async function fetchPropertyNearestStationsById(id: string): Promise<PropertyNearestStations[] | null> {
+  try {
+    // Fetch all station records for this property
+    const stationRecords = await prisma.dim_property_nearest_stations.findMany({
+      where: { listing_id: id },
+      orderBy: { walking_minutes: 'asc' }, // Order by walking time, closest first
+    });
+
+    if (!stationRecords || stationRecords.length === 0) {
+      return []; // Return empty array if none found
+    }
+
+    // Format the data to match PropertyNearestStations type
+    const formattedStations = stationRecords.map(station => ({
+      listing_id: station.listing_id,
+      route_id: station.route_id,
+      walking_minutes: station.walking_minutes.toNumber(),
+      route_short_name: station.route_short_name,
+      route_color: station.route_color,
+      stop_name: station.stop_name,
+      peak: station.peak?.toNumber() || null,
+      off_peak: station.off_peak?.toNumber() || null,
+      late_night: station.late_night?.toNumber() || null,
+    }));
+
+    return formattedStations as PropertyNearestStations[];
+  } catch (error) {
+    console.error('Error fetching property analytics:', error);
+    return []; // Return empty array on error
+  }
+}
+
+export async function fetchPropertyAnalyticsById(id: string): Promise<PropertyAnalyticsDetails | null> {
+  try {
+    const analytics = await prisma.dim_property_analytics_view.findFirst({
+      where: { listing_id: id },
+    });
+
+    const formattedAnalytics = analytics ? {
+      ...analytics,
+      subway_access_percentile: analytics.subway_access_percentile?.toNumber() || null,
+    } : null;
+    return formattedAnalytics as PropertyAnalyticsDetails | null;
+  } catch (error) {
+    console.error('Error fetching property analytics:', error);
+    return null;
+  }
+}
+
 export async function fetchPropertyPage(id: string): Promise<CombinedPropertyDetails> {
   try {
     const property = await fetchPropertiesRDSById(id);
-    const propertyDetails = await fetchPropertyDetailsById(id);
-    const propertyCombined = { ...propertyDetails, ...property };
-    return propertyCombined as CombinedPropertyDetails;
+    const propertyDetails = await fetchPropertyDetailsById(id) || {};
+    const propertyAnalytics = await fetchPropertyAnalyticsById(id) || {};
+    const nearestStations = await fetchPropertyNearestStationsById(id) || [];
     
+    // Properly combine objects with stations in a closest_stations array property
+    const propertyCombined = { 
+      ...propertyDetails, 
+      ...property,
+      ...propertyAnalytics,
+      closest_stations: nearestStations // Put stations in closest_stations property
+    };
+    
+    return propertyCombined as CombinedPropertyDetails;
+  
   } catch (error) {
     console.error(`Failed to fetch listing id ${id}:`, error);
     throw new Error(`Failed to fetch listing id ${id}`);

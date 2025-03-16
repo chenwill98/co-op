@@ -22,7 +22,7 @@ export default function ListingsPricingPanel({
       <TagList category="Price" tags={listingDetails.tag_list || []} />
       <div>
         <div className="text-2xl font-bold">
-          ${listingDetails.price.toLocaleString()}
+          ${listingDetails.price.toLocaleString()} per month
         </div>
         {!listingDetails.no_fee && (
           <div className="text-lg font-semibold">

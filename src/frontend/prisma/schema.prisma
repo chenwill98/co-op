@@ -1,10 +1,12 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["real_estate", "real_estate_analytics"]
 }
 
 model dim_property_details {
@@ -22,7 +24,7 @@ model dim_property_details {
   property_type   String?   @db.VarChar(50)
   sqft            Int?
   bedrooms        Int?
-  bathrooms       Int?
+  bathrooms       Decimal?  @db.Decimal(3, 1)
   type            String?   @db.VarChar(50)
   latitude        Decimal?  @db.Decimal(9, 6)
   longitude       Decimal?  @db.Decimal(9, 6)
@@ -34,6 +36,8 @@ model dim_property_details {
   thumbnail_image String?
   tag_list        String[]
   loaded_datetime DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("real_estate")
 }
 
 model fct_properties {
@@ -46,6 +50,7 @@ model fct_properties {
   loaded_datetime DateTime? @default(now()) @db.Timestamp(6)
 
   @@id([id, date], map: "fct_properties_composite_pk")
+  @@schema("real_estate") 
 }
 
 model latest_property_details_view {
@@ -63,7 +68,7 @@ model latest_property_details_view {
   property_type   String?   @db.VarChar(50)
   sqft            Int?
   bedrooms        Int?
-  bathrooms       Int?
+  bathrooms       Decimal?  @db.Decimal(3, 1)
   type            String?   @db.VarChar(50)
   latitude        Decimal?  @db.Decimal(9, 6)
   longitude       Decimal?  @db.Decimal(9, 6)
@@ -82,6 +87,7 @@ model latest_property_details_view {
   live_days_on_market  Int?
 
   @@map("latest_property_details_view") 
+  @@schema("real_estate")
 }
 
 model neighborhoods {
@@ -89,6 +95,8 @@ model neighborhoods {
   name      String  @db.VarChar(255)
   group     String? @db.VarChar(255)
   parent_id Int?
+
+  @@schema("real_estate")
 }
 
 model neighborhoods_enhanced_view {
@@ -99,4 +107,39 @@ model neighborhoods_enhanced_view {
   parent_name   String
   hierarchy_path String
   level         Int
+
+  @@schema("real_estate")
+}
+
+// Reference to the external view in real_estate_analytics schema
+model dim_property_nearest_stations {
+  listing_id             String   @db.VarChar(20)
+  parent_station         String   @db.VarChar(50)
+  route_id               String   @db.VarChar(10)
+  manhattan_distance_km  Decimal  @db.Decimal(6, 2)
+  walking_minutes        Decimal  @db.Decimal(5, 1)
+  route_short_name       String?  @db.VarChar(10)
+  route_long_name        String?  @db.VarChar(100)
+  route_color            String?  @db.VarChar(10)
+  stop_name              String?  @db.VarChar(100)
+  peak                   Decimal? @db.Decimal(8, 2)
+  off_peak               Decimal? @db.Decimal(8, 2)
+  late_night             Decimal? @db.Decimal(8, 2)
+  stop_lat               Decimal? @db.Decimal(9, 6)
+  stop_lon               Decimal? @db.Decimal(9, 6)
+  location_type          String?  @db.VarChar(20)
+  agency_id              String?  @db.VarChar(20)
+  loaded_datetime        DateTime @default(now()) @db.Timestamp(6)
+
+  @@id([listing_id, route_id])
+  @@schema("real_estate_analytics")
+}
+
+model dim_property_analytics_view {
+  listing_id              String   @id @db.VarChar(20)
+  distinct_line_count     Int
+  subway_access_percentile Decimal @db.Decimal(5, 2)
+  
+  @@map("dim_property_analytics_view") 
+  @@schema("real_estate_analytics")
 }
