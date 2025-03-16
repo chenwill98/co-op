@@ -1,4 +1,4 @@
-import { tagCategories, getDisplayTag } from '@/app/lib/tagUtils';
+import { tagCategories, getDisplayTag, getTagsInCategory } from '@/app/lib/tagUtils';
 
 /**
  * Displays a list of tags for a specific category
@@ -13,7 +13,7 @@ export function TagList({ category, tags }: { category?: keyof typeof tagCategor
   // If category is provided, filter tags that belong to that category
   // Otherwise, use all tags
   const filteredTags = category 
-    ? tags.filter(tag => tagCategories[category].includes(tag))
+    ? tags.filter(tag => getTagsInCategory(category).includes(tag))
     : tags;
   
   if (filteredTags.length === 0) {
@@ -25,7 +25,7 @@ export function TagList({ category, tags }: { category?: keyof typeof tagCategor
       {filteredTags.map(tag => (
         <div 
           key={tag} 
-          className="badge badge-primary rounded-full badge-outline text-xs"
+          className="badge bg-primary/10 text-primary rounded-full text-xs"
           title={tag} // Show the system tag on hover for debugging
         >
           {getDisplayTag(tag)}

@@ -6,6 +6,7 @@ import SubwayIcon from "@/app/ui/icons/SubwayIcon";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon"; 
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { TagList } from "@/app/ui/utilities";
 
 export default function ListingsTransportationPanel({
   listingDetails,
@@ -50,6 +51,9 @@ export default function ListingsTransportationPanel({
               <h3 className="text-lg font-semibold mb-2">
                 Nearby Subway Lines
               </h3>
+              <div className="flex flex-wrap gap-1">
+                <TagList category="Transportation" tags={listingDetails.tag_list || []} />
+              </div>
               
               {/* Simple grid for subway stations */}
               <div className="grid grid-cols-2 gap-4">
@@ -92,10 +96,10 @@ export default function ListingsTransportationPanel({
 
       {/* Panel that expands/collapses */}
       <div
-        className={`transition-all duration-700 ease-in-out ${
+        className={`transition-all duration-300 ease-in-out ${
           isExpanded 
-            ? 'max-h-[1000px] opacity-100 mt-4' 
-            : 'max-h-0 opacity-0 mt-0 pointer-events-none'
+            ? 'opacity-100 max-h-[800px] mt-4 visible' 
+            : 'opacity-0 max-h-0 mt-0 invisible'
         }`}
       >
         {/* Display detailed subway times when expanded */}
@@ -109,11 +113,11 @@ export default function ListingsTransportationPanel({
               <span className="font-bold">
                 {(listingDetails.subway_access_percentile ?? 0).toFixed(1)}th
               </span>
-              {" "}percentile of subway accessibility.
+              {" "}percentile of listings in subway accessibility.
             </p>
             <div className="flex flex-row items-center gap-2 mb-2">
               <h3 className="text-lg font-semibold">Detailed Subway Times (min) </h3>
-              <TooltipIcon tooltipText="Average wait times for subway lines are derived from publicly available MTA subway schedules" />
+              <TooltipIcon tooltipText="Average wait times for subway lines are limited to a 15 minute walk from the property and derived from publicly available MTA subway schedules" />
             </div>
             <div className="text-xs text-gray-500">Peak times are weekdays 7:00am to 9:30am and 4:00pm to 7:00pm </div>
             <div className="text-xs text-gray-500 mb-2">Late-night times are every day from midnight to 7:00am </div>

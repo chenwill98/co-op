@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { tagCategories, getDisplayTag } from "@/app/lib/tagUtils";
+import { tagCategories, getDisplayTag, getTagsInCategory } from "@/app/lib/tagUtils";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface TagsFilterProps {
@@ -40,16 +40,17 @@ export default function TagsFilter({
   // Filter tags based on input text
   const filteredCategories = Object.entries(tagCategories).reduce((acc, [category, tags]) => {
     const filtered = tags.filter(tag => 
-      tag.toLowerCase().includes(filterText.toLowerCase())
+      tag.name.toLowerCase().includes(filterText.toLowerCase()) || 
+      tag.display.toLowerCase().includes(filterText.toLowerCase())
     );
     if (filtered.length > 0) acc[category] = filtered;
     return acc;
-  }, {} as Record<string, string[]>);
+  }, {} as Record<string, {name: string, display: string, source: string[]}[]>);
 
   // Create flattened list of categories and tags
   const flattenedItems = Object.entries(filteredCategories).flatMap(([category, tags]) => [
     { type: "category" as const, text: category },
-    ...tags.map(tag => ({ type: "tag" as const, text: tag }))
+    ...tags.map(tag => ({ type: "tag" as const, text: tag.name, display: tag.display }))
   ]);
 
   // Event handlers
@@ -85,25 +86,38 @@ export default function TagsFilter({
           onFocus={() => setIsOpen(true)}
         />
         
-        <div className="dropdown-content outline outline-1 outline-primary p-4 shadow-sm bg-base-100 w-[800px] max-h-[600px] overflow-auto z-10">
+        <div className="dropdown-content outline outline-1 outline-primary p-4 shadow-sm bg-base-100 w-[1000px] max-h-[500px] overflow-auto z-10">
           {Object.keys(filteredCategories).length === 0 ? (
             <div className="p-2 text-gray-500">No tags found</div>
           ) : (
-            <div className="columns-2 md:columns-3 gap-4 space-y-2">
+            <div className="columns-3 md:columns-4 gap-4 space-y-2">
               {flattenedItems.map((item, index) => (
                 item.type === "category" ? (
                   <div key={index} className="font-bold border-b pb-1 break-inside-avoid">
                     {item.text}
                   </div>
                 ) : (
-                  <div key={index} className="flex items-center break-inside-avoid">
+                  <div
+                    key={index}
+                    className="flex items-center p-1 hover:bg-base-200 rounded cursor-pointer"
+                    onClick={(e) => {
+                      // Prevent the click from being handled twice
+                      if (e.target === e.currentTarget) {
+                        toggleTag(item.text);
+                      }
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={tempTags.includes(item.text)}
-                      onChange={() => toggleTag(item.text)}
+                      onChange={(e) => {
+                        // Stop propagation to prevent the parent onClick from firing
+                        e.stopPropagation();
+                        toggleTag(item.text);
+                      }}
                       className="checkbox checkbox-xs checkbox-primary mr-2"
                     />
-                    <span className="text-sm">{getDisplayTag(item.text)}</span>
+                    <span className="text-xs">{item.display}</span>
                   </div>
                 )
               ))}
@@ -126,12 +140,12 @@ export default function TagsFilter({
         {selectedTags.map(tag => (
           <div
             key={tag}
-            className="badge badge-primary rounded-full badge-outline text-xs flex items-center"
+            className="badge bg-primary/10 text-primary rounded-full text-xs flex items-center"
           >
             {getDisplayTag(tag)}
             <XMarkIcon
               onClick={() => removeTag(tag)}
-              className="h-4 w-4 cursor-pointer ml-1"
+              className="h-4 w-4 cursor-pointer"
             />
           </div>
         ))}

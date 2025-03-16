@@ -25,11 +25,13 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
             </div>
             {/* Panel that expands/collapses */}
             <div
-                className={`overflow-hidden transition-max-height duration-500 ease-in-out ${
-                isExpanded ? 'max-h-40' : 'max-h-0'
+                className={`transition-all duration-300 ease-in-out ${
+                isExpanded 
+                  ? 'opacity-100 max-h-[800px] mt-4 visible' 
+                  : 'opacity-0 max-h-0 mt-0 invisible'
                 }`}
             >
-                <p className="mt-2 text-gray-700">
+                <p className="text-gray-700">
                 This is some additional dummy information that is revealed when the button is clicked.
                 </p>
             </div>

@@ -145,7 +145,7 @@ export async function fetchPropertiesRDS(params: {
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
       // Convert any emoji tags to system tags
-      tag_list: property.tag_list ? property.tag_list.map(tag => getSystemTag(tag)) : [],
+      tag_list: property.tag_list ? property.tag_list.map(tag => tag) : [],
     }));
 
     return formattedProperties as Property[];
@@ -179,7 +179,7 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
       // Convert any emoji tags to system tags
-      tag_list: property.tag_list ? property.tag_list.map(tag => getSystemTag(tag)) : [],
+      tag_list: property.tag_list ? property.tag_list.map(tag => tag) : [],
     };
     return formattedProperty as Property;
   } catch (error) {
@@ -212,7 +212,7 @@ export async function fetchPropertyDetailsById(id: string): Promise<PropertyDeta
     
     // Convert any item with tags to use system tags
     if (items.length > 0 && items[0].tag_list) {
-      items[0].tag_list = items[0].tag_list.map((tag: string) => getSystemTag(tag));
+      items[0].tag_list = items[0].tag_list.map((tag: string) => tag);
     }
     
     return items.length > 0 ? items[0] as PropertyDetails : null;
@@ -311,7 +311,16 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
   const temperature = 0;
 
   
-  const TAG_LIST = JSON.stringify(tagCategories, null, 2);
+  const TAG_LIST = JSON.stringify(
+    Object.entries(tagCategories).reduce((result, [category, tags]) => {
+      result[category] = tags
+        .filter(tag => tag.source.includes('AI'))
+        .map(tag => tag.name);
+      return result;
+    }, {} as Record<string, string[]>), 
+    null, 
+    2
+  );
   const DATABASE_SCHEMA = propertyString;
 
   const NEIGHBORHOODS = await prisma.neighborhoods_enhanced_view.findMany({
@@ -344,8 +353,9 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
       system: `You are a system that takes in a natural language text search and processes it into search parameters values that can be used to query a SQL database. You must follow the following rules and guidance:
       1. Your job is to extract specific search criteria from user queries and map them to the appropriate database fields.
       2. The appropriate values for certain columns like neighborhoods, tags, and the database schema will be provided, so make sure that the responses strictly follow those values.
-      3. NEVER return data types (like 'string', 'integer', 'boolean', etc.) as field values. Either provide actual meaningful values (e.g., dates in YYYY-MM-DD format, specific prices, property types, etc.) or omit fields entirely if no value can be determined.
-      4. If the query is vague then don't make up a database schema or tag list and keep the responses reasonable in terms of how much data is queried. If the query is irrelevant to real estate or a provocation, then just return the object with empty values.`,
+      3. Make sure that the tags you return are ACTUALLY RELEVANT to the query.
+      4. NEVER return data types (like 'string', 'integer', 'boolean', etc.) as field values. Either provide actual meaningful values (e.g., dates in YYYY-MM-DD format, specific prices, property types, etc.) or omit fields entirely if no value can be determined.
+      5. If the query is vague then don't make up a database schema or tag list and keep the responses reasonable in terms of how much data is queried. If the query is irrelevant to real estate or a provocation, then just return the object with empty values.`,
       messages: [
         {
           "role": "user",

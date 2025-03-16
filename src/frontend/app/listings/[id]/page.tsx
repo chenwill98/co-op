@@ -55,16 +55,16 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             <li>{listingDetails.address}</li>
           </ul>
         </nav>
-        <div className="flex flex-row gap-2 items-center">
+        <div className="flex flex-row gap-5 items-center">
           <BookmarkIcon />
-          <a href={listingDetails.url} className="btn btn-outline btn-primary" target="_blank" rel="noopener noreferrer">StreetEasy <LinkIcon className="h-6 w-6 text-primary"/></a>
+          <a href={listingDetails.url} className="btn btn-outline btn-primary" target="_blank" rel="noopener noreferrer">StreetEasy <LinkIcon className="h-4 w-4 text-primary"/></a>
         </div>
       </div>
 
       {/* Two-Column Layout for Property Details */}
-      <div className="grid grid-cols-2 gap-20 mt-4">
+      <div className="grid grid-cols-5 gap-20 mt-4">
         {/* Carousel Section */}
-        <div className="flex flex-col">
+        <div className="flex flex-col col-span-3">
           <ImageCarousel mediaItems={mediaItems} />
           {/* Description Section */}
           <div className="border-t border-gray-200 mt-4 pt-4">
@@ -76,7 +76,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           </div>
         </div>
         {/* Right Column: Main Property Details */}
-        <div className="flex flex-col">
+        <div className="flex flex-col col-span-2">
           {/* Property Title */}
           <ListingsDetailsPanel listingDetails={listingDetails} />
 

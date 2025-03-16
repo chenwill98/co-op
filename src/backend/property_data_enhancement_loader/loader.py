@@ -175,7 +175,7 @@ def get_nearest_station_per_route(aggregated_df):
     
     return nearest_df
 
-def fetch_property_coordinates(session):
+def load_nearest_subways(session):
     try:
         logger.info("Fetching property coordinates")
         query = """
@@ -232,29 +232,65 @@ def fetch_property_coordinates(session):
         if 'session' in locals():
             session.close()
 
-def fetch_api_payloads(api_type):
+def load_analytics_tags(session):
+    try:
+        logger.info("Fetching property coordinates")
+        query = """
+        SELECT id, latitude, longitude
+        FROM real_estate.latest_property_details_view
+        WHERE id IS NOT NULL
+          AND id NOT IN (
+              SELECT listing_id
+              FROM real_estate_analytics.dim_property_nearest_stations
+          );"""
+
+        listings = execute_query(session, query)
+        listings_df = pd.DataFrame(listings)
+        logger.info(f"Fetched {len(listings_df)} property coordinates")
+
+        logger.info(f"Inserting {len(nearest_stations_df)} nearest stations into dim_property_nearest_stations")
+        engine = session.get_bind()
+        nearest_stations_df.to_sql(
+            'dim_property_nearest_stations',
+            con=engine,
+            schema='real_estate_analytics',
+            if_exists='append',
+            index=False
+        )
+
+    except Exception as e:
+        logger.error(f"Error fetching property coordinates: {e}")
+        raise
+    finally:
+        if 'session' in locals():
+            session.close()
+
+
+def run_enhancement_loaders(load_type):
     API_KEYS = get_secret(secret_name='COAPTAPIKeys')
-    logger.info(f"Fetching API payloads for {api_type}")
+    logger.info(f"Fetching API payloads for {load_type}")
     session = get_db_session()
     
-    if api_type == "subway":
-        fetch_property_coordinates(session)
-    elif api_type == "mapbox":
+    if load_type == "subway":
+        load_nearest_subways(session)
+    elif load_type == "mapbox":
         pass
+    elif load_type == "analytics_tags":
+        load_analytics_tags(session)
     else:
-        raise ValueError(f"Unsupported API type: {api_type}")
+        raise ValueError(f"Unsupported API type: {load_type}")
 
 def lambda_handler(event, context):
-    api_type = event["api_type"]
+    load_type = event["load_type"]
     
     try:
-        result = fetch_api_payloads(api_type)
+        result = run_enhancement_loaders(load_type)
         # If result is returned (from loader functions), return it
         if result is not None:
             return {"statusCode": 200, "body": result}
             
     except Exception as e:
-        logger.error(f"Error processing api type {api_type}: {e}")
+        logger.error(f"Error processing api type {load_type}: {e}")
         raise
 
 # def upsert_properties_to_rds(session, listings):

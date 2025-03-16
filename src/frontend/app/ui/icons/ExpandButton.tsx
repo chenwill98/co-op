@@ -15,7 +15,7 @@ export default function ExpandButton({
 }: ExpandButtonProps) {
   return (
     <div className="flex items-center gap-1">
-      <label className="text-primary cursor-pointer text-sm" onClick={onToggle}>
+      <label className="text-primary cursor-pointer text-xs" onClick={onToggle}>
         {isExpanded ? expandedText : collapsedText}
       </label>
       <label className="swap swap-rotate">
@@ -23,10 +23,10 @@ export default function ExpandButton({
       <input type="checkbox" checked={isExpanded} onChange={onToggle} />
 
       {/* hamburger icon (shown when checkbox is unchecked) */}
-      <PlusIcon className="swap-off text-primary" width={16} height={16} />
+      <PlusIcon className="swap-off text-primary" width={12} height={12} />
 
       {/* close icon (shown when checkbox is checked) */}
-      <MinusIcon className="swap-on text-primary" width={16} height={16} />
+      <MinusIcon className="swap-on text-primary" width={12} height={12} />
       </label>
     </div>
   );

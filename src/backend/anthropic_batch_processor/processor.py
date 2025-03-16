@@ -7,11 +7,7 @@ from aws_utils import get_secret, logger, get_db_session, execute_query
 
 TAG_LIST = {
   'Price': [
-    'price-drop',
-    'great-deal',
-    'price-increase',
-    'discounted',
-    'underpriced'
+    # No AI-sourced price tags
   ],
   'Features': [
     'luxury',
@@ -19,37 +15,50 @@ TAG_LIST = {
     'open-house',
     'furnished',
     'home-office',
-    'pet-friendly',
     'spacious',
-    'cozy'
+    'pre-war',
+    'brownstone',
+    'cozy',
+    'high-ceilings',
+    'natural-light'
   ],
   'Location': [
-    'near-subway',
     'park-view',
     'city-center',
+    'prime-location',
+    'up-and-coming',
     'quiet-neighborhood',
-    'waterfront'
+    'noisy-area',
+    'waterfront',
+    'near-schools',
+    'near-shopping',
+    'remote-location'
   ],
   'Popularity': [
-    'new',
-    'popular',
-    'short-term',
-    'trending'
+    # No AI-sourced popularity tags
   ],
   'Amenities': [
+    'pet-friendly',
     'solar-powered',
     'eco-friendly',
+    'energy-efficient',
     'modern-design',
+    'classic-design',
     'gym',
     'pool',
     'rooftop-access',
-    'concierge-service'
+    'concierge-service',
+    'doorman',
+    'private-balcony',
+    'shared-outdoor-space'
   ],
   'Transportation': [
-    'walk-score-high',
     'close-to-bus-stop',
-    'close-to-train-station',
-    'bike-friendly'
+    'far-from-bus-stop',
+    'close-to-subway',
+    'far-from-subway',
+    'bike-friendly',
+    'parking-available'
   ]
 }
 
@@ -131,8 +140,7 @@ def create_batch():
                                                     "home-office",
                                                     "spacious",
                                                     "park-view",
-                                                    "quiet-neighborhood",
-                                                    "new"
+                                                    "quiet-neighborhood"
                                                 ]
                                                 })
                                                 </ideal_output>

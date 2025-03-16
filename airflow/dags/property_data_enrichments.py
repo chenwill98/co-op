@@ -57,38 +57,55 @@ def create_batch(**kwargs):
         logger.error(f"Error creating Anthropic batch: {e}")
         raise
 
-def trigger_enhancement_lambda(api_type, **kwargs):
+def trigger_enhancement_lambda(load_type, **kwargs):
     """
-    Trigger the PropertyDataEnhancementLoader Lambda function for subway data.
+    Trigger the PropertyDataEnhancementLoader Lambda function.
     
-    This function invokes the Lambda function with the subway API type to
-    process and enhance property data with subway information.
+    This function invokes the Lambda function with the load type to
+    process and enhance property data.
+    
+    Args:
+        load_type (str): The type of data enhancement to perform
+        **kwargs: Additional keyword arguments
     
     Returns:
         dict: Response information from the Lambda invocation
     """
-    logger.info(f"Triggering PropertyDataEnhancementLoader Lambda for API type: {api_type}")
+    logger.info(f"Triggering PropertyDataEnhancementLoader Lambda for load type: {load_type}")
     
     try:
         response = lambda_client.invoke(
             FunctionName="PropertyDataEnhancementLoader",
-            InvocationType="Event",
-            Payload=json.dumps({"api_type": api_type}),
+            InvocationType="RequestResponse",
+            Payload=json.dumps({"load_type": load_type}),
         )
         
         response_info = {
             'StatusCode': response.get('StatusCode'),
             'RequestId': response.get('ResponseMetadata', {}).get('RequestId'),
             'HTTPStatusCode': response.get('ResponseMetadata', {}).get('HTTPStatusCode'),
-            'api_type': api_type
+            'load_type': load_type
         }
         
-        logger.info(f"Successfully triggered Lambda for API type: {api_type}. Status code: {response_info['StatusCode']}")
+        # Parse the response payload if available
+        if 'Payload' in response:
+            try:
+                payload_str = response['Payload'].read().decode()
+                if payload_str:  # Check if payload is not empty
+                    payload = json.loads(payload_str)
+                    response_info['Payload'] = payload
+                    logger.info(f"Received response for {load_type}: {payload}")
+                else:
+                    logger.info(f"Empty payload received for {load_type}")
+            except json.JSONDecodeError:
+                logger.warning(f"Could not parse JSON payload for {load_type}")
+        
+        logger.info(f"Successfully triggered Lambda for load type: {load_type}. Status code: {response_info['StatusCode']}")
         
         # Return a serializable dictionary instead of the full response
         return response_info
     except Exception as e:
-        logger.error(f"Failed to trigger Lambda for API type: {api_type}. Error: {str(e)}")
+        logger.error(f"Failed to trigger Lambda for load type: {load_type}. Error: {str(e)}")
         raise
 
 def check_batch_complete(batch_id, **kwargs):
@@ -187,14 +204,21 @@ with DAG(
     trigger_subway_data = PythonOperator(
         task_id='trigger_subway_data',
         python_callable=trigger_enhancement_lambda,
-        op_kwargs={'api_type': 'subway'},
+        op_kwargs={'load_type': 'subway'},
     )
 
     # Step 1 (parallel): Trigger map data enhancement Lambda
     trigger_mapbox_data = PythonOperator(
         task_id='trigger_mapbox_data',
         python_callable=trigger_enhancement_lambda,
-        op_kwargs={'api_type': 'mapbox'},
+        op_kwargs={'load_type': 'mapbox'},
+    )
+    
+    # Step 1.5: Trigger analytics tags enhancement Lambda after subway and mapbox complete
+    trigger_analytics_tags = PythonOperator(
+        task_id='trigger_analytics_tags',
+        python_callable=trigger_enhancement_lambda,
+        op_kwargs={'load_type': 'analytics_tags'},
     )
     
     # Step 2: Wait for Anthropic batch processing to complete
@@ -215,5 +239,6 @@ with DAG(
     wait_for_processing >> create_anthropic_batch >> wait_for_anthropic_batch
     wait_for_processing >> trigger_subway_data
     wait_for_processing >> trigger_mapbox_data
+    [trigger_subway_data, trigger_mapbox_data] >> trigger_analytics_tags
     
     logger.info("Property data enrichments DAG setup complete")

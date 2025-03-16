@@ -3,6 +3,7 @@
 import { CombinedPropertyDetails } from "@/app/lib/definitions";
 import { useState } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
+import { TagList } from "@/app/ui/utilities";
 
 export default function ListingsDescriptionPanel({ listingDetails }: { listingDetails: CombinedPropertyDetails }) {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -12,9 +13,12 @@ export default function ListingsDescriptionPanel({ listingDetails }: { listingDe
     return (
         <div className="flex flex-col gap-2">
             <h2 className="text-2xl font-semibold text-gray-800">
-              About Summary ✨
+              Description Summary ✨
             </h2>
-            <p className="mt-2 text-gray-700 leading-relaxed text-sm">
+            <div className="flex flex-wrap gap-1">
+                <TagList category="Features" tags={listingDetails.tag_list || []} />
+            </div>
+            <p className="text-gray-700 leading-relaxed text-sm">
               {listingDetails.description_summary}
             </p>
             {/* Pass state and toggle handler to the ExpandButton */}
@@ -23,11 +27,13 @@ export default function ListingsDescriptionPanel({ listingDetails }: { listingDe
             </div>
             {/* Panel that expands/collapses */}
             <div
-                className={`overflow-hidden transition-max-height duration-500 ease-in-out ${
-                isExpanded ? 'max-h-[1000px]' : 'max-h-0'
+                className={`transition-all duration-300 ease-in-out ${
+                isExpanded 
+                  ? 'opacity-100 max-h-[800px] mt-4 visible' 
+                  : 'opacity-0 max-h-0 mt-0 invisible'
                 }`}
             >
-                <p className="mt-2 text-gray-700 text-sm">
+                <p className="text-gray-700 text-sm">
                 {listingDetails.description}
                 </p>
             </div>
