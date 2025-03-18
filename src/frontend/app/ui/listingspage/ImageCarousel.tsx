@@ -50,7 +50,7 @@ export default function ImageCarousel({
       {/* Carousel Container */}
       <div
         ref={carouselRef}
-        className="carousel w-full aspect-[16/10] overflow-x-auto scroll-smooth relative outline outline-1 outline-primary"
+        className="carousel w-full aspect-[16/10] overflow-x-auto scroll-smooth relative rounded-md"
       >
         {mediaItems.map((item, index) => {
           // Use 1-indexed slide numbers for DaisyUI-style anchors
@@ -116,7 +116,7 @@ export default function ImageCarousel({
       </div>
 
       {/* Thumbnail Navigation */}
-      <div className="flex flex-nowrap gap-2 overflow-x-auto w-full scrollbar-hide justify-center py-1">
+      <div className="flex flex-nowrap overflow-x-auto w-full scrollbar-hide justify-center">
         {mediaItems.map((item, index) => {
           // Also 1-indexed for matching
           const slideNumber = index + 1;
@@ -126,11 +126,11 @@ export default function ImageCarousel({
               key={index}
               onClick={goToSlide}
               href={`#slide${slideNumber}`}
-              // If this thumbnail corresponds to the active slide, apply a ring outline
-              className={`shrink-0 border border-primary cursor-pointer 
+              // If this thumbnail corresponds to the active slide, apply a background highlight
+              className={`shrink-0 cursor-pointer rounded-lg p-1
                 ${
                   activeSlide === slideNumber
-                    ? "ring-1 ring-primary ring-offset-2"
+                    ? "bg-primary/20"
                     : ""
                 }`}
             >
@@ -146,7 +146,7 @@ export default function ImageCarousel({
                 <img
                   src={item.url}
                   alt={`Thumbnail ${slideNumber}`}
-                  className="w-15 h-10 object-cover"
+                  className="w-15 h-10 object-cover rounded-sm"
                 />
               )}
             </a>

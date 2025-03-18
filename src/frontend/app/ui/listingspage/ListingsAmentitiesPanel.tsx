@@ -99,7 +99,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
             </div>
             
             {/* Primary amenities */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 gap-4 mt-2">
                 <AmenityCard 
                     title="Elevator" 
                     available={hasElevator} 

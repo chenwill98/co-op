@@ -31,6 +31,11 @@ export default function Navbar() {
         </Link>
       </div>
       <div className="flex-none">
+        <Link href="/analytics">
+          <button className="btn btn-primary mr-2">
+          Analytics for Nerds
+          </button>
+        </Link>
         <Link href="/saved">
           <button className="btn btn-primary mr-2">
           Saved

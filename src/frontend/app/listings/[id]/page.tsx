@@ -35,11 +35,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
       {/* Breadcrumbs */}
       <div className="flex justify-between">
         <nav className="breadcrumbs" aria-label="breadcrumbs">
-          <ul className="flex">
+          <ul className="flex items-center">
             <li>
               <Link
                 href={`/listings?borough=${listingDetails.borough}`}
-                className="text-blue-500 hover:underline"
+                className="bg-primary/10 text-primary rounded-full text-xs py-1 px-3 hover:bg-primary/20"
               >
                 {listingDetails.borough}
               </Link>
@@ -47,12 +47,14 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             <li>
               <Link
                 href={`/listings?borough=${listingDetails.borough}&neighborhood=${listingDetails.neighborhood}`}
-                className="text-blue-500 hover:underline"
+                className="bg-primary/10 text-primary rounded-full text-xs py-1 px-3 hover:bg-primary/20"
               >
                 {listingDetails.neighborhood}
               </Link>
             </li>
-            <li>{listingDetails.address}</li>
+            <li className="text-primary text-xs">
+                {listingDetails.address}
+            </li>
           </ul>
         </nav>
         <div className="flex flex-row gap-5 items-center">

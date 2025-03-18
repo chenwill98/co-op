@@ -12,7 +12,7 @@ export default function ListingsDetailsPanel({ listingDetails }: { listingDetail
     };
     return (
         <div className="flex flex-col items-start gap-1">
-            <h1 className="text-3xl font-semibold text-gray-800">
+            <h1 className="text-3xl font-semibold text-gray-800 mb-1">
               {listingDetails.address}
             </h1>
             <div className="flex flex-wrap gap-1">

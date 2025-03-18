@@ -108,12 +108,18 @@ export default function ListingsTransportationPanel({
               <h3 className="text-lg font-semibold">Subway Access Analytics</h3>
               <TooltipIcon tooltipText="Subway access percentile is a measure of the accessibility of a property to subway stations relative to other properties. It is calculated based on the number of distinct subway lines accessible within walking distance." />
             </div>
+            <p className="mb-2">This property is in the:</p>
             <p className="mb-2">
-              This property is in the{" "}
               <span className="font-bold">
                 {(listingDetails.subway_access_percentile ?? 0).toFixed(1)}th
               </span>
-              {" "}percentile of listings in subway accessibility.
+              {" "}percentile of all listings in subway accessibility.
+            </p>
+            <p className="mb-2">
+              <span className="font-bold">
+                {(listingDetails.subway_neighborhood_access_percentile ?? 0).toFixed(1)}th
+              </span>
+              {" "}percentile of neighborhood listings in subway accessibility.
             </p>
             <div className="flex flex-row items-center gap-2 mb-2">
               <h3 className="text-lg font-semibold">Detailed Subway Times (min) </h3>
