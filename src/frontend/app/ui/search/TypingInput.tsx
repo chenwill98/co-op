@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, ChangeEvent, FC } from "react";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 interface TypingInputProps {
   onValueChange?: (val: string) => void;
@@ -19,6 +20,20 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
   const [isEditable, setIsEditable] = useState(false);
   const [userHasClicked, setUserHasClicked] = useState(false);
   const [kbdVisible, setKbdVisible] = useState(false);
+  const [showCursor, setShowCursor] = useState(true);
+
+  // -----------------------
+  // Cursor blinking effect
+  // -----------------------
+  useEffect(() => {
+    if (isEditable) return; // Stop blinking when user is typing
+    
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev);
+    }, 500);
+    
+    return () => clearInterval(cursorInterval);
+  }, [isEditable]);
 
   // -----------------------
   // Auto-typing effect
@@ -41,7 +56,8 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
       setTypingSpeed(isDeleting ? 30 : 30);
 
       if (!isDeleting && text === fullText) {
-        setTimeout(() => setIsDeleting(true), 500);
+        // Add a longer pause (1000ms) when finished typing before starting to delete
+        setTimeout(() => setIsDeleting(true), 1000);
       } else if (isDeleting && text === "") {
         setIsDeleting(false);
         setLoopNum(loopNum + 1);
@@ -85,19 +101,28 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
 
   return (
     <div className="relative w-full">
-      <input
-        type="text"
-        className="input w-full pr-24"
-        value={text}
-        placeholder={userHasClicked ? "Search anything..." : ""}
-        onFocus={handleFocus}
-        onChange={handleChange}
-      />
+      <label className="input w-full">
+      <MagnifyingGlassIcon className="h-5 w-5 opacity-50" />
+      <div className="grow flex items-center">
+        <span>{text}</span>
+        {!isEditable && showCursor && (
+          <div className="h-4 w-0.5 bg-gray-500 animate-pulse ml-0.5"></div>
+        )}
+        <input
+          type="text"
+          className="grow absolute opacity-0"
+          value={text}
+          placeholder={userHasClicked ? "Search anything..." : ""}
+          onFocus={handleFocus}
+          onChange={handleChange}
+        />
+      </div>
       {isEditable && (
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 opacity-70">
+        <div className="transform opacity-70">
           <kbd className={`kbd kbd-md transition-all duration-300 ease-in ${kbdVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>enter</kbd>
         </div>
       )}
+      </label>
     </div>
   );
 };
