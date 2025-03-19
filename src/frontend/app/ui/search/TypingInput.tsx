@@ -13,6 +13,7 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
     "Pre-war 2 bedroom apartments in Bed-Stuy",
     "Charming 1 bedroom apartment that allows pets in Queens",
     "Modern studios near the 6 line",
+    "Cozy 3 bedroom apartments in the Bronx",
   ];
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
@@ -21,6 +22,21 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
   const [userHasClicked, setUserHasClicked] = useState(false);
   const [kbdVisible, setKbdVisible] = useState(false);
   const [showCursor, setShowCursor] = useState(true);
+  const [startTyping, setStartTyping] = useState(false);
+
+  // -----------------------
+  // Initial delay before typing begins
+  // -----------------------
+  useEffect(() => {
+    if (isEditable) return; // Don't start if user has already clicked
+    
+    // Set a 3-second delay before starting the typing animation
+    const initialDelay = setTimeout(() => {
+      setStartTyping(true);
+    }, 3000);
+    
+    return () => clearTimeout(initialDelay);
+  }, [isEditable]);
 
   // -----------------------
   // Cursor blinking effect
@@ -40,7 +56,8 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
   // -----------------------
   useEffect(() => {
     // If user has focused and is typing, we stop auto-typing
-    if (isEditable) return;
+    // Also, don't start typing until after the initial delay
+    if (isEditable || !startTyping) return;
 
     const handleTyping = () => {
       const i = loopNum % phrases.length;
@@ -53,11 +70,11 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
       );
 
       // If you want different speeds for typing vs deleting, change them:
-      setTypingSpeed(isDeleting ? 30 : 30);
+      setTypingSpeed(isDeleting ? 20 : 50);
 
       if (!isDeleting && text === fullText) {
         // Add a longer pause (1000ms) when finished typing before starting to delete
-        setTimeout(() => setIsDeleting(true), 1000);
+        setTimeout(() => setIsDeleting(true), 800);
       } else if (isDeleting && text === "") {
         setIsDeleting(false);
         setLoopNum(loopNum + 1);
@@ -66,7 +83,7 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
 
     const timer = setTimeout(handleTyping, typingSpeed);
     return () => clearTimeout(timer);
-  }, [text, isDeleting, typingSpeed, loopNum, phrases, isEditable]);
+  }, [text, isDeleting, typingSpeed, loopNum, phrases, isEditable, startTyping]);
 
   // -----------------------
   // Handle focus -> user starts typing
