@@ -18,6 +18,7 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
   const [typingSpeed, setTypingSpeed] = useState(10);
   const [isEditable, setIsEditable] = useState(false);
   const [userHasClicked, setUserHasClicked] = useState(false);
+  const [kbdVisible, setKbdVisible] = useState(false);
 
   // -----------------------
   // Auto-typing effect
@@ -60,6 +61,11 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
       setUserHasClicked(true);
     }
     setIsEditable(true); // Stop auto-typing
+    
+    // Trigger kbd animation after a tiny delay
+    setTimeout(() => {
+      setKbdVisible(true);
+    }, 50);
   };
 
   // -----------------------
@@ -78,14 +84,21 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
   };
 
   return (
-    <input
-      type="text"
-      className="input w-full"
-      value={text}
-      placeholder={userHasClicked ? "Search anything..." : ""}
-      onFocus={handleFocus}
-      onChange={handleChange}
-    />
+    <div className="relative w-full">
+      <input
+        type="text"
+        className="input w-full pr-24"
+        value={text}
+        placeholder={userHasClicked ? "Search anything..." : ""}
+        onFocus={handleFocus}
+        onChange={handleChange}
+      />
+      {isEditable && (
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 opacity-70">
+          <kbd className={`kbd kbd-md transition-all duration-300 ease-in ${kbdVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>enter</kbd>
+        </div>
+      )}
+    </div>
   );
 };
 

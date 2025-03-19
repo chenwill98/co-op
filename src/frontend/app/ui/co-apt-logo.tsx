@@ -3,7 +3,7 @@
 import { sen } from "@/app/ui/fonts";
 
 export default function CoAptLogo({ theme }: { theme: string }) {
-  const emoji = theme === "corporate" ? "🏙️" : "🌆";
+  const emoji = theme === "autumn" ? "🌆": "🌃";
 
   return (
     <div

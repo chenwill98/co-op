@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @plugin "daisyui" {
-  themes: autumn --default, silk;
+  themes: autumn --default, abyss;
 };
 
 /*
@@ -34,8 +34,18 @@
 
 .animate-fade-up {
   animation-name: fadeUp;
-  animation-duration: 300ms;
+  animation-duration: 1000ms;
   animation-timing-function: ease-out;
+  opacity: 100;
+  transform: translateY(20px);
+  animation-fill-mode: forwards;
+}
+
+.animate-fade-up-delayed {
+  animation-name: fadeUp;
+  animation-duration: 1000ms;
+  animation-timing-function: ease-out;
+  animation-delay: 3000ms;
   opacity: 0;
   transform: translateY(20px);
   animation-fill-mode: forwards;
