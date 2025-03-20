@@ -82,7 +82,7 @@ export default function Page() {
               </button> */}
               <TypingInput onValueChange={(val) => setSearchText(val)} />
               <button
-                className="btn btn-primary text-white"
+                className="btn btn-primary text-primary-content text-lg"
                 onClick={handleSearch}
               >
                 Search
