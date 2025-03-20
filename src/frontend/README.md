@@ -91,3 +91,4 @@ Vercel automatically deploys:
 - **Styling**: Tailwind CSS 4 with DaisyUI 5
 - **Icons**: Heroicons 2
 - **Maps**: Mapbox GL
+
