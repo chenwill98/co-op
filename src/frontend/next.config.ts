@@ -10,10 +10,18 @@ const nextConfig: NextConfig = {
     // Disable TypeScript errors during production builds
     ignoreBuildErrors: true,
   },
-  // Optional: Uncomment if you're using images and need to customize domains
-  // images: {
-  //   domains: ['your-domain.com'],
-  // },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.zillowstatic.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.unsplash.com',
+      }
+    ]
+  },
 };
 
 export default nextConfig;
