@@ -40,15 +40,38 @@ export default function ListingsTransportationPanel({
   // Only add empty rows if we actually have pagination
   const needsPagination = stationsWithTimeData.length > stationsPerPage;
   const emptyRows = needsPagination ? stationsPerPage - displayedStations.length : 0;
+  
+  // Simple fade transition for page navigation
+  const handlePageChange = (newPage: number) => {
+    if (newPage === currentPage) return;
+    
+    const tableBody = document.querySelector('.station-table-body');
+    if (tableBody) {
+      // Fade out
+      tableBody.classList.add('opacity-0');
+      
+      // Change page after short delay
+      setTimeout(() => {
+        setCurrentPage(newPage);
+        // Fade in
+        setTimeout(() => {
+          tableBody.classList.remove('opacity-0');
+        }, 50);
+      }, 150);
+    } else {
+      // Fallback if DOM element not found
+      setCurrentPage(newPage);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2">
-      <h2 className="text-2xl font-semibold text-gray-800">Transportation</h2>
+      <h2 className="text-2xl font-semibold text-base-content">Transportation</h2>
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1">
           {/* Display subway lines */}
           <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-2">
+              <h3 className="text-lg font-semibold text-base-content/80 mb-2">
                 Nearby Subway Lines
               </h3>
               <div className="flex flex-wrap gap-1">
@@ -98,64 +121,82 @@ export default function ListingsTransportationPanel({
       <div
         className={`transition-all duration-300 ease-in-out ${
           isExpanded 
-            ? 'opacity-100 max-h-[800px] mt-4 visible' 
+            ? 'opacity-100 max-h-[1000px] mt-4 visible' 
             : 'opacity-0 max-h-0 mt-0 invisible'
         }`}
       >
         {/* Display detailed subway times when expanded */}
         <div>
             <div className="flex flex-row items-center gap-2 mb-2">
-              <h3 className="text-lg font-semibold">Subway Access Analytics</h3>
+              <h3 className="text-lg font-semibold text-base-content/80">Subway Access Analytics</h3>
               <TooltipIcon tooltipText="Subway access percentile is a measure of the accessibility of a property to subway stations relative to other properties. It is calculated based on the number of distinct subway lines accessible within walking distance." />
             </div>
-            <p className="mb-2">This property is in the:</p>
-            <p className="mb-2">
-              <span className="font-bold">
-                {(listingDetails.subway_access_percentile ?? 0).toFixed(1)}th
-              </span>
-              {" "}percentile of all listings in subway accessibility.
-            </p>
-            <p className="mb-2">
-              <span className="font-bold">
-                {(listingDetails.subway_neighborhood_access_percentile ?? 0).toFixed(1)}th
-              </span>
-              {" "}percentile of neighborhood listings in subway accessibility.
-            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              {/* All Listings Percentile */}
+              <div className="p-3 bg-base-200 rounded-lg flex flex-col items-center justify-center text-center">
+                <div className="font-semibold text-lg mb-1">
+                  {(listingDetails.subway_access_percentile ?? 0).toFixed(1)}th
+                </div>
+                <div className="text-xs text-base-content/60">
+                  Percentile among all listings
+                </div>
+              </div>
+              
+              {/* Borough Percentile - Using type assertion since this property may be added in the future */}
+              <div className="p-3 bg-base-200 rounded-lg flex flex-col items-center justify-center text-center">
+                <div className="font-semibold text-lg mb-1">
+                  {((listingDetails as any).subway_borough_access_percentile ?? 0).toFixed(1)}th
+                </div>
+                <div className="text-xs text-base-content/60">
+                  Percentile within borough
+                </div>
+              </div>
+              
+              {/* Neighborhood Percentile - Using type assertion since this property may be added in the future */}
+              <div className="p-3 bg-base-200 rounded-lg flex flex-col items-center justify-center text-center">
+                <div className="font-semibold text-lg mb-1">
+                  {((listingDetails as any).subway_neighborhood_access_percentile ?? 0).toFixed(1)}th
+                </div>
+                <div className="text-xs text-base-content/60">
+                  Percentile within neighborhood
+                </div>
+              </div>
+            </div>
             <div className="flex flex-row items-center gap-2 mb-2">
-              <h3 className="text-lg font-semibold">Detailed Subway Times (min) </h3>
+              <h3 className="text-lg font-semibold text-base-content/80">Detailed Subway Times (min) </h3>
               <TooltipIcon tooltipText="Average wait times for subway lines are limited to a 15 minute walk from the property and derived from publicly available MTA subway schedules" />
             </div>
-            <div className="text-xs text-gray-500">Peak times are weekdays 7:00am to 9:30am and 4:00pm to 7:00pm </div>
-            <div className="text-xs text-gray-500 mb-2">Late-night times are every day from midnight to 7:00am </div>
-            <div className="overflow-x-auto">
+            <div className="text-xs text-base-content/70">Peak times are weekdays 7:00am to 9:30am and 4:00pm to 7:00pm </div>
+            <div className="text-xs text-base-content/70 mb-2">Late-night times are every day from midnight to 7:00am </div>
+            <div className="overflow-x-auto bg-base-200 pt-1 pb-3 rounded-lg">
               <table className="table zebra table-xs w-full">
                 <thead>
                   <tr>
-                    <th className="w-16 text-center">Line</th>
-                    <th className="w-1/3">Station</th>
-                    <th className="w-16 text-center">Walk</th>
-                    <th className="w-16 text-center">Peak</th>
-                    <th className="w-16 text-center">Off-Peak</th>
-                    <th className="w-16 text-center">Late Night</th>
+                    <th className="w-16">Line</th>
+                    <th className="w-30">Station</th>
+                    <th className="w-12 text-center">Walk</th>
+                    <th className="w-12 text-center">Peak</th>
+                    <th className="w-12 text-center whitespace-normal">Off-<br />Peak</th>
+                    <th className="w-12 text-center whitespace-normal">Late<br />Night</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="station-table-body transition-opacity duration-150 ease-in-out">
                   {displayedStations.map((station, index) => (
-                    <tr key={`travel-${station.route_id}-${index}`} className="h-[45px]">
-                      <td className="w-16 text-center">
+                    <tr key={`travel-${station.route_id}-${index}`} className="h-12">
+                      <td className="w-16">
                         <SubwayIcon line={station.route_short_name || station.route_id} />
                       </td>
-                      <td className="w-1/3">{station.stop_name}</td>
-                      <td className="w-16 text-center">{station.walking_minutes ? Math.round(station.walking_minutes) : '-'}</td>
-                      <td className="w-16 text-center">{station.peak ? Math.round(station.peak / 60) : '-'}</td>
-                      <td className="w-16 text-center">{station.off_peak ? Math.round(station.off_peak / 60) : '-'}</td>
-                      <td className="w-16 text-center">{station.late_night ? Math.round(station.late_night / 60) : '-'}</td>
+                      <td className="w-30">{station.stop_name}</td>
+                      <td className="w-12 text-center">{station.walking_minutes ? Math.round(station.walking_minutes) : '-'}</td>
+                      <td className="w-12 text-center">{station.peak ? Math.round(station.peak / 60) : '-'}</td>
+                      <td className="w-12 text-center">{station.off_peak ? Math.round(station.off_peak / 60) : '-'}</td>
+                      <td className="w-12 text-center">{station.late_night ? Math.round(station.late_night / 60) : '-'}</td>
                     </tr>
                   ))}
                   
                   {/* Add empty rows to maintain consistent table height, but only when using pagination */}
                   {needsPagination && Array.from({ length: emptyRows }).map((_, index) => (
-                    <tr key={`empty-${index}`} className="h-[45px]">
+                    <tr key={`empty-${index}`} className="h-12">
                       <td></td>
                       <td></td>
                       <td></td>
@@ -171,7 +212,7 @@ export default function ListingsTransportationPanel({
                 <div className="flex justify-center items-center gap-2 mt-2">
                   <button 
                     className="btn btn-sm"
-                    onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                    onClick={() => handlePageChange(Math.max(0, currentPage - 1))}
                     disabled={currentPage === 0}
                   >
                     <ArrowLeftIcon className="h-4 w-4" />
@@ -183,7 +224,7 @@ export default function ListingsTransportationPanel({
                   
                   <button 
                     className="btn btn-sm"
-                    onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                    onClick={() => handlePageChange(Math.min(totalPages - 1, currentPage + 1))}
                     disabled={currentPage === totalPages - 1}
                   >
                     <ArrowRightIcon className="h-4 w-4" />

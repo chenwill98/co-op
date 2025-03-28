@@ -12,13 +12,13 @@ export default function ListingsDescriptionPanel({ listingDetails }: { listingDe
     };
     return (
         <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-semibold text-gray-800">
+            <h2 className="text-2xl font-semibold text-base-content">
               Description Summary ✨
             </h2>
             <div className="flex flex-wrap gap-1">
                 <TagList category="Features" tags={listingDetails.tag_list || []} />
             </div>
-            <p className="text-gray-700 leading-relaxed text-sm">
+            <p className="text-base-content/80 leading-relaxed text-sm">
               {listingDetails.description_summary}
             </p>
             {/* Pass state and toggle handler to the ExpandButton */}
@@ -33,7 +33,7 @@ export default function ListingsDescriptionPanel({ listingDetails }: { listingDe
                   : 'opacity-0 max-h-0 mt-0 invisible'
                 }`}
             >
-                <p className="text-gray-700 text-sm">
+                <p className="text-base-content/80 leading-relaxed text-sm">
                 {listingDetails.description}
                 </p>
             </div>

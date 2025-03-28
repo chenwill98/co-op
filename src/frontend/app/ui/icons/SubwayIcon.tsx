@@ -1,4 +1,5 @@
-// Map subway line IDs to the corresponding SVG URL.
+import Image from 'next/image';
+
 const subwayLineToImage: Record<string, string> = {
   "1": "/subwayIcons/1.svg",
   "2": "/subwayIcons/2.svg",
@@ -38,9 +39,11 @@ const subwayLineToImage: Record<string, string> = {
 export default function SubwayIcon({ line }: { line: string }) {
   const iconLink = subwayLineToImage[line.toUpperCase()] || "";
   return (
-    <img
+    <Image
       src={iconLink}
       alt={`Subway icon for line ${line}`}
+      width={24}
+      height={24}
       className="w-6 h-6"
     />
   );

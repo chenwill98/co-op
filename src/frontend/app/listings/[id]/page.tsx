@@ -69,11 +69,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         <div className="flex flex-col col-span-3">
           <ImageCarousel mediaItems={mediaItems} />
           {/* Description Section */}
-          <div className="border-t border-gray-200 mt-4 pt-4">
+          <div className="border-t border-base-content/30 mt-4 pt-4">
             <ListingsDescriptionPanel listingDetails={listingDetails} />
           </div>
           {/* Amenities */}
-          <div className="border-t border-gray-200 mt-4 pt-4">
+          <div className="border-t border-base-content/30 mt-4 pt-4">
             <ListingsAmenitiesPanel listingDetails={listingDetails} />
           </div>
         </div>
@@ -83,17 +83,17 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           <ListingsDetailsPanel listingDetails={listingDetails} />
 
           {/* Price and Basic Stats */}
-          <div className="border-t border-gray-200 mt-4 pt-4">
+          <div className="border-t border-base-content/30 mt-4 pt-4">
             <ListingsPricingPanel listingDetails={listingDetails} />
           </div>
 
           {/* Transportation Info */}
-          <div className="border-t border-gray-200 mt-4 pt-4">
+          <div className="border-t border-base-content/30 mt-4 pt-4">
             <ListingsTransportationPanel listingDetails={listingDetails} />
           </div>
 
           {/* Location Info */}
-          <div className="border-t border-gray-200 mt-4 pt-4">
+          <div className="border-t border-base-content/30 mt-4 pt-4">
             <ListingsLocationPanel listingDetails={listingDetails} />
           </div>
 

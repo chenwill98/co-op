@@ -18,7 +18,7 @@ export default function ListingsPricingPanel({
 
   return (
     <div className="flex flex-col gap-2">
-      <h2 className="text-2xl font-semibold text-gray-800">Price</h2>
+      <h2 className="text-2xl font-semibold text-base-content">Price</h2>
       <div className="flex flex-wrap gap-1">
           <TagList category="Price" tags={listingDetails.tag_list || []} />
       </div>
@@ -29,13 +29,13 @@ export default function ListingsPricingPanel({
         {!listingDetails.no_fee && (
           <div className="text-lg font-semibold">
             ${(listingDetails.price + listingDetails.price * 0.15).toLocaleString()}
-            <span className="text-gray-500 text-sm"> net effective rent</span>
+            <span className="text-base-content/60 text-sm"> net effective rent</span>
           </div>
         )}
         {!listingDetails.no_fee && (
           <div className="text-lg font-semibold">
             ${(listingDetails.price * 0.15 * 12).toLocaleString()}
-            <span className="text-gray-500 text-sm"> total fees</span>
+            <span className="text-base-content/60 text-sm"> total fees</span>
           </div>
         )}
       </div>
@@ -53,7 +53,7 @@ export default function ListingsPricingPanel({
             : 'opacity-0 max-h-0 mt-0 invisible'
         }`}
       >
-        <p className="text-gray-700">
+        <p className="text-base-content/80">
           This is some additional dummy information that is revealed when the button is clicked.
         </p>
       </div>

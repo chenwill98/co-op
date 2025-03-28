@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { VideoCameraIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
+import Image from 'next/image';
 
 export default function ImageCarousel({
   mediaItems,
@@ -9,6 +10,7 @@ export default function ImageCarousel({
   mediaItems: { type: string; url: string }[];
 }) {
   const carouselRef = useRef<HTMLDivElement>(null);
+  const thumbnailContainerRef = useRef<HTMLDivElement>(null);
 
   // Track which slide is currently active (for thumbnail highlighting).
   // We default to 1 (first slide) or you can choose 0 if you prefer.
@@ -18,6 +20,21 @@ export default function ImageCarousel({
   const isPDF = (url: string): boolean => {
     return url.toLowerCase().endsWith('.pdf');
   };
+
+  // Effect to scroll the active thumbnail into view when it changes
+  useEffect(() => {
+    const thumbnailContainer = thumbnailContainerRef.current;
+    if (!thumbnailContainer) return;
+    
+    const activeThumb = thumbnailContainer.querySelector(`[data-slide="${activeSlide}"]`) as HTMLElement;
+    if (activeThumb) {
+      activeThumb.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center"
+      });
+    }
+  }, [activeSlide]);
 
   // Handles all navigation (arrows and thumbnails)
   const goToSlide = (
@@ -86,9 +103,12 @@ export default function ImageCarousel({
                 </a>
               ) : (
                 // Default case: treat as image
-                <img
+                <Image
                   src={item.url}
                   alt={`Image ${currentSlide}`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 80vw"
+                  priority={index === 0}
                   className="w-full h-full object-cover"
                 />
               )}
@@ -116,7 +136,7 @@ export default function ImageCarousel({
       </div>
 
       {/* Thumbnail Navigation */}
-      <div className="flex flex-nowrap overflow-x-auto w-full scrollbar-hide justify-center">
+      <div ref={thumbnailContainerRef} className="flex flex-nowrap overflow-x-auto w-full scrollbar-hide justify-start">
         {mediaItems.map((item, index) => {
           // Also 1-indexed for matching
           const slideNumber = index + 1;
@@ -126,12 +146,13 @@ export default function ImageCarousel({
               key={index}
               onClick={goToSlide}
               href={`#slide${slideNumber}`}
+              data-slide={slideNumber}
               // If this thumbnail corresponds to the active slide, apply a background highlight
-              className={`shrink-0 cursor-pointer rounded-lg p-1
+              className={`shrink-0 cursor-pointer rounded-lg p-1 first:ml-0 last:mr-0
                 ${
                   activeSlide === slideNumber
                     ? "bg-primary/20"
-                    : ""
+                    : "hover:bg-primary/20 transition-colors"
                 }`}
             >
               {item.type === "video" ? (
@@ -143,9 +164,11 @@ export default function ImageCarousel({
                   <DocumentTextIcon className="w-4 h-4 text-white" />
                 </div>
               ) : (
-                <img
+                <Image
                   src={item.url}
                   alt={`Thumbnail ${slideNumber}`}
+                  width={60}
+                  height={40}
                   className="w-15 h-10 object-cover rounded-sm"
                 />
               )}

@@ -13,7 +13,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
     };
     return (
         <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-semibold text-gray-800">
+            <h2 className="text-2xl font-semibold text-base-content">
             Location
             </h2>
             <div className="flex flex-wrap gap-1">
@@ -31,7 +31,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
                   : 'opacity-0 max-h-0 mt-0 invisible'
                 }`}
             >
-                <p className="text-gray-700">
+                <p className="text-base-content/80">
                 This is some additional dummy information that is revealed when the button is clicked.
                 </p>
             </div>

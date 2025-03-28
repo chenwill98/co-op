@@ -12,17 +12,17 @@ export default function ListingsDetailsPanel({ listingDetails }: { listingDetail
     };
     return (
         <div className="flex flex-col items-start gap-1">
-            <h1 className="text-3xl font-semibold text-gray-800 mb-1">
+            <h1 className="text-3xl font-semibold text-base-content mb-1">
               {listingDetails.address}
             </h1>
             <div className="flex flex-wrap gap-1">
                 <TagList category="Popularity" tags={listingDetails.tag_list || []} />
             </div>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-base-content">
               {listingDetails.property_type} in {listingDetails.neighborhood},{" "}
               {listingDetails.borough} &mdash; {listingDetails.zipcode}
             </p>
-            <div className="text-gray-500 text-sm space-x-1">
+            <div className="text-base-content/80 text-sm space-x-1">
               <span>
                 {listingDetails.bedrooms}{" "}
                 {listingDetails.bedrooms && listingDetails.bedrooms % 1 === 0 ? (listingDetails.bedrooms === 1 ? "bed" : "beds") : "beds"}
@@ -57,7 +57,7 @@ export default function ListingsDetailsPanel({ listingDetails }: { listingDetail
                   : 'opacity-0 max-h-0 mt-0 invisible'
                 }`}
             >
-                <p className="text-gray-700 text-sm">
+                <p className="text-base-content/80 text-sm">
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </p>
             </div>

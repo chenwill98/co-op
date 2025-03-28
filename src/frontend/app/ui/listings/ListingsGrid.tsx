@@ -5,6 +5,7 @@ import { TagList } from "@/app/ui/utilities";
 import ListingsSummaryCard from "./ListingsSummaryCard";
 import Link from "next/link";
 import BookmarkIcon from "@/app/ui/icons/BookmarkIcon";
+import Image from 'next/image';
 
 export default function ListingsGrid({
   listings,
@@ -21,10 +22,12 @@ export default function ListingsGrid({
           key={listing.id}
           className="group card bg-base-100 h-[60vh] hover:bg-base-200 shadow-xl hover:shadow-2xl transform transition-all duration-300 hover:-translate-y-2"
         >
-          <figure className="h-2/5 overflow-hidden">
-          <img
+          <figure className="h-2/5 overflow-hidden relative">
+          <Image
             src={listing.thumbnail_image}
             alt={listing.address}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
             className="thumbnail object-cover w-full h-full
                       transform transition-transform duration-300 group-hover:scale-105 z-0 rounded-2xl"
           />

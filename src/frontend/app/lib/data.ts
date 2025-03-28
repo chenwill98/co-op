@@ -262,12 +262,12 @@ export async function fetchPropertyNearestStationsById(id: string): Promise<Prop
 export async function fetchPropertyAnalyticsById(id: string): Promise<PropertyAnalyticsDetails | null> {
   try {
     const analytics = await prisma.dim_property_analytics_view.findFirst({
-      where: { listing_id: id },
+      where: { fct_id: id },
     });
 
     const formattedAnalytics = analytics ? {
       ...analytics,
-      subway_access_percentile: analytics.subway_access_percentile?.toNumber() || null,
+      subway_access_percentile: analytics.subway_access_percentile || null,
     } : null;
     return formattedAnalytics as PropertyAnalyticsDetails | null;
   } catch (error) {

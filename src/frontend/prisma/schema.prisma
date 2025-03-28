@@ -136,9 +136,13 @@ model dim_property_nearest_stations {
 }
 
 model dim_property_analytics_view {
-  listing_id              String   @id @db.VarChar(20)
-  distinct_line_count     Int
-  subway_access_percentile Decimal @db.Decimal(5, 2)
+  fct_id                              String   @id @db.VarChar(20)
+  borough                             String?  @db.VarChar(100)
+  neighborhood                        String?  @db.VarChar(100)
+  distinct_line_count                 BigInt
+  subway_access_percentile            Float    @db.DoublePrecision
+  subway_borough_access_percentile    Float    @db.DoublePrecision
+  subway_neighborhood_access_percentile Float  @db.DoublePrecision
   
   @@map("dim_property_analytics_view") 
   @@schema("real_estate_analytics")

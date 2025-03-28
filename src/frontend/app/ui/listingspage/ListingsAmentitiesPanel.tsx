@@ -85,11 +85,11 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
 
     return (
         <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-semibold text-gray-800">
+            <h2 className="text-2xl font-semibold text-base-content">
                 Amenities
             </h2>
             <div className="flex flex-row items-center gap-2">
-                <h3 className="text-lg font-semibold">
+                <h3 className="text-lg font-semibold text-base-content/80">
                     Key Amenities
                 </h3>
                 <TooltipIcon tooltipText="Key amenities are the most important features of a property that are typically highlighted in the description summary." />
@@ -97,7 +97,6 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
             <div className="flex flex-wrap gap-1">
                 <TagList category="Amenities" tags={listingDetails.tag_list || []} />
             </div>
-            
             {/* Primary amenities */}
             <div className="grid grid-cols-4 gap-4 mt-2">
                 <AmenityCard 
@@ -149,7 +148,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                 <div className="flex flex-col gap-3">
                     {/* Notable Amenities */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Notable Amenities</h3>
+                        <h3 className="text-lg font-semibold mb-2 text-base-content/80">Notable Amenities</h3>
                         <div className="flex flex-wrap gap-2">
                             {getAvailableAmenities(notableAmenities).map((amenity, index) => (
                                 <span 
@@ -167,7 +166,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                     
                     {/* Miscellaneous Amenities */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">Other Amenities</h3>
+                        <h3 className="text-lg font-semibold mb-2 text-base-content/80">Other Amenities</h3>
                         <div className="flex flex-wrap gap-2">
                             {listingDetails.amenities
                                 ?.filter(amenity => 
@@ -188,7 +187,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                                     !keyAmenities.includes(amenity) && 
                                     !notableAmenities.includes(amenity)
                                 ).length === 0 && (
-                                    <span className="text-sm text-gray-500">No additional amenities available</span>
+                                    <span className="text-sm text-base-content/80">No additional amenities available</span>
                                 )
                             }
                         </div>
@@ -213,7 +212,7 @@ function AmenityCard({
         <div className="p-2 bg-base-200 rounded-lg flex items-center justify-center text-center gap-1.5">
             <div>
                 <div className="font-small">{title}</div>
-                {details && <div className="text-xs text-gray-500">{details}</div>}
+                {details && <div className="text-xs text-base-content/60">{details}</div>}
             </div>
             {available ? (
                 <CheckCircleIcon className="h-6 w-6 text-success" />
