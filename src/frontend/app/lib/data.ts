@@ -354,8 +354,9 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
       1. Your job is to extract specific search criteria from user queries and map them to the appropriate database fields.
       2. The appropriate values for certain columns like neighborhoods, tags, and the database schema will be provided, so make sure that the responses strictly follow those values.
       3. Make sure that the tags you return are ACTUALLY RELEVANT to the query.
-      4. NEVER return data types (like 'string', 'integer', 'boolean', etc.) as field values. Either provide actual meaningful values (e.g., dates in YYYY-MM-DD format, specific prices, property types, etc.) or omit fields entirely if no value can be determined.
-      5. If the query is vague then don't make up a database schema or tag list and keep the responses reasonable in terms of how much data is queried. If the query is irrelevant to real estate or a provocation, then just return the object with empty values.`,
+      4. Be fairly restrained with tag filters - for example, don't return tags like "luxury" or "renovated" if they're not explicitly mentioned in the query.
+      5. NEVER return data types (like 'string', 'integer', 'boolean', etc.) as field values. Either provide actual meaningful values (e.g., dates in YYYY-MM-DD format, specific prices, property types, etc.) or omit fields entirely if no value can be determined.
+      6. If the query is vague then don't make up a database schema or tag list and keep the responses reasonable in terms of how much data is queried. If the query is irrelevant to real estate or a provocation, then just return the object with empty values.`,
       messages: [
         {
           "role": "user",

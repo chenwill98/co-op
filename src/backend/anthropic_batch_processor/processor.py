@@ -122,7 +122,7 @@ def create_batch():
                     "model": "claude-3-5-haiku-20241022",
                     "max_tokens": 1000,
                     "temperature": 0.5,
-                    "system": "You are an excellent real estate agent who's generating compelling but factually accurate and unbiased real estate description summaries and generating a list of tags from a predetermined list of tags based on a given description. Do not leave out negative traits.",
+                    "system": """You are an excellent real estate agent who's generating compelling but factually accurate and unbiased real estate description summaries and generating a list of tags from a predetermined list of tags based on a given description. Do not leave out negative traits.""",
                     "messages": [
                         {
                             "role": "user",

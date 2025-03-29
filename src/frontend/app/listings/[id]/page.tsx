@@ -23,11 +23,14 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   const listingDetails = await fetchPropertyPage(pageParams.id);
   console.log('Listing details:', listingDetails);
 
+  const mapImage = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f74e4e(${listingDetails.longitude || '-73.935242'},${listingDetails.latitude || '40.730610'})/${listingDetails.longitude || '-73.935242'},${listingDetails.latitude || '40.730610'},14/600x600@2x?access_token=pk.eyJ1IjoiY2hlbndpbGw5OCIsImEiOiJjbTc4M2JiOWkxZWZtMmtweGRyMHRxenZnIn0.RmSgCA0jq_ejQqDHEUj5Pg`;
+
   // Combine images, videos, and floorplans into one array
   const mediaItems = [
     ...listingDetails.images.map((url) => ({ type: "image", url })),
     ...listingDetails.videos.map((url) => ({ type: "video", url })),
     ...listingDetails.floorplans.map((url) => ({ type: "floorplan", url })),
+    { type: "map", url: mapImage },
   ] as { type: string; url: string }[];
 
   return (

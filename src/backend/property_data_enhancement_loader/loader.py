@@ -232,7 +232,11 @@ def load_nearest_subways(session):
         if 'session' in locals():
             session.close()
 
+def load_mapbox_data(session):
+    pass
+
 def load_analytics_tags(session):
+    # OBVIOUSLY NEED TO CHANGE - ALSO I SHOULD ADD THE LOCATIONS TAGS TO EACH NEIGHBORHOOD
     try:
         logger.info("Fetching property coordinates")
         query = """
@@ -274,7 +278,7 @@ def run_enhancement_loaders(load_type):
     if load_type == "subway":
         load_nearest_subways(session)
     elif load_type == "mapbox":
-        pass
+        load_mapbox_data(session)
     elif load_type == "analytics_tags":
         load_analytics_tags(session)
     else:

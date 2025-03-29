@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import CoAptLogo from "./co-apt-logo";
-import { ChartBarSquareIcon, BookmarkIcon } from "@heroicons/react/24/outline";
+import { ChartBarSquareIcon, BookmarkSquareIcon } from "@heroicons/react/24/outline";
 
 export default function Navbar() {
   // Keep the current theme in local state
@@ -46,7 +46,7 @@ export default function Navbar() {
         <Link href="/saved">
           <button className="btn btn-ghost text-primary mr-2">
             Saved
-            <BookmarkIcon className="h-5 w-5 ml-1" />
+            <BookmarkSquareIcon className="h-5 w-5 ml-1" />
           </button>
         </Link>
         <label className="toggle text-base-content mr-2">

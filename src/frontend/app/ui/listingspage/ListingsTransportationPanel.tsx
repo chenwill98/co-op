@@ -168,7 +168,7 @@ export default function ListingsTransportationPanel({
             </div>
             <div className="text-xs text-base-content/70">Peak times are weekdays 7:00am to 9:30am and 4:00pm to 7:00pm </div>
             <div className="text-xs text-base-content/70 mb-2">Late-night times are every day from midnight to 7:00am </div>
-            <div className="overflow-x-auto bg-base-200 pt-1 pb-3 rounded-lg">
+            <div className="overflow-x-auto bg-base-200 pt-1 pb-3 p-0.5 rounded-lg">
               <table className="table zebra table-xs w-full">
                 <thead>
                   <tr>

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BookmarkIcon as BookmarkOutlineIcon } from "@heroicons/react/24/outline";
-import { BookmarkIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
+import { BookmarkSquareIcon as BookmarkOutlineIcon } from "@heroicons/react/24/outline";
+import { BookmarkSquareIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
 
 export interface BookmarkIconProps {
   onClick?: React.MouseEventHandler<HTMLDivElement>;
