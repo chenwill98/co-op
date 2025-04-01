@@ -135,6 +135,22 @@ model dim_property_nearest_stations {
   @@schema("real_estate_analytics")
 }
 
+// Model for points of interest near properties
+model dim_property_nearest_pois {
+  listing_id       String   @db.VarChar(20)
+  name             String   @db.VarChar(255)
+  longitude        Decimal  @db.Decimal(11, 8)
+  latitude         Decimal  @db.Decimal(11, 8)
+  distance         BigInt
+  address          String?  @db.VarChar(255)
+  website          String?  @db.VarChar(255)
+  category         String   @db.VarChar(50)
+  loaded_datetime  DateTime @default(now()) @db.Timestamp(6)
+
+  @@id([listing_id, name])
+  @@schema("real_estate_analytics")
+}
+
 model dim_property_analytics_view {
   fct_id                              String   @id @db.VarChar(20)
   borough                             String?  @db.VarChar(100)

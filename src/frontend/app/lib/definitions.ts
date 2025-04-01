@@ -89,10 +89,6 @@ export type PropertyDetails = {
     description_summary: string;
 }
 
-export type CombinedPropertyDetails = Property & PropertyDetails & PropertyAnalyticsDetails & {
-  closest_stations?: PropertyNearestStations[];
-};
-
 export type PropertyNearestStations = {
   listing_id: string;
   route_id: string;
@@ -105,9 +101,25 @@ export type PropertyNearestStations = {
   late_night: number | null;
 };
 
+export type PropertyNearestPois = {
+  listing_id: string;
+  name: string;
+  longitude: number;
+  latitude: number;
+  distance: number;
+  address: string | null;
+  website: string | null;
+  category: string;
+};
+
 // PropertyAnalyticsDetails is kept separate from station data
 export type PropertyAnalyticsDetails = {
   listing_id: string;
   distinct_line_count: number;
   subway_access_percentile: number;
+};
+
+export type CombinedPropertyDetails = Property & PropertyDetails & PropertyAnalyticsDetails & {
+  closest_stations?: PropertyNearestStations[];
+  nearest_pois?: PropertyNearestPois[];
 };

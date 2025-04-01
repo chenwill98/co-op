@@ -7,6 +7,7 @@ import ExpandButton from "@/app/ui/icons/ExpandButton";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon"; 
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { TagList } from "@/app/ui/utilities";
+import PercentileCards from "@/app/ui/analytics/PercentileCards";
 
 export default function ListingsTransportationPanel({
   listingDetails,
@@ -65,9 +66,9 @@ export default function ListingsTransportationPanel({
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1">
       <h2 className="text-2xl font-semibold text-base-content">Transportation</h2>
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col gap-4">
         <div className="flex-1">
           {/* Display subway lines */}
           <div className="mb-4">
@@ -131,37 +132,11 @@ export default function ListingsTransportationPanel({
               <h3 className="text-lg font-semibold text-base-content/80">Subway Access Analytics</h3>
               <TooltipIcon tooltipText="Subway access percentile is a measure of the accessibility of a property to subway stations relative to other properties. It is calculated based on the number of distinct subway lines accessible within walking distance." />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {/* All Listings Percentile */}
-              <div className="p-3 bg-base-200 rounded-lg flex flex-col items-center justify-center text-center">
-                <div className="font-semibold text-lg mb-1">
-                  {(listingDetails.subway_access_percentile ?? 0).toFixed(1)}th
-                </div>
-                <div className="text-xs text-base-content/60">
-                  Percentile among all listings
-                </div>
-              </div>
-              
-              {/* Borough Percentile - Using type assertion since this property may be added in the future */}
-              <div className="p-3 bg-base-200 rounded-lg flex flex-col items-center justify-center text-center">
-                <div className="font-semibold text-lg mb-1">
-                  {((listingDetails as any).subway_borough_access_percentile ?? 0).toFixed(1)}th
-                </div>
-                <div className="text-xs text-base-content/60">
-                  Percentile within borough
-                </div>
-              </div>
-              
-              {/* Neighborhood Percentile - Using type assertion since this property may be added in the future */}
-              <div className="p-3 bg-base-200 rounded-lg flex flex-col items-center justify-center text-center">
-                <div className="font-semibold text-lg mb-1">
-                  {((listingDetails as any).subway_neighborhood_access_percentile ?? 0).toFixed(1)}th
-                </div>
-                <div className="text-xs text-base-content/60">
-                  Percentile within neighborhood
-                </div>
-              </div>
-            </div>
+            <PercentileCards 
+              allPercentile={listingDetails.subway_access_percentile ?? 0}
+              boroughPercentile={(listingDetails as any).subway_borough_access_percentile ?? 0}
+              neighborhoodPercentile={(listingDetails as any).subway_neighborhood_access_percentile ?? 0}
+            />
             <div className="flex flex-row items-center gap-2 mb-2">
               <h3 className="text-lg font-semibold text-base-content/80">Detailed Subway Times (min) </h3>
               <TooltipIcon tooltipText="Average wait times for subway lines are limited to a 15 minute walk from the property and derived from publicly available MTA subway schedules" />

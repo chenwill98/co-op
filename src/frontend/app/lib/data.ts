@@ -1,6 +1,6 @@
 // Import your database client/ORM here, e.g. Prisma
 import { PrismaClient } from '@prisma/client';
-import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations } from './definitions';
+import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois } from './definitions';
 import { getSystemTag, tagCategories } from './tagUtils';
 import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -259,6 +259,49 @@ export async function fetchPropertyNearestStationsById(id: string): Promise<Prop
   }
 }
 
+export async function fetchPropertyNearestPoisById(id: string): Promise<PropertyNearestPois[] | null> {
+  try {
+    // Use fixed categories
+    const categories = ['fitness_center', 'food', 'grocery', 'park'];
+    let allPois: any[] = [];
+    
+    // For each category, get the top 5 nearest POIs
+    for (const category of categories) {
+      const poisForCategory = await prisma.dim_property_nearest_pois.findMany({
+        where: { 
+          listing_id: id,
+          category: category
+        },
+        orderBy: { distance: 'asc' },
+        take: 5
+      });
+      
+      allPois = [...allPois, ...poisForCategory];
+    }
+    
+    if (allPois.length === 0) {
+      return []; // Return empty array if none found
+    }
+
+    // Format the data to match PropertyNearestPois type
+    const formattedPois = allPois.map((poi) => ({
+      listing_id: poi.listing_id,
+      name: poi.name,
+      longitude: poi.longitude.toNumber(),
+      latitude: poi.latitude.toNumber(),
+      distance: Number(poi.distance),
+      address: poi.address,
+      website: poi.website,
+      category: poi.category,
+    }));
+
+    return formattedPois as PropertyNearestPois[];
+  } catch (error) {
+    console.error('Error fetching property analytics:', error);
+    return []; // Return empty array on error
+  }
+}
+
 export async function fetchPropertyAnalyticsById(id: string): Promise<PropertyAnalyticsDetails | null> {
   try {
     const analytics = await prisma.dim_property_analytics_view.findFirst({
@@ -282,13 +325,15 @@ export async function fetchPropertyPage(id: string): Promise<CombinedPropertyDet
     const propertyDetails = await fetchPropertyDetailsById(id) || {};
     const propertyAnalytics = await fetchPropertyAnalyticsById(id) || {};
     const nearestStations = await fetchPropertyNearestStationsById(id) || [];
+    const nearestPois = await fetchPropertyNearestPoisById(id) || [];
     
     // Properly combine objects with stations in a closest_stations array property
     const propertyCombined = { 
       ...propertyDetails, 
       ...property,
       ...propertyAnalytics,
-      closest_stations: nearestStations // Put stations in closest_stations property
+      closest_stations: nearestStations,
+      nearest_pois: nearestPois
     };
     
     return propertyCombined as CombinedPropertyDetails;
