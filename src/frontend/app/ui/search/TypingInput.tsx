@@ -120,7 +120,7 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
     <div className="relative w-full">
       <label className="input w-full">
       <MagnifyingGlassIcon className="h-5 w-5 opacity-50" />
-      <div className="grow flex items-center">
+      <div className="grow flex items-center overflow-hidden">
         <span>{text}</span>
         {!isEditable && showCursor && (
           <div className="h-4 w-0.5 bg-gray-500 animate-pulse ml-0.5"></div>

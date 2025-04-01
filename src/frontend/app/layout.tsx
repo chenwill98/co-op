@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { geistSans, geistMono } from "@/app/ui/fonts";
 import "./globals.css";
 import Navbar from "@/app/ui/navbar";
+import CookieConsent from "@/app/ui/CookieConsent";
 
 export const metadata: Metadata = {
   title: "Co-Apt",
@@ -36,6 +37,7 @@ export default function RootLayout({
       >
         <Navbar />
         <div>{children}</div>
+        <CookieConsent />
       </body>
     </html>
   );

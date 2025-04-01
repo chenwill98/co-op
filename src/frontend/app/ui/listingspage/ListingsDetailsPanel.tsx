@@ -53,8 +53,8 @@ export default function ListingsDetailsPanel({ listingDetails }: { listingDetail
             <div
                 className={`transition-all duration-300 ease-in-out ${
                 isExpanded 
-                  ? 'opacity-100 max-h-[800px] mt-4 visible' 
-                  : 'opacity-0 max-h-0 mt-0 invisible'
+                  ? 'opacity-100 max-h-[800px] mt-4' 
+                  : 'opacity-0 max-h-0 mt-0 hidden'
                 }`}
             >
                 <p className="text-base-content/80 text-sm">

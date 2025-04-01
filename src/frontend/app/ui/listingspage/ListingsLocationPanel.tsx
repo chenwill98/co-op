@@ -164,8 +164,8 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
             <div
                 className={`transition-all duration-300 ease-in-out ${
                 isExpanded 
-                  ? 'opacity-100 max-h-[800px] mt-4 visible' 
-                  : 'opacity-0 max-h-0 mt-0 invisible'
+                  ? 'opacity-100 max-h-[800px] mt-4' 
+                  : 'opacity-0 max-h-0 mt-0 hidden'
                 }`}
             >
                 <div className="flex flex-row items-center gap-2 mb-2">

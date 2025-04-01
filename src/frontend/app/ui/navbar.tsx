@@ -31,10 +31,12 @@ export default function Navbar() {
   return (
     <div className="navbar sticky z-10 top-0 bg-base-100 shadow-md">
       <div className="flex-1 px-2">
-        <Link href="/">
-          {/* Pass the current theme to CoAptLogo so it can swap emojis */}
-          <CoAptLogo theme={theme} />
-        </Link>
+        <div className="inline-block">
+          <Link href="/">
+            {/* Pass the current theme to CoAptLogo so it can swap emojis */}
+            <CoAptLogo theme={theme} />
+          </Link>
+        </div>
       </div>
       <div className="flex-none">
         <Link href="/analytics">
