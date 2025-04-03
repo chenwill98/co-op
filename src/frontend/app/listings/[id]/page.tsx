@@ -61,7 +61,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           </ul>
         </nav>
         <div className="flex flex-row gap-5 items-center">
-          <BookmarkIcon />
+          <BookmarkIcon property={listingDetails} />
           <a href={listingDetails.url} className="btn btn-outline btn-primary" target="_blank" rel="noopener noreferrer">StreetEasy <LinkIcon className="h-4 w-4 text-primary"/></a>
         </div>
       </div>

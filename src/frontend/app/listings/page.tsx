@@ -3,7 +3,7 @@ import {
 } from "@/app/lib/data";
 import { Property } from "@/app/lib/definitions";
 import ListingFilters from "@/app/ui/filters/ListingFilters";
-import ListingsGrid from "@/app/ui/listings/ListingsGrid";
+import ListingsGrid from "@/app/ui/listings/SearchListingsGrid";
 
 function getParam(value: string | string[] | undefined, defaultValue = ""): string {
   if (!value) return defaultValue;
