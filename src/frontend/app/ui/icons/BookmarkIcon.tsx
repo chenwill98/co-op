@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BookmarkSquareIcon as BookmarkOutlineIcon } from "@heroicons/react/24/outline";
 import { BookmarkSquareIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
 import { Property } from "@/app/lib/definitions";
+const mojs = typeof window !== 'undefined' ? (await import('@mojs/core')).default : null;
+
 
 export interface BookmarkIconProps {
   property: Property;
@@ -15,6 +17,9 @@ export default function BookmarkIcon({ property, onClick, className }: BookmarkI
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  
+  // Reference to the bookmark icon element
+  const bookmarkRef = useRef<HTMLDivElement>(null);
 
   // Mark component as mounted on client
   useEffect(() => {
@@ -74,18 +79,56 @@ export default function BookmarkIcon({ property, onClick, className }: BookmarkI
     
     try {
       const savedListings = getSavedListings();
+      const wasBookmarked = isBookmarked;
       
-      if (isBookmarked) {
+      if (wasBookmarked) {
         // Remove from bookmarks
         const updatedListings = savedListings.filter(listing => listing.id !== property.id);
         localStorage.setItem('saved_listings', JSON.stringify(updatedListings));
+        
+        // Directly decrement the new bookmarks counter
+        const currentCount = parseInt(localStorage.getItem('new-bookmarks-count') || '0', 10);
+        const newCount = Math.max(0, currentCount - 1); // Prevent negative values
+        localStorage.setItem('new-bookmarks-count', newCount.toString());
       } else {
-        // Add to bookmarks
+        // Add to bookmarks - trigger animation only when adding
         const propertyForStorage = preparePropForStorage(property);
         localStorage.setItem('saved_listings', JSON.stringify([...savedListings, propertyForStorage]));
+        
+        // Directly increment the new bookmarks counter
+        const currentCount = parseInt(localStorage.getItem('new-bookmarks-count') || '0', 10);
+        const newCount = currentCount + 1;
+        localStorage.setItem('new-bookmarks-count', newCount.toString());
+        
+        // Create and play the burst animation
+        if (bookmarkRef.current) {
+          const rect = bookmarkRef.current.getBoundingClientRect();
+          const burstX = rect.left + rect.width / 2;
+          const burstY = rect.top + rect.height / 2;
+          
+          const burst = new mojs.Burst({
+            radius: { 10: 20 },
+            count: 6,
+            left: 0,
+            top: 0,
+            x: burstX,
+            y: burstY,
+            children: {
+              shape: 'circle',
+              fill: { 'magenta': 'cyan' },
+              scale: { 0.4: 0.8, easing: 'elastic.out' },
+              opacity: { 1: 0 },
+              duration: 500,
+              scaleX: 0.8,
+              scaleY: 0.4
+            }
+          });
+          
+          burst.play();
+        }
       }
       
-      setIsBookmarked(!isBookmarked);
+      setIsBookmarked(!wasBookmarked);
     } catch (error) {
       console.error('Error updating bookmarks:', error);
     }
@@ -102,6 +145,7 @@ export default function BookmarkIcon({ property, onClick, className }: BookmarkI
       className={className}
     >
       <div
+        ref={bookmarkRef}
         className="w-6 h-6 text-primary cursor-pointer hover:text-primary-focus active:scale-90 transition"
         onClick={toggleBookmark}
         onMouseEnter={() => setIsHovered(true)}

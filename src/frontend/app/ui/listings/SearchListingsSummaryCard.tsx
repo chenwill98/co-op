@@ -3,7 +3,7 @@
 import { Property } from "@/app/lib/definitions";
 import { useSearchParams } from "next/navigation";
 
-export default function ListingsSummaryCard({
+export default function SearchListingsSummaryCard({
   listings,
 }: {
   listings: Property[];
@@ -33,13 +33,13 @@ export default function ListingsSummaryCard({
               {listings.length}{" "}
               {listings.length === 1 ? "Property" : "Properties"} Found 🎉
             </h2>
-            <p className="text-gray-500">
+            <p className="text-base-content/60">
               {getSortText()}
             </p>
           </div>
         </div>
         {listings.length > 0 && (
-          <div className="text-right text-gray-500">
+          <div className="text-right text-base-content/60">
             <p>Price Range:</p>
             <p className="font-semibold text-primary">
               ${Math.min(...listings.map((l) => l.price)).toLocaleString()} - $

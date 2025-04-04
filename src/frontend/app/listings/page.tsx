@@ -30,7 +30,8 @@ export default async function Page({ searchParams }: { searchParams: any }) {
 
   return (
     <main className="z-0 bg-base-200">
-      <div className="flex flex-row w-full">
+      <div className="container mx-auto">
+        <div className="flex flex-row w-full">
         <div className="min-w-72 max-w-72 z-10">
           <ListingFilters />
         </div>
@@ -38,6 +39,7 @@ export default async function Page({ searchParams }: { searchParams: any }) {
           <ListingsGrid
             listings={listings}
           />
+        </div>
         </div>
       </div>
     </main>

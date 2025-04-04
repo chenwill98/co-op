@@ -12,6 +12,7 @@ import ListingsAmenitiesPanel from "@/app/ui/listingspage/ListingsAmentitiesPane
 import ListingsLocationPanel from "@/app/ui/listingspage/ListingsLocationPanel";
 import ListingsTransportationPanel from "@/app/ui/listingspage/ListingsTransportationPanel";
 import ListingsDescriptionPanel from "@/app/ui/listingspage/ListingsDescriptionPanel";
+import { FormatDisplayText } from "@/app/ui/utilities";
 
 interface PropertyPageProps {
   params: { id: string };
@@ -34,25 +35,25 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   ] as { type: string; url: string }[];
 
   return (
-    <div className="mx-auto px-4 py-8 w-3/4">
+    <main className="container mx-auto px-4 py-8 w-4/5">
       {/* Breadcrumbs */}
       <div className="flex justify-between">
         <nav className="breadcrumbs" aria-label="breadcrumbs">
           <ul className="flex items-center">
             <li>
               <Link
-                href={`/listings?borough=${listingDetails.borough}`}
+                href={`/listings?borough=${FormatDisplayText(listingDetails.borough)}`}
                 className="bg-primary/10 text-primary rounded-full text-xs py-1 px-3 hover:bg-primary/20"
               >
-                {listingDetails.borough}
+                {FormatDisplayText(listingDetails.borough)}
               </Link>
             </li>
             <li>
               <Link
-                href={`/listings?borough=${listingDetails.borough}&neighborhood=${listingDetails.neighborhood}`}
+                href={`/listings?borough=${FormatDisplayText(listingDetails.borough)}&neighborhood=${FormatDisplayText(listingDetails.neighborhood)}`}
                 className="bg-primary/10 text-primary rounded-full text-xs py-1 px-3 hover:bg-primary/20"
               >
-                {listingDetails.neighborhood}
+                {FormatDisplayText(listingDetails.neighborhood)}
               </Link>
             </li>
             <li className="text-primary text-xs">
@@ -102,6 +103,6 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
 
         </div>
       </div>
-    </div>
+    </main>
   );
 }

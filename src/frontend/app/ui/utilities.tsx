@@ -36,6 +36,6 @@ export function TagList({ category, tags }: { category?: keyof typeof tagCategor
 }
 
 // Convert neighborhood text from, for example, hells-kitchen to Hells Kitchen for display purposes
-export function FormatNeighborhoodText(text: string) {
+export function FormatDisplayText(text: string) {
   return text.replace(/-/g, ' ').replace(/\b\w/g, (match) => match.toUpperCase());
 }

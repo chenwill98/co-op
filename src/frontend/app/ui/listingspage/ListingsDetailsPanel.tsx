@@ -1,7 +1,7 @@
 'use client';
 
 import { CombinedPropertyDetails } from "@/app/lib/definitions";
-import { TagList } from "@/app/ui/utilities";
+import { TagList, FormatDisplayText } from "@/app/ui/utilities";
 import { useState } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 
@@ -19,25 +19,25 @@ export default function ListingsDetailsPanel({ listingDetails }: { listingDetail
                 <TagList category="Popularity" tags={listingDetails.tag_list || []} />
             </div>
             <p className="mt-1 text-sm text-base-content">
-              {listingDetails.property_type} in {listingDetails.neighborhood},{" "}
-              {listingDetails.borough} &mdash; {listingDetails.zipcode}
+              {FormatDisplayText(listingDetails.property_type || '')} in {FormatDisplayText(listingDetails.neighborhood)},{" "}
+              {FormatDisplayText(listingDetails.borough)} &mdash; {listingDetails.zipcode}
             </p>
             <div className="text-base-content/80 text-sm space-x-1">
               <span>
                 {listingDetails.bedrooms}{" "}
                 {listingDetails.bedrooms && listingDetails.bedrooms % 1 === 0 ? (listingDetails.bedrooms === 1 ? "bed" : "beds") : "beds"}
               </span>
-              <span>|</span>
+              <span>•</span>
               <span>
                 {listingDetails.bathrooms}{" "}
                 {listingDetails.bathrooms && listingDetails.bathrooms % 1 === 0 ? (listingDetails.bathrooms === 1 ? "bath" : "baths") : "baths"}
               </span>
-              <span>|</span>
+              <span>•</span>
               <span>
                 {listingDetails.sqft === null || listingDetails.sqft === 0 ? "-" : listingDetails.sqft} ft
                 <sup>2</sup>
               </span>
-              <span>|</span>
+              <span>•</span>
               <span>
                 $
                 {listingDetails.sqft === null || listingDetails.sqft === 0

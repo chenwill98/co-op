@@ -1,7 +1,7 @@
 import { Property } from "@/app/lib/definitions";
 import Link from "next/link";
 import Image from 'next/image';
-import { FormatNeighborhoodText, TagList } from "@/app/ui/utilities";
+import { FormatDisplayText, TagList } from "@/app/ui/utilities";
 import BookmarkIcon from "@/app/ui/icons/BookmarkIcon";
 import MapButton from "@/app/ui/icons/MapButton";
 
@@ -39,7 +39,7 @@ export default function ListingsCard({ listing }: { listing: Property }) {
         <div className="flex items-center justify-between">
             <div className="flex flex-col gap-0">
             <p className="text-base-content/60 text-xs">
-                Rental unit in {FormatNeighborhoodText(listing.neighborhood)}
+                Rental unit in {FormatDisplayText(listing.neighborhood)}
             </p>
             <h2 className="hover:text-primary transition-colors">{listing.address}</h2>
             <div className="text-base-content/60 text-sm space-x-1">
@@ -54,7 +54,7 @@ export default function ListingsCard({ listing }: { listing: Property }) {
                 </span>
                 <span>•</span>
                 <span>
-                {listing.sqft === null ? "N/A" : listing.sqft} ft
+                {listing.sqft === null ? "N/A" : listing.sqft === 0 ? "-" : listing.sqft} ft
                 <sup>2</sup>
                 </span>
             </div>
