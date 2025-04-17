@@ -121,7 +121,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: AnthropicBatchProcessor
-      Handler: processor.lambda_handler
+      Handler: batch_processor.lambda_handler
       CodeUri: anthropic_batch_processor
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:

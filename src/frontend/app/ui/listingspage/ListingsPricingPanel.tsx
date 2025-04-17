@@ -28,13 +28,13 @@ export default function ListingsPricingPanel({
         </div>
         {!listingDetails.no_fee && (
           <div className="text-lg font-semibold">
-            ${(listingDetails.price + listingDetails.price * 0.15).toLocaleString()}
+            ${(listingDetails.price + listingDetails.price * listingDetails.actual_brokers_fee).toLocaleString()}
             <span className="text-base-content/60 text-sm"> net effective rent</span>
           </div>
         )}
         {!listingDetails.no_fee && (
           <div className="text-lg font-semibold">
-            ${(listingDetails.price * 0.15 * 12).toLocaleString()}
+            ${(listingDetails.price * listingDetails.actual_brokers_fee * 12).toLocaleString()}
             <span className="text-base-content/60 text-sm"> total fees</span>
           </div>
         )}

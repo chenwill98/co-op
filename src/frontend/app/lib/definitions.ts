@@ -25,11 +25,13 @@ export type Property = {
     thumbnail_image: string;
     tag_list: string[];
     loaded_datetime: string;
+    brokers_fee: number | null;
     url: string;
     date: string;
     fct_id: string;
     fct_price: number;
     live_days_on_market: number | null;
+    actual_brokers_fee: number;
 }
 
 export interface Neighborhood {

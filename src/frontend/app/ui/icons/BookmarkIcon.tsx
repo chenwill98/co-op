@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { BookmarkSquareIcon as BookmarkOutlineIcon } from "@heroicons/react/24/outline";
 import { BookmarkSquareIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
 import { Property } from "@/app/lib/definitions";
-const mojs = typeof window !== 'undefined' ? (await import('@mojs/core')).default : null;
 
 
 export interface BookmarkIconProps {
@@ -17,13 +16,23 @@ export default function BookmarkIcon({ property, onClick, className }: BookmarkI
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [mojsInstance, setMojsInstance] = useState<any>(null);
   
   // Reference to the bookmark icon element
   const bookmarkRef = useRef<HTMLDivElement>(null);
 
-  // Mark component as mounted on client
+  // Load mo.js and mark component as mounted on client
   useEffect(() => {
     setIsMounted(true);
+    
+    // Dynamically import mo.js only on the client side
+    if (typeof window !== 'undefined') {
+      import('@mojs/core').then((mod) => {
+        setMojsInstance(mod.default);
+      }).catch(error => {
+        console.error('Error loading mo.js:', error);
+      });
+    }
   }, []);
 
   // Check if property is bookmarked after mounting
@@ -100,19 +109,36 @@ export default function BookmarkIcon({ property, onClick, className }: BookmarkI
         const newCount = currentCount + 1;
         localStorage.setItem('new-bookmarks-count', newCount.toString());
         
-        // Create and play the burst animation
-        if (bookmarkRef.current) {
-          const rect = bookmarkRef.current.getBoundingClientRect();
-          const burstX = rect.left + rect.width / 2;
-          const burstY = rect.top + rect.height / 2;
+        // Create and play the burst animation at the exact position of the icon
+        if (bookmarkRef.current && mojsInstance) {
+          // Create a temporary HTML element for the animation
+          const burstEl = document.createElement('div');
+          document.body.appendChild(burstEl);
           
-          const burst = new mojs.Burst({
+          // Position the element at the exact location of the bookmark icon
+          const updatePosition = () => {
+            if (!bookmarkRef.current) return;
+            
+            const rect = bookmarkRef.current.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            // Position the burst element
+            burstEl.style.position = 'fixed';
+            burstEl.style.left = `${centerX}px`;
+            burstEl.style.top = `${centerY}px`;
+            burstEl.style.zIndex = '9999';
+            burstEl.style.pointerEvents = 'none';
+          };
+          
+          // Initial positioning
+          updatePosition();
+          
+          // Create the burst animation
+          const burst = new mojsInstance.Burst({
+            parent: burstEl,
             radius: { 10: 20 },
             count: 6,
-            left: 0,
-            top: 0,
-            x: burstX,
-            y: burstY,
             children: {
               shape: 'circle',
               fill: { 'magenta': 'cyan' },
@@ -124,7 +150,15 @@ export default function BookmarkIcon({ property, onClick, className }: BookmarkI
             }
           });
           
+          // Play the animation
           burst.play();
+          
+          // Clean up after animation completes
+          setTimeout(() => {
+            if (document.body.contains(burstEl)) {
+              document.body.removeChild(burstEl);
+            }
+          }, 1000);
         }
       }
       

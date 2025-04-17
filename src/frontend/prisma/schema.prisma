@@ -80,11 +80,13 @@ model latest_property_details_view {
   thumbnail_image String?
   tag_list        String[]
   loaded_datetime DateTime? @default(now()) @db.Timestamp(6)
+  brokers_fee     Decimal?  @db.Decimal(10, 2)
   url             String?   @db.VarChar(255)
   date            DateTime  @default(now()) @db.Date
   fct_id          String    @id @db.VarChar(100)
   fct_price       Int?
   live_days_on_market  Int?
+  actual_brokers_fee Decimal  @db.Decimal(10, 2)
 
   @@map("latest_property_details_view") 
   @@schema("real_estate")

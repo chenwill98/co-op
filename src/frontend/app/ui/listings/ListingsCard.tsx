@@ -10,9 +10,9 @@ export default function ListingsCard({ listing }: { listing: Property }) {
     <Link
         href={`/listings/${listing.id}`}
         key={listing.id}
-        className="group card bg-base-100 h-[60vh] hover:bg-base-200 shadow-xl hover:shadow-2xl transform transition-all duration-500 hover:-translate-y-2"
+        className="group card rounded bg-base-100 h-[60vh] hover:bg-base-200 shadow-xl hover:shadow-2xl transform transition-all duration-500 hover:-translate-y-2"
     >
-        <figure className="h-3/7 relative bg-primary/10 rounded-t-box overflow-hidden">
+        <figure className="h-3/7 relative bg-primary/10 rounded-t overflow-hidden">
         <div className="absolute inset-1 overflow-hidden rounded-xl">
         {listing.thumbnail_image ? (
         <Image
@@ -79,12 +79,12 @@ export default function ListingsCard({ listing }: { listing: Property }) {
             <div className="badge bg-primary/10 text-primary rounded-full text-xs">
                 {listing.no_fee
                 ? "No Fee"
-                : `Fees: ~$${Math.floor(listing.price * 0.15).toLocaleString()}`}
+                : `Fees: ~$${Math.floor(listing.price * listing.actual_brokers_fee).toLocaleString()}`}
             </div>
             </div>
             {!listing.no_fee && (
             <div className="text-lg font-semibold">
-                ${Math.floor(listing.price - listing.price * 0.15).toLocaleString()}
+                ${Math.floor(listing.price + listing.price * listing.actual_brokers_fee).toLocaleString()}
                 <span className="text-gray-500 text-sm">
                 {" "}
                 net effective rent

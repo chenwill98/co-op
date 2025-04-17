@@ -144,6 +144,8 @@ export async function fetchPropertiesRDS(params: {
       available_from: property.available_from ? property.available_from.toDateString() : '',
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
+      brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
+      actual_brokers_fee: property.actual_brokers_fee.toNumber(),
       // Convert any emoji tags to system tags
       tag_list: property.tag_list ? property.tag_list.map(tag => tag) : [],
     }));
@@ -178,6 +180,8 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
       available_from: property.available_from ? property.available_from.toDateString() : '',
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
+      brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
+      actual_brokers_fee: property.actual_brokers_fee.toNumber(),
       // Convert any emoji tags to system tags
       tag_list: property.tag_list ? property.tag_list.map(tag => tag) : [],
     };

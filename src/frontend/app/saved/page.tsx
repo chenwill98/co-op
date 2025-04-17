@@ -28,7 +28,7 @@ export default function SavedListingsPage() {
 
   return (
     <main className="z-0 bg-base-200 min-h-screen">
-      <div className="container mx-auto py-6 px-4 w-4/5">
+      <div className="container mx-auto px-4 w-4/5">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="loading loading-spinner loading-lg text-primary"></div>

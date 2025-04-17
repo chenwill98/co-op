@@ -30,17 +30,20 @@ def upsert_properties_to_rds(session, listings):
         
         logger.info(f"Inserting {len(listings)} into real_estate.fct_properties Table")
         
+        # Create parameters list for executemany
+        params_list = []
         for listing in listings:
-            data_dict = {
+            params_list.append({
                 'id': listing["id"],
                 'price': listing["price"],
                 'longitude': listing["longitude"],
                 'latitude': listing["latitude"],
                 'url': listing["url"],
-            }
-            
-            # Use the execute_query helper function
-            execute_query(session, upsert_query, data_dict)
+            })
+        
+        # Execute a batch insert with executemany
+        if params_list:
+            session.execute(text(upsert_query).execution_options(autocommit=False), params_list)
         
         session.commit()
         logger.info(f"Successfully upserted {len(listings)} listings to fct_properties")

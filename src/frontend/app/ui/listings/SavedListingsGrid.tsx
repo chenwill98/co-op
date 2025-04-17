@@ -3,17 +3,43 @@
 import { Property } from "@/app/lib/definitions";
 import ListingsCard from "./ListingsCard";
 import SavedListingsSummaryCard from "./SavedListingsSummaryCard";
+import { useState, useEffect } from "react";
 
 export default function ListingsGrid({
   listings,
 }: {
   listings: Property[];
 }) {
-  // No need for client-side filtering anymore as it's done on the server
+  // Track the listings order with state
+  const [displayedListings, setDisplayedListings] = useState<Property[]>(listings);
+  
+  // Listen for the custom event from the summary card component
+  useEffect(() => {
+    const handleListingsSorted = (event: CustomEvent) => {
+      if (event.detail?.listings) {
+        setDisplayedListings(event.detail.listings);
+      }
+    };
+    
+    // TypeScript requires this casting for CustomEvent
+    window.addEventListener('listings-sorted', handleListingsSorted as EventListener);
+    
+    return () => {
+      window.removeEventListener('listings-sorted', handleListingsSorted as EventListener);
+    };
+  }, []);
+  
+  // Ensure we have the initial listings
+  useEffect(() => {
+    if (displayedListings.length === 0 && listings.length > 0) {
+      setDisplayedListings(listings);
+    }
+  }, [listings, displayedListings.length]);
+
   return (
     <div className="grid grid-cols-3 gap-3 p-4 w-full">
       <SavedListingsSummaryCard listings={listings} />
-      {listings.map((listing) => (
+      {displayedListings.map((listing) => (
         <ListingsCard key={listing.id} listing={listing} />
       ))}
     </div>

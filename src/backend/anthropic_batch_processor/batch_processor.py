@@ -62,10 +62,16 @@ TAG_LIST = {
   ]
 }
 
-def fetch_properties_without_summary():
+def fetch_properties_without_summary(limit=1000):
     """
     Fetches property items from DynamoDB that don't have a description_summary field.
     Returns a list of dictionaries containing id and description for each property.
+    
+    Args:
+        limit (int): Maximum number of items to return (defaults to 1000)
+    
+    Returns:
+        list: List of dictionaries containing property data
     """
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table('PropertyMediaDetails')
@@ -74,22 +80,36 @@ def fetch_properties_without_summary():
     logger.info("Scanning DynamoDB for properties without description_summary")
     response = table.scan(
         FilterExpression="attribute_not_exists(description_summary)",
-        ProjectionExpression="id, description"
+        ProjectionExpression="id, description, loaded_datetime"
     )
     
     items = response['Items']
     
-    # Handle pagination if there are more items
-    while 'LastEvaluatedKey' in response:
+    # Handle pagination if there are more items and we haven't reached the limit
+    while 'LastEvaluatedKey' in response and len(items) < limit:
         logger.info(f"Fetching more items, found {len(items)} so far")
         response = table.scan(
             FilterExpression="attribute_not_exists(description_summary)",
-            ProjectionExpression="id, description",
+            ProjectionExpression="id, description, loaded_datetime",
             ExclusiveStartKey=response['LastEvaluatedKey']
         )
         items.extend(response['Items'])
+        
+        # Exit the loop if we've reached or exceeded the limit
+        if len(items) >= limit:
+            logger.info(f"Reached item limit of {limit}")
+            # Trim excess items if we've gone over the limit
+            items = items[:limit]
+            break
     
-    logger.info(f"Found {len(items)} properties without description_summary")
+    # Sort items by loaded_datetime if it exists in the items
+    try:
+        items = sorted(items, key=lambda x: x.get('loaded_datetime', ''), reverse=True)
+        logger.info("Sorted items by loaded_datetime (newest first)")
+    except Exception as e:
+        logger.warning(f"Could not sort by loaded_datetime: {str(e)}")
+    
+    logger.info(f"Found {len(items)} properties without description_summary (limited to {limit})")
     return items
 
 def create_batch():
@@ -120,9 +140,9 @@ def create_batch():
                 "custom_id": property['id'],
                 "params": {
                     "model": "claude-3-5-haiku-20241022",
-                    "max_tokens": 1000,
-                    "temperature": 0.5,
-                    "system": """You are an excellent real estate agent who's generating compelling but factually accurate and unbiased real estate description summaries and generating a list of tags from a predetermined list of tags based on a given description. Do not leave out negative traits.""",
+                    "max_tokens": 2000,
+                    "temperature": 0.2,
+                    "system": """You are an excellent real estate agent who's generating compelling but factually accurate and unbiased real estate description summaries, generating a list of tags from a predetermined list of tags based on a given description, and extracting any additional fees values like brokers fees ONLY IF EXPLICITLY MENTIONED. Do not leave out negative traits.""",
                     "messages": [
                         {
                             "role": "user",
@@ -132,7 +152,7 @@ def create_batch():
                                     "text": """<example>
                                                 <ideal_output>
                                                 process_description({
-                                                "input_description": "Full size outdoor terrace make this home a great space for entertaining or just enjoying the glorious private outdoor gardens! This beautiful home on Central Park South is a must see! With only two apartments on each floor, open your door to your own private oasis on Central Park! Welcome home to this well appointed residence with peaceful park views and an expansive, beautifully landscaped, approx. 832 sf, private patio out back. This home has been recently renovated with beautiful architecture and exquisite upgrades from the rich wood floors to the gorgeous tiled kitchen and dining areas. This home features a generous split floorplan with grand living room, primary bedroom suite and home office on one side with a guest bedroom suite and large kitchen/dining area that opens out to the outdoor patio. All throughout this lovely home is custom cabinetry and fine millwork, Crestron A/V system with recessed speakers (out in the garden, as well), and triple glazed windows for peace and quiet. Please note: outdoor space virtually staged 24 CPS is a boutique, full service cooperative with two apartments per floor, low maintenance that includes utilities, full time doorman and concierge, private storage, state-of-the-art fitness center and magnificent new lobby and entry.",
+                                                "input_description": "Full size outdoor terrace make this home a great space for entertaining or just enjoying the glorious private outdoor gardens! This beautiful home on Central Park South is a must see! With only two apartments on each floor, open your door to your own private oasis on Central Park! Welcome home to this well appointed residence with peaceful park views and an expansive, beautifully landscaped, approx. 832 sf, private patio out back. This home has been recently renovated with beautiful architecture and exquisite upgrades from the rich wood floors to the gorgeous tiled kitchen and dining areas. This home features a generous split floorplan with grand living room, primary bedroom suite and home office on one side with a guest bedroom suite and large kitchen/dining area that opens out to the outdoor patio. All throughout this lovely home is custom cabinetry and fine millwork, Crestron A/V system with recessed speakers (out in the garden, as well), and triple glazed windows for peace and quiet. Please note: outdoor space virtually staged 24 CPS is a boutique, full service cooperative with two apartments per floor, low maintenance that includes utilities, full time doorman and concierge, private storage, state-of-the-art fitness center and magnificent new lobby and entry. 1.5 month broker's fee applies, with an additional annual utility fee of $1,200 and one-time HOA fee of $500. There's also a 16% annual building fee.",
                                                 "summary": "This recently renovated Central Park South cooperative features a spacious layout with two bedroom suites, a home office, and an impressive 832 sq ft private outdoor terrace with park views. The luxury residence includes custom cabinetry, fine millwork, Crestron A/V system, and triple-glazed windows, located in a boutique full-service building with doorman, concierge, and fitness center.",
                                                 "tag_list": [
                                                     "luxury",
@@ -141,11 +161,37 @@ def create_batch():
                                                     "spacious",
                                                     "park-view",
                                                     "quiet-neighborhood"
+                                                ],
+                                                "additional_fees": [
+                                                    {
+                                                        "name": "broker",
+                                                        "amount": 1.5,
+                                                        "type": "months",
+                                                        "recurring": false
+                                                    },
+                                                    {
+                                                        "name": "utility",
+                                                        "amount": 100,
+                                                        "type": "dollars",
+                                                        "recurring": true
+                                                    },
+                                                    {
+                                                        "name": "HOA",
+                                                        "amount": 500,
+                                                        "type": "dollars",
+                                                        "recurring": false
+                                                    },
+                                                    {
+                                                        "name": "building",
+                                                        "amount": 16,
+                                                        "type": "percentage",
+                                                        "recurring": true
+                                                    }
                                                 ]
                                                 })
                                                 </ideal_output>
                                                 </example>""",
-                                    "cache_control": {"type": "ephemeral"}
+                                    "cache_control": {"type": "persistent"}
                                 },
                                 {
                                     "type": "text",
@@ -157,13 +203,14 @@ def create_batch():
                     "tools": [
                         {
                             "name": "process_description",
-                            "description": "Process a real estate description into a summarized description and a list of tags",
-                            "cache_control": {"type": "ephemeral"},
+                            "description": "Process a real estate description into a summarized description, a list of tags, and additional fees",
+                            "cache_control": {"type": "persistent"},
                             "input_schema": {
                                 "type": "object",
                                 "required": [
                                     "summary",
                                     "tag_list",
+                                    "additional_fees",
                                     "input_description"
                                 ],
                                 "properties": {
@@ -183,6 +230,16 @@ def create_batch():
                                         "description": f"""List of tags that accurately describe the input description. 
                                         Tags should be selected from the following list: <TAG_LIST>\n{json.dumps(TAG_LIST, indent=2)}\n</TAG_LIST>
                                         If the input description is empty, return an empty array."""
+                                    },
+                                    "additional_fees": {
+                                        "type": "array",
+                                        "items": {
+                                            "name": "string",
+                                            "amount": "string",
+                                            "type": "string",
+                                            "recurring": "boolean"
+                                        },
+                                        "description": "Array of additional fees, such as brokers fees, ONLY IF ANY FEES ARE EXPLICITLY MENTIONED. IF NO FEE IS EXPLICITLY MENTIONED RETURN AN EMPTY LIST. Fee name is the type of fee (e.g. brokers fee, closing cost, etc.) and fee amount is the amount of the fee. Fee type needs to be either 'dollars', 'percentage', or 'months'. For recurring dollar fees, all values should be monthly - for example an annual fee of $600 should be divided by 12. Percentage values should be value between 0 and 100. If the input description is empty, return an empty array."
                                     }
                                 }
                             }

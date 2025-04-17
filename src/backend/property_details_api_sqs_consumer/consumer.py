@@ -50,12 +50,15 @@ def upsert_property_details_to_rds(session, listings):
     """
 
     try:
+        # Create parameters list for executemany
+        params_list = []
+        
         for listing in listings:
             # Convert Python lists to PostgreSQL array format
             amenities_array = "{" + ",".join(f'"{item}"' for item in listing["amenities"]) + "}" if listing["amenities"] else "{}"
             agents_array = "{" + ",".join(f'"{item}"' for item in listing["agents"]) + "}" if listing["agents"] else "{}"
             
-            data_dict = {
+            params_list.append({
                 'id': listing["id"],
                 'status': listing["status"],
                 'listed_at': listing["listedAt"],
@@ -80,10 +83,11 @@ def upsert_property_details_to_rds(session, listings):
                 'agents': agents_array,
                 'no_fee': listing["noFee"],
                 'thumbnail_image': listing["images"][0] if listing["images"] and len(listing["images"]) > 0 else None,
-            }
-            
-            # Use the execute_query helper function
-            execute_query(session, upsert_query, data_dict)
+            })
+        
+        # Execute a batch insert with executemany
+        if params_list:
+            session.execute(text(upsert_query).execution_options(autocommit=False), params_list)
         
         session.commit()
         logger.info(f"Successfully upserted {len(listings)} listings to dim_property_details")

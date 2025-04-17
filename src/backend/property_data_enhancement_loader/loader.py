@@ -252,9 +252,9 @@ def load_analytics_tags(session):
         listings_df = pd.DataFrame(listings)
         logger.info(f"Fetched {len(listings_df)} property coordinates")
 
-        logger.info(f"Inserting {len(nearest_stations_df)} nearest stations into dim_property_nearest_stations")
+        logger.info(f"Inserting {len(listings_df)} nearest stations into dim_property_nearest_stations")
         engine = session.get_bind()
-        nearest_stations_df.to_sql(
+        listings_df.to_sql(
             'dim_property_nearest_stations',
             con=engine,
             schema='real_estate_analytics',
@@ -268,7 +268,6 @@ def load_analytics_tags(session):
     finally:
         if 'session' in locals():
             session.close()
-
 
 def run_enhancement_loaders(load_type):
     API_KEYS = get_secret(secret_name='COAPTAPIKeys')

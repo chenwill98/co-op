@@ -88,20 +88,18 @@ export default function Navbar() {
       </div>
       <div className="flex-none">
         <Link href="/analytics">
-          <button className="btn btn-ghost text-primary">
+          <span className="text-primary font-semibold text-sm hover:text-primary/70 transition-colors duration-200 px-4 py-2 cursor-pointer">
             Analytics for Nerds
-            <ChartBarSquareIcon className="h-5 w-5 ml-1" />
-          </button>
+          </span>
         </Link>
         <Link href="/saved" onClick={handleSavedClick}>
           <div className="indicator mr-2">
             {newBookmarksCount > 0 && (
               <span className="indicator-item badge badge-primary badge-sm transition-all duration-300 ease-in-out">{newBookmarksCount}</span>
             )}
-            <button className="btn btn-ghost text-primary">
+            <span className="text-primary font-semibold text-sm hover:text-primary/70 transition-colors duration-200 px-4 py-2 cursor-pointer">
               Saved
-              <BookmarkSquareIcon className="h-5 w-5 ml-1" />
-            </button>
+            </span>
           </div>
         </Link>
         <label className="toggle text-base-content mr-2">
