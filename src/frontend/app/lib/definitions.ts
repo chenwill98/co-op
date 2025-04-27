@@ -117,8 +117,21 @@ export type PropertyNearestPois = {
 // PropertyAnalyticsDetails is kept separate from station data
 export type PropertyAnalyticsDetails = {
   listing_id: string;
-  distinct_line_count: number;
-  subway_access_percentile: number;
+  price_band: number;
+  distinct_line_count?: number;
+  amenity_score?: number;
+  subway_access_percentile?: number;
+  amenity_percentile?: number;
+  sqft_percentile?: number;
+  price_percentile?: number;
+  subway_borough_access_percentile?: number;
+  amenity_borough_percentile?: number;
+  sqft_borough_percentile?: number;
+  price_borough_percentile?: number;
+  subway_neighborhood_access_percentile?: number;
+  amenity_neighborhood_percentile?: number;
+  sqft_neighborhood_percentile?: number;
+  price_neighborhood_percentile?: number;
 };
 
 export type CombinedPropertyDetails = Property & PropertyDetails & PropertyAnalyticsDetails & {

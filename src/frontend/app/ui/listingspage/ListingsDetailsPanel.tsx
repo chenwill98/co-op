@@ -4,6 +4,8 @@ import { CombinedPropertyDetails } from "@/app/lib/definitions";
 import { TagList, FormatDisplayText } from "@/app/ui/utilities";
 import { useState } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
+import PercentileCards from "@/app/ui/analytics/PercentileCards";
+import TooltipIcon from "@/app/ui/icons/TooltipIcon";
 
 export default function ListingsDetailsPanel({ listingDetails }: { listingDetails: CombinedPropertyDetails }) {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -47,19 +49,25 @@ export default function ListingsDetailsPanel({ listingDetails }: { listingDetail
               </span>
             </div>
             <div className="">
-                <ExpandButton isExpanded={isExpanded} onToggle={toggleExpanded} expandedText="Hide Market Trends" collapsedText="Show Market Trends" />
+                <ExpandButton isExpanded={isExpanded} onToggle={toggleExpanded} expandedText="Hide Property Insights" collapsedText="Show Property Insights" />
             </div>
             {/* Panel that expands/collapses */}
             <div
                 className={`transition-all duration-300 ease-in-out ${
-                isExpanded 
-                  ? 'opacity-100 max-h-[800px] mt-4' 
-                  : 'opacity-0 max-h-0 mt-0 hidden'
+                  isExpanded
+                    ? 'opacity-100 max-h-[1000px] mt-2 overflow-visible'
+                    : 'opacity-0 max-h-0 mt-0 overflow-hidden'
                 }`}
             >
-                <p className="text-base-content/80 text-sm">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                </p>
+                <div className="flex flex-row items-center gap-2 mb-2">
+                  <h3 className="text-lg font-semibold text-base-content/80">Sq. Footage Analytics</h3>
+                  <TooltipIcon tooltipText="Sq. footage percentile is a measure of the size of a property relative to other properties with the same number of bedrooms and in the same price band." />
+                </div>
+                <PercentileCards 
+                  allPercentile={listingDetails.sqft_percentile ?? null}
+                  boroughPercentile={listingDetails.sqft_borough_percentile ?? null}
+                  neighborhoodPercentile={listingDetails.sqft_neighborhood_percentile ?? null}
+                />
             </div>
           </div>
     );

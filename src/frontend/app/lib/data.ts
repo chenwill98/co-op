@@ -258,7 +258,7 @@ export async function fetchPropertyNearestStationsById(id: string): Promise<Prop
 
     return formattedStations as PropertyNearestStations[];
   } catch (error) {
-    console.error('Error fetching property analytics:', error);
+    console.error('Error fetching property nearest stations:', error);
     return []; // Return empty array on error
   }
 }
@@ -314,7 +314,9 @@ export async function fetchPropertyAnalyticsById(id: string): Promise<PropertyAn
 
     const formattedAnalytics = analytics ? {
       ...analytics,
-      subway_access_percentile: analytics.subway_access_percentile || null,
+      price_band: analytics.price_band?.toNumber(),
+      price: analytics.price?.toNumber(),
+      amenity_score: analytics.amenity_score?.toNumber()
     } : null;
     return formattedAnalytics as PropertyAnalyticsDetails | null;
   } catch (error) {

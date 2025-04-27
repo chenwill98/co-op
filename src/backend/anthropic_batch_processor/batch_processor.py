@@ -48,6 +48,8 @@ TAG_LIST = {
     'pool',
     'rooftop-access',
     'concierge-service',
+    'in-unit-laundry',
+    'dishwasher',
     'doorman',
     'private-balcony',
     'shared-outdoor-space'
@@ -151,7 +153,7 @@ def create_batch():
                                     "type": "text",
                                     "text": """<example>
                                                 <ideal_output>
-                                                process_description({
+                                                save_details({
                                                 "input_description": "Full size outdoor terrace make this home a great space for entertaining or just enjoying the glorious private outdoor gardens! This beautiful home on Central Park South is a must see! With only two apartments on each floor, open your door to your own private oasis on Central Park! Welcome home to this well appointed residence with peaceful park views and an expansive, beautifully landscaped, approx. 832 sf, private patio out back. This home has been recently renovated with beautiful architecture and exquisite upgrades from the rich wood floors to the gorgeous tiled kitchen and dining areas. This home features a generous split floorplan with grand living room, primary bedroom suite and home office on one side with a guest bedroom suite and large kitchen/dining area that opens out to the outdoor patio. All throughout this lovely home is custom cabinetry and fine millwork, Crestron A/V system with recessed speakers (out in the garden, as well), and triple glazed windows for peace and quiet. Please note: outdoor space virtually staged 24 CPS is a boutique, full service cooperative with two apartments per floor, low maintenance that includes utilities, full time doorman and concierge, private storage, state-of-the-art fitness center and magnificent new lobby and entry. 1.5 month broker's fee applies, with an additional annual utility fee of $1,200 and one-time HOA fee of $500. There's also a 16% annual building fee.",
                                                 "summary": "This recently renovated Central Park South cooperative features a spacious layout with two bedroom suites, a home office, and an impressive 832 sq ft private outdoor terrace with park views. The luxury residence includes custom cabinetry, fine millwork, Crestron A/V system, and triple-glazed windows, located in a boutique full-service building with doorman, concierge, and fitness center.",
                                                 "tag_list": [
@@ -190,8 +192,33 @@ def create_batch():
                                                 ]
                                                 })
                                                 </ideal_output>
+                                                <EXAMPLE_OF_FATAL_OUTPUT_AVOID_AT_ALL_COST>
+                                                "input_description": "344 EAST 85TH STREET #5C\n\nABOUT THE APARTMENT: Washer/ Dryer, Stainless Kitchen, Dishwasher, Stainless Kitchen, Microwave, Sleek Fridge, Designer Bath, Kohler Pedestal Sink & Toilet, Soaking Tub, Tile & Marble Finishes, Sunny/Bright, Crown Moldings, Recessed Lighting Throughout\n\nABOUT THE BUILDING: Renovated Lobby, Beautiful Courtyard with Grills For a Nominal Annual Fee, Elevator, Laundry Room, Gorgeous Tree-Lined Block",
+                                                "summary": "Charming apartment located on East 85th Street featuring modern amenities including in-unit washer/dryer, stainless steel kitchen appliances, and a designer bathroom with luxurious finishes. The building offers a renovated lobby, courtyard with grilling area, elevator, and is situated on a beautiful tree-lined block. Broker's fee applies",
+                                                "tag_list": [
+                                                    "renovated",
+                                                    "spacious",
+                                                    "luxury",
+                                                    "pet-friendly"
+                                                ],
+                                                "additional_fees": [
+                                                    {
+                                                    "name": "courtyard grills",
+                                                    "amount": null,
+                                                    "type": "dollars",
+                                                    "recurring": true
+                                                    },
+                                                {
+                                                    "name": "broker",
+                                                    "amount": 1,
+                                                    "type": "months",
+                                                    "recurring": false
+                                                    }
+                                                ]
+                                                </EXAMPLE_OF_FATAL_OUTPUT_AVOID_AT_ALL_COST >
+
                                                 </example>""",
-                                    "cache_control": {"type": "persistent"}
+                                    "cache_control": {"type": "ephemeral"}
                                 },
                                 {
                                     "type": "text",
@@ -202,46 +229,68 @@ def create_batch():
                     ],
                     "tools": [
                         {
-                            "name": "process_description",
+                            "name": "save_details",
                             "description": "Process a real estate description into a summarized description, a list of tags, and additional fees",
-                            "cache_control": {"type": "persistent"},
+                            "cache_control": {"type": "ephemeral"},
                             "input_schema": {
                                 "type": "object",
+                                "properties": {
+                                    "summary": {
+                                    "type": "string",
+                                    "description": "Summary of real estate description. If the input description is empty, return an empty string. If the description is extremely short, just clean it up."
+                                    },
+                                    "tag_list": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": f"""List of tags that accurately describe the input description. 
+                                        Tags should be selected from the following list: <TAG_LIST>\n{json.dumps(TAG_LIST, indent=2)}\n</TAG_LIST>
+                                        If the input description is empty, return an empty array."""
+                                    },
+                                    "additional_fees": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "amount": {
+                                            "type": "number"
+                                        },
+                                        "type": {
+                                            "type": "string",
+                                            "enum": [
+                                            "dollars",
+                                            "percentage",
+                                            "months"
+                                            ]
+                                        },
+                                        "recurring": {
+                                            "type": "boolean"
+                                        }
+                                        },
+                                        "required": [
+                                        "name",
+                                        "amount",
+                                        "type",
+                                        "recurring"
+                                        ]
+                                    },
+                                    "description": "CRITICALLY IMPORTANT: Return an array containing ONLY fees that have EXPLICIT NUMERICAL amounts stated in the description. Rules: 1) A fee MUST have an explicit numerical value in the description to be included. 2) NEVER include fees described as 'nominal' or with any non-numerical terms. 3) NEVER include fees where no specific amount is mentioned (e.g., 'broker fees apply' with no amount = DO NOT INCLUDE). 4) For discounts/free periods, include with positive numbers (e.g., '2 months free' = {name: 'rent-free', amount: 2, type: 'months'}). 5) For complementary items, use negative numbers to indicate value given to renter. 6) Convert annual fees to monthly (divide by 12). 7) Percentage values must be between 0-100. 8) If no fees with explicit numerical values exist, return an empty array []."
+                                    },
+                                    "input_description": {
+                                    "type": "string",
+                                    "description": "Input of real estate description"
+                                    }
+                                },
                                 "required": [
                                     "summary",
                                     "tag_list",
                                     "additional_fees",
                                     "input_description"
-                                ],
-                                "properties": {
-                                    "input_description": {
-                                        "type": "string",
-                                        "description": "Input of real estate description"
-                                    },
-                                    "summary": {
-                                        "type": "string",
-                                        "description": "Summary of real estate description. If the input description is empty, return an empty string."
-                                    },
-                                    "tag_list": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        },
-                                        "description": f"""List of tags that accurately describe the input description. 
-                                        Tags should be selected from the following list: <TAG_LIST>\n{json.dumps(TAG_LIST, indent=2)}\n</TAG_LIST>
-                                        If the input description is empty, return an empty array."""
-                                    },
-                                    "additional_fees": {
-                                        "type": "array",
-                                        "items": {
-                                            "name": "string",
-                                            "amount": "string",
-                                            "type": "string",
-                                            "recurring": "boolean"
-                                        },
-                                        "description": "Array of additional fees, such as brokers fees, ONLY IF ANY FEES ARE EXPLICITLY MENTIONED. IF NO FEE IS EXPLICITLY MENTIONED RETURN AN EMPTY LIST. Fee name is the type of fee (e.g. brokers fee, closing cost, etc.) and fee amount is the amount of the fee. Fee type needs to be either 'dollars', 'percentage', or 'months'. For recurring dollar fees, all values should be monthly - for example an annual fee of $600 should be divided by 12. Percentage values should be value between 0 and 100. If the input description is empty, return an empty array."
-                                    }
-                                }
+                                ]
                             }
                         }
                     ]

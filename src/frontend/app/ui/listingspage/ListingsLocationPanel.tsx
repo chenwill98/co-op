@@ -103,7 +103,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
                             ))
                         ) : (
                             <tr className="h-12">
-                                <td colSpan={3} className="text-center">No nearby {displayName.toLowerCase()} found</td>
+                                <td colSpan={3} className="text-center text-base-content/60">No nearby {displayName.toLowerCase()} found</td>
                             </tr>
                         )}
                     </tbody>
@@ -163,9 +163,9 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
             {/* Panel that expands/collapses */}
             <div
                 className={`transition-all duration-300 ease-in-out ${
-                isExpanded 
-                  ? 'opacity-100 max-h-[800px] mt-4' 
-                  : 'opacity-0 max-h-0 mt-0 hidden'
+                    isExpanded
+                      ? 'opacity-100 max-h-[1000px] mt-2 overflow-visible'
+                      : 'opacity-0 max-h-0 mt-0 overflow-hidden'
                 }`}
             >
                 <div className="flex flex-row items-center gap-2 mb-2">

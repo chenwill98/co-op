@@ -107,6 +107,8 @@ export const tagCategories = {
     {name: 'pool', display: 'Pool 🏊', source: ['AI', 'Analysis'], rank: 2},
     {name: 'rooftop-access', display: 'Rooftop Access 🚀', source: ['AI', 'Analysis'], rank: 2},
     {name: 'concierge-service', display: 'Concierge Service 🤵', source: ['AI', 'Analysis'], rank: 2},
+    {name: 'in-unit-laundry', display: 'In Unit Laundry 🧺', source: ['AI', 'Analysis'], rank: 2},
+    {name: 'dishwasher', display: 'Dishwasher 🧼', source: ['AI', 'Analysis'], rank: 2},
     {name: 'doorman', display: 'Doorman 🚪', source: ['AI', 'Analysis'], rank: 2},
     {name: 'private-balcony', display: 'Private Balcony 🪑', source: ['AI', 'Analysis'], rank: 2},
     {name: 'shared-outdoor-space', display: 'Shared Outdoor Space 🌳', source: ['AI', 'Analysis'], rank: 2}

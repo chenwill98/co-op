@@ -90,7 +90,7 @@ export default function ListingsTransportationPanel({
                         <SubwayIcon key={idx} line={station.route_short_name || station.route_id} />
                       ))}
                     {!sortedStations.some(station => station.walking_minutes < 5) && (
-                      <span className="text-xs text-gray-500">No stations</span>
+                      <span className="text-xs text-base-content/60">No stations</span>
                     )}
                   </div>
                 </div>
@@ -104,7 +104,7 @@ export default function ListingsTransportationPanel({
                         <SubwayIcon key={idx} line={station.route_short_name || station.route_id} />
                       ))}
                     {!sortedStations.some(station => station.walking_minutes >= 5 && station.walking_minutes <= 10) && (
-                      <span className="text-xs text-gray-500">No stations</span>
+                      <span className="text-xs text-base-content/60">No stations</span>
                     )}
                   </div>
                 </div>
@@ -121,21 +121,21 @@ export default function ListingsTransportationPanel({
       {/* Panel that expands/collapses */}
       <div
         className={`transition-all duration-300 ease-in-out ${
-          isExpanded 
-            ? 'opacity-100 max-h-[1000px] mt-4' 
-            : 'opacity-0 max-h-0 mt-0 hidden'
+          isExpanded
+            ? 'opacity-100 max-h-[1000px] mt-2 overflow-visible'
+            : 'opacity-0 max-h-0 mt-0 overflow-hidden'
         }`}
       >
         {/* Display detailed subway times when expanded */}
         <div>
             <div className="flex flex-row items-center gap-2 mb-2">
               <h3 className="text-lg font-semibold text-base-content/80">Subway Access Analytics</h3>
-              <TooltipIcon tooltipText="Subway access percentile is a measure of the accessibility of a property to subway stations relative to other properties. It is calculated based on the number of distinct subway lines accessible within walking distance." />
+              <TooltipIcon tooltipText="Subway access percentile is a measure of the accessibility of a property to subway stations relative to other properties with the same number of bedrooms and in the same price band. It is calculated based on the number of distinct subway lines accessible within walking distance." />
             </div>
             <PercentileCards 
-              allPercentile={listingDetails.subway_access_percentile ?? 0}
-              boroughPercentile={(listingDetails as any).subway_borough_access_percentile ?? 0}
-              neighborhoodPercentile={(listingDetails as any).subway_neighborhood_access_percentile ?? 0}
+              allPercentile={listingDetails.subway_access_percentile ?? null}
+              boroughPercentile={listingDetails.subway_borough_access_percentile ?? null}
+              neighborhoodPercentile={listingDetails.subway_neighborhood_access_percentile ?? null}
             />
             <div className="flex flex-row items-center gap-2 mb-2">
               <h3 className="text-lg font-semibold text-base-content/80">Detailed Subway Times (min) </h3>

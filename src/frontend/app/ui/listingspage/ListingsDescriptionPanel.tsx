@@ -28,10 +28,10 @@ export default function ListingsDescriptionPanel({ listingDetails }: { listingDe
             {/* Panel that expands/collapses */}
             <div
                 className={`transition-all duration-300 ease-in-out ${
-                isExpanded 
-                  ? 'opacity-100 max-h-[800px] mt-4' 
-                  : 'opacity-0 max-h-0 mt-0 hidden'
-                }`}
+                    isExpanded
+                      ? 'opacity-100 max-h-[1000px] mt-2 overflow-visible'
+                      : 'opacity-0 max-h-0 mt-0 overflow-hidden'
+                  }`}
             >
                 <p className="text-base-content/80 leading-relaxed text-sm">
                 {listingDetails.description}

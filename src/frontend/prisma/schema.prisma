@@ -157,10 +157,24 @@ model dim_property_analytics_view {
   fct_id                              String   @id @db.VarChar(20)
   borough                             String?  @db.VarChar(100)
   neighborhood                        String?  @db.VarChar(100)
-  distinct_line_count                 BigInt
-  subway_access_percentile            Float    @db.DoublePrecision
-  subway_borough_access_percentile    Float    @db.DoublePrecision
-  subway_neighborhood_access_percentile Float  @db.DoublePrecision
+  bedrooms                            Int?     @db.Integer
+  price_band                          Decimal?  @db.Decimal(12,0)
+  price                               Decimal?  @db.Decimal(12,2)
+  sqft                                Int?     @db.Integer
+  distinct_line_count                 BigInt?   @db.BigInt
+  amenity_score                       Decimal?  @db.Decimal(12,2)
+  sqft_percentile                     Float?   @db.DoublePrecision
+  price_percentile                    Float?   @db.DoublePrecision
+  subway_access_percentile            Float?   @db.DoublePrecision
+  amenity_percentile                  Float?   @db.DoublePrecision
+  sqft_borough_percentile             Float?   @db.DoublePrecision
+  price_borough_percentile            Float?   @db.DoublePrecision
+  subway_borough_access_percentile    Float?   @db.DoublePrecision
+  amenity_borough_percentile          Float?   @db.DoublePrecision
+  sqft_neighborhood_percentile        Float?   @db.DoublePrecision
+  price_neighborhood_percentile       Float?   @db.DoublePrecision
+  subway_neighborhood_access_percentile Float? @db.DoublePrecision
+  amenity_neighborhood_percentile     Float?   @db.DoublePrecision
   
   @@map("dim_property_analytics_view") 
   @@schema("real_estate_analytics")

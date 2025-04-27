@@ -6,6 +6,7 @@ import { useState } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon";
+import PercentileCards from "@/app/ui/analytics/PercentileCards";
 
 export default function ListingsAmentitiesPanel({ listingDetails }: { listingDetails: CombinedPropertyDetails }) {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -140,12 +141,12 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
             <div
                 className={`transition-all duration-300 ease-in-out ${
                 isExpanded 
-                  ? 'opacity-100 max-h-[800px] mt-4' 
+                  ? 'opacity-100 max-h-[800px] mt-2' 
                   : 'opacity-0 max-h-0 mt-0 hidden'
                 }`}
             >
                 {/* Simplified amenity display */}
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
                     {/* Notable Amenities */}
                     <div>
                         <h3 className="text-lg font-semibold mb-2 text-base-content/80">Notable Amenities</h3>
@@ -192,6 +193,15 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                             }
                         </div>
                     </div>
+                    <div className="flex flex-row items-center gap-2">
+                        <h3 className="text-lg font-semibold text-base-content/80">Amenity Analytics</h3>
+                        <TooltipIcon tooltipText="Amenity percentile is a quantitative score of the amenities (which is of course highly subjective) of a property relative to other properties with the same number of bedrooms and in the same price band. Weights are ~1 for all key amenities, ~0.5 for notable amenities, and ~0.1 for other amenities." />
+                    </div>
+                    <PercentileCards 
+                        allPercentile={listingDetails.amenity_percentile ?? null}
+                        boroughPercentile={listingDetails.amenity_borough_percentile ?? null}
+                        neighborhoodPercentile={listingDetails.amenity_neighborhood_percentile ?? null}
+                    />
                 </div>
             </div>
         </div>
