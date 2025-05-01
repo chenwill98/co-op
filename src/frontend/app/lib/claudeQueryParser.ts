@@ -1,4 +1,5 @@
 import { getAllChildNeighborhoods } from './data';
+import { Prisma } from '@prisma/client';
 
 /**
  * Interface representing the structure of Claude's response
@@ -234,7 +235,7 @@ export async function parseClaudeResultsToPrismaSQL(
   orderBy?: Record<string, string>,
   limit?: number,
   offset?: number
-): Promise<string> {
+): Promise<Prisma.Sql> {
   // Initialize the where condition parts array and tag array
   const whereClauseParts: string[] = [];
   const tagArray: string[] = [];
@@ -249,14 +250,14 @@ export async function parseClaudeResultsToPrismaSQL(
       claudeResults = JSON.parse(claudeResults);
     } catch (error) {
       console.log('Failed to parse claudeResults string (SQL):', error);
-      return '';
+      return Prisma.empty;
     }
   }
   
   // Return empty query if claudeResults is empty or undefined
   if (!claudeResults || Object.keys(claudeResults).length === 0) {
     console.log('Claude results is empty or undefined (SQL)');
-    return '';
+    return Prisma.empty;
   }
   
   console.log('Processing Claude results (SQL):', JSON.stringify(claudeResults, null, 2));
@@ -438,19 +439,60 @@ export async function parseClaudeResultsToPrismaSQL(
   const limitClause = limit ? `LIMIT ${limit}` : '';
   const offsetClause = offset ? `OFFSET ${offset}` : '';
   
-  // Build the final SQL query
-  const sqlQuery = `
-    SELECT * 
-    FROM "real_estate"."latest_property_details_view"
-    ${whereClause}
-    ${orderByClause}
-    ${limitClause}
-    ${offsetClause}
-  `.trim();
+  // Create tag arrays for safe interpolation
+  const tagValues = tagArray.length > 0 ? Prisma.sql`ARRAY[${Prisma.join(tagArray.map(tag => tag))}]` : Prisma.empty;
   
-  console.log('Generated SQL query:', sqlQuery);
+  // Build the final SQL query with tagged template literals
+  let baseQuery;
   
-  return sqlQuery;
+  if (tagArray.length > 0) {
+    // If we have tags, use a more optimized query that filters out listings without matching tags
+    // Use a subquery to avoid GROUP BY issues
+    baseQuery = Prisma.sql`
+      WITH matched_properties AS (
+        SELECT *, 
+               array_length(array(
+                 SELECT unnest(combined_tag_list) 
+                 INTERSECT 
+                 SELECT unnest(${tagValues})
+               ), 1) as tag_match_count
+        FROM "real_estate"."latest_property_details_view"
+        ${Prisma.raw(whereClause)}
+      )
+      SELECT * FROM matched_properties
+      WHERE tag_match_count > 0
+    `;
+  } else {
+    // If no tags, use a simpler query
+    baseQuery = Prisma.sql`
+      SELECT * 
+      FROM "real_estate"."latest_property_details_view"
+      ${Prisma.raw(whereClause)}
+    `;
+  }
+  
+  // Add ORDER BY if needed
+  if (tagArray.length > 0) {
+    baseQuery = Prisma.sql`${baseQuery}
+    ORDER BY tag_match_count DESC${orderBy ? Prisma.raw(`, ${Object.keys(orderBy)[0]} ${orderBy[Object.keys(orderBy)[0]]}`) : Prisma.empty}
+    `;
+  } else if (orderBy) {
+    baseQuery = Prisma.sql`${baseQuery}
+    ORDER BY ${Prisma.raw(`${Object.keys(orderBy)[0]} ${orderBy[Object.keys(orderBy)[0]]}`)}`;
+  }
+  
+  // Add LIMIT and OFFSET
+  if (limit) {
+    baseQuery = Prisma.sql`${baseQuery} LIMIT ${limit}`;
+  }
+  
+  if (offset) {
+    baseQuery = Prisma.sql`${baseQuery} OFFSET ${offset}`;
+  }
+  
+  console.log('Generated SQL query for use with $queryRaw:', baseQuery);
+  
+  return baseQuery;
 }
 
 /**

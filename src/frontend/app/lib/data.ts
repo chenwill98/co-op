@@ -1,12 +1,12 @@
 // Import your database client/ORM here, e.g. Prisma
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois } from './definitions';
 import { getSystemTag, tagCategories } from './tagUtils';
 import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import Anthropic from "@anthropic-ai/sdk";
 // Import the parser properly using ES module syntax
-import { parseClaudeResultsToPrismaQuery } from './claudeQueryParser';
+import { parseClaudeResultsToPrismaSQL } from './claudeQueryParser';
 
 
 
@@ -27,11 +27,7 @@ export async function fetchPropertiesRDS(params: {
 
   // Destructure parameters
   const { neighborhood, minPrice, maxPrice, brokerFee, sort, tags } = params;
-  // Prepare tag array for sorting (avoid undefined)
-  let claudeTagArray: string[] = [];
-
-  // Build the where condition based on provided filters
-  const whereCondition: any = {};
+  let claudeQuery = Prisma.empty;
 
   // Get Claude results if text search is provided
   if (params.text) {
@@ -52,62 +48,50 @@ export async function fetchPropertiesRDS(params: {
           }
           return dbSchema ?? {};
         });
+
+      // Define orderBy based on sort parameter
+      let orderBy: any = undefined;
+      
+      if (sort) {
+        switch (sort) {
+          case 'newest':
+            orderBy = { listed_at: 'desc' };
+            break;
+          case 'least_expensive':
+            orderBy = { price: 'asc' };
+            break;
+          case 'most_expensive':
+            orderBy = { price: 'desc' };
+            break;
+          default:
+            // No sorting
+            break;
+        }
+      }
       
       // Parse claudeResults into Prisma filters - properly await the async function
-      const [claudeFilters, tagListFromClaude] = await parseClaudeResultsToPrismaQuery(claudeResults);
-      
-      // Save tags for later sorting
-      claudeTagArray = tagListFromClaude;
-      console.log('Received tag array from Claude:', claudeTagArray);
-      
-      // Merge Claude filters with whereCondition
-      Object.assign(whereCondition, claudeFilters);
+      claudeQuery = await parseClaudeResultsToPrismaSQL(claudeResults, orderBy, limit, skip);
+
     } catch (error) {
       console.error('Error processing Claude search results:', error);
       // Continue with empty whereCondition if Claude search fails
     }
   }
 
-  whereCondition.id = { not: null };
-
-  console.log('Query conditions (raw):', whereCondition);
-  console.log('Query conditions type:', typeof whereCondition);
-  console.log('Query conditions (stringified):', JSON.stringify(whereCondition, null, 2));
-
   try {
-    if (typeof whereCondition !== 'object' || Array.isArray(whereCondition) || whereCondition === null) {
-      throw new Error('Invalid whereCondition: expected an object');
-    }
-
-    // Define orderBy based on sort parameter
-    let orderBy: any = undefined;
+    // Execute the query if we have one from Claude
+    const properties = params.text 
+      ? await prisma.$queryRaw<any[]>(claudeQuery)
+      : await prisma.latest_property_details_view.findMany({
+          where: { id: { not: null } },
+          take: limit,
+          skip: skip,
+          orderBy: sort ? {
+            [sort === 'newest' ? 'listed_at' : 'price']: 
+            sort === 'least_expensive' ? 'asc' : 'desc'
+          } : undefined
+        });
     
-    if (sort) {
-      switch (sort) {
-        case 'newest':
-          orderBy = { listed_at: 'desc' };
-          break;
-        case 'least_expensive':
-          orderBy = { price: 'asc' };
-          break;
-        case 'most_expensive':
-          orderBy = { price: 'desc' };
-          break;
-        default:
-          // No sorting
-          break;
-      }
-    }
-
-    console.log('whereCondition:', whereCondition);
-
-    const properties = await prisma.latest_property_details_view.findMany({
-      where: whereCondition,
-      take: limit,
-      skip: skip,
-      orderBy: orderBy,
-    });
-
     let formattedProperties = properties.map(property => ({
       ...property,
       price: property.price ? property.price.toNumber() : 0,
@@ -122,21 +106,11 @@ export async function fetchPropertiesRDS(params: {
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
       actual_brokers_fee: property.actual_brokers_fee.toNumber(),
       // Convert any emoji tags to system tags
-      tag_list: property.tag_list ? property.tag_list.map(tag => tag) : [],
-      analytics_tags: property.analytics_tags ? property.analytics_tags.map(tag => tag) : [],
-      combined_tag_list: property.combined_tag_list ? property.combined_tag_list.map(tag => tag) : [],
+      tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
+      analytics_tags: property.analytics_tags ? property.analytics_tags.map((tag: string) => tag) : [],
+      combined_tag_list: property.combined_tag_list ? property.combined_tag_list.map((tag: string) => tag) : [],
       additional_fees: property.additional_fees ? property.additional_fees : null,
     }));
-
-    // Sort listings by number of matching tags (descending)
-    if (claudeTagArray.length > 0) {
-      formattedProperties.sort((a, b) => {
-        // Use combined_tag_list for sorting instead of tag_list
-        const aCount = a.combined_tag_list.filter(t => claudeTagArray.includes(t)).length;
-        const bCount = b.combined_tag_list.filter(t => claudeTagArray.includes(t)).length;
-        return bCount - aCount;
-      });
-    }
 
     return formattedProperties as Property[];
   } catch (error) {
@@ -171,9 +145,9 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
       actual_brokers_fee: property.actual_brokers_fee.toNumber(),
       // Convert any emoji tags to system tags
-      tag_list: property.tag_list ? property.tag_list.map(tag => tag) : [],
-      analytics_tags: property.analytics_tags ? property.analytics_tags.map(tag => tag) : [],
-      combined_tag_list: property.combined_tag_list ? property.combined_tag_list.map(tag => tag) : [],
+      tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
+      analytics_tags: property.analytics_tags ? property.analytics_tags.map((tag: string) => tag) : [],
+      combined_tag_list: property.combined_tag_list ? property.combined_tag_list.map((tag: string) => tag) : [],
       additional_fees: property.additional_fees ? property.additional_fees : null,
     };
     return formattedProperty as Property;
