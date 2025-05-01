@@ -27,6 +27,8 @@ export async function fetchPropertiesRDS(params: {
 
   // Destructure parameters
   const { neighborhood, minPrice, maxPrice, brokerFee, sort, tags } = params;
+  // Prepare tag array for sorting (avoid undefined)
+  let claudeTagArray: string[] = [];
 
   // Build the where condition based on provided filters
   const whereCondition: any = {};
@@ -52,46 +54,17 @@ export async function fetchPropertiesRDS(params: {
         });
       
       // Parse claudeResults into Prisma filters - properly await the async function
-      const claudeFilters = await parseClaudeResultsToPrismaQuery(claudeResults);
+      const [claudeFilters, tagListFromClaude] = await parseClaudeResultsToPrismaQuery(claudeResults);
+      
+      // Save tags for later sorting
+      claudeTagArray = tagListFromClaude;
+      console.log('Received tag array from Claude:', claudeTagArray);
       
       // Merge Claude filters with whereCondition
       Object.assign(whereCondition, claudeFilters);
     } catch (error) {
       console.error('Error processing Claude search results:', error);
       // Continue with empty whereCondition if Claude search fails
-    }
-  }
-
-  // Apply manual filters (these will override Claude filters if there's a conflict)
-  if (neighborhood && !whereCondition.neighborhood) {
-    whereCondition.neighborhood = {
-      equals: neighborhood,
-      mode: 'insensitive'
-    };
-  }
-
-  if ((minPrice || maxPrice) && !whereCondition.price) {
-    whereCondition.price = {};
-    if (minPrice) {
-      whereCondition.price.gte = Number(minPrice);
-    }
-    if (maxPrice) {
-      whereCondition.price.lte = Number(maxPrice);
-    }
-  }
-
-  // Handle broker fee filter if needed
-  if (brokerFee === 'true' && !whereCondition.no_fee) {
-    whereCondition.no_fee = true;
-  }
-
-  // Handle tag filtering
-  if (tags && !whereCondition.tag_list) {
-    const tagArray = tags.split(',');
-    if (tagArray.length > 0) {
-      whereCondition.tag_list = {
-        hasEvery: tagArray
-      };
     }
   }
 
@@ -126,6 +99,8 @@ export async function fetchPropertiesRDS(params: {
       }
     }
 
+    console.log('whereCondition:', whereCondition);
+
     const properties = await prisma.latest_property_details_view.findMany({
       where: whereCondition,
       take: limit,
@@ -133,7 +108,7 @@ export async function fetchPropertiesRDS(params: {
       orderBy: orderBy,
     });
 
-    const formattedProperties = properties.map(property => ({
+    let formattedProperties = properties.map(property => ({
       ...property,
       price: property.price ? property.price.toNumber() : 0,
       bathrooms: property.bathrooms ? property.bathrooms.toNumber() : null,
@@ -148,7 +123,20 @@ export async function fetchPropertiesRDS(params: {
       actual_brokers_fee: property.actual_brokers_fee.toNumber(),
       // Convert any emoji tags to system tags
       tag_list: property.tag_list ? property.tag_list.map(tag => tag) : [],
+      analytics_tags: property.analytics_tags ? property.analytics_tags.map(tag => tag) : [],
+      combined_tag_list: property.combined_tag_list ? property.combined_tag_list.map(tag => tag) : [],
+      additional_fees: property.additional_fees ? property.additional_fees : null,
     }));
+
+    // Sort listings by number of matching tags (descending)
+    if (claudeTagArray.length > 0) {
+      formattedProperties.sort((a, b) => {
+        // Use combined_tag_list for sorting instead of tag_list
+        const aCount = a.combined_tag_list.filter(t => claudeTagArray.includes(t)).length;
+        const bCount = b.combined_tag_list.filter(t => claudeTagArray.includes(t)).length;
+        return bCount - aCount;
+      });
+    }
 
     return formattedProperties as Property[];
   } catch (error) {
@@ -184,6 +172,9 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
       actual_brokers_fee: property.actual_brokers_fee.toNumber(),
       // Convert any emoji tags to system tags
       tag_list: property.tag_list ? property.tag_list.map(tag => tag) : [],
+      analytics_tags: property.analytics_tags ? property.analytics_tags.map(tag => tag) : [],
+      combined_tag_list: property.combined_tag_list ? property.combined_tag_list.map(tag => tag) : [],
+      additional_fees: property.additional_fees ? property.additional_fees : null,
     };
     return formattedProperty as Property;
   } catch (error) {
@@ -546,6 +537,7 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
         {
           "name": "process_search_query",
           "description": "Process a natural language text search into parameters that can be used to query a database. The system uses the provided database schema and tag list to generate the search filters.",
+          "cache_control": {"type": "ephemeral"},
           "input_schema": {
             "type": "object",
             "properties": {

@@ -87,6 +87,9 @@ model latest_property_details_view {
   fct_price       Int?
   live_days_on_market  Int?
   actual_brokers_fee Decimal  @db.Decimal(10, 2)
+  analytics_tags String[]
+  combined_tag_list String[]
+  additional_fees Json? @db.JsonB
 
   @@map("latest_property_details_view") 
   @@schema("real_estate")
@@ -166,14 +169,17 @@ model dim_property_analytics_view {
   sqft_percentile                     Float?   @db.DoublePrecision
   price_percentile                    Float?   @db.DoublePrecision
   subway_access_percentile            Float?   @db.DoublePrecision
+  poi_access_percentile               Float?   @db.DoublePrecision
   amenity_percentile                  Float?   @db.DoublePrecision
   sqft_borough_percentile             Float?   @db.DoublePrecision
   price_borough_percentile            Float?   @db.DoublePrecision
   subway_borough_access_percentile    Float?   @db.DoublePrecision
+  poi_borough_access_percentile       Float?   @db.DoublePrecision
   amenity_borough_percentile          Float?   @db.DoublePrecision
   sqft_neighborhood_percentile        Float?   @db.DoublePrecision
   price_neighborhood_percentile       Float?   @db.DoublePrecision
   subway_neighborhood_access_percentile Float? @db.DoublePrecision
+  poi_neighborhood_access_percentile  Float?   @db.DoublePrecision
   amenity_neighborhood_percentile     Float?   @db.DoublePrecision
   
   @@map("dim_property_analytics_view") 

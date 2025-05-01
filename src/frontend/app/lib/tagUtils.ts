@@ -47,42 +47,44 @@ export const tagCategories = {
     {name: 'good-deal', display: 'Good Deal 👍', source: ['Analysis'], rank: 1},
     {name: 'fair-deal', display: 'Fair Deal 👌', source: ['Analysis'], rank: 1},
     {name: 'poor-deal', display: 'Poor Deal 👎', source: ['Analysis'], rank: 1},
-    {name: 'price-drop', display: 'Price Drop 📉', source: ['Analysis'], rank: 2},
-    {name: 'overpriced', display: 'Overpriced ⚠️', source: ['Analysis'], rank: 2},
-    {name: 'price-increase', display: 'Price Increase 📈', source: ['Analysis'], rank: 2},
-    {name: 'discounted', display: 'Discounted 🔖', source: ['Analysis'], rank: 2},
-    {name: 'underpriced', display: 'Underpriced 🤫', source: ['Analysis'], rank: 2}
+    {name: 'price-drop', display: 'Price Drop 📉', source: ['Analysis'], rank: 1},
+    {name: 'price-increase', display: 'Price Increase 📈', source: ['Analysis'], rank: 1},
+    {name: 'poor-price', display: 'Overpriced 💸', source: ['Analysis'], rank: 1},
+    {name: 'fair-price', display: 'Average Price 🆗', source: ['Analysis'], rank: 1},
+    {name: 'good-price', display: 'Good Price 👍', source: ['Analysis'], rank: 1},
+    {name: 'great-price', display: 'Great Price 🤑', source: ['Analysis'], rank: 1},
   ],
   'Features': [
-    {name: 'spacious', display: 'Spacious 🏡', source: ['AI', 'Analysis'], rank: 1},
-    {name: 'average-size', display: 'Average Size ⬜', source: ['Analysis'], rank: 1},
-    {name: 'cramped', display: 'Cramped 😬', source: ['Analysis'], rank: 1},
-    {name: 'luxury', display: 'Luxury 💎', source: ['AI'], rank: 2},
-    {name: 'renovated', display: 'Renovated 🔨', source: ['AI'], rank: 2},
-    {name: 'open-house', display: 'Open House 🏠', source: ['AI'], rank: 2},
-    {name: 'furnished', display: 'Furnished 🛋️', source: ['AI'], rank: 2},
-    {name: 'home-office', display: 'Home Office 💻', source: ['AI'], rank: 2},
-    {name: 'pre-war', display: 'Pre-War 💥', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'brownstone', display: 'Brownstone 🏢', source: ['AI'], rank: 2},
-    {name: 'cozy', display: 'Cozy 🔥', source: ['AI'], rank: 2},
-    {name: 'high-ceilings', display: 'High Ceilings 🔝', source: ['AI'], rank: 2},
-    {name: 'natural-light', display: 'Natural Light ☀️', source: ['AI'], rank: 2}
+    {name: 'spacious', display: 'Spacious 🏡', source: ['AI', 'Analysis'], rank: 2},
+    {name: 'average-size', display: 'Average Size ⬜', source: ['Analysis'], rank: 2},
+    {name: 'cramped', display: 'Cramped 😬', source: ['Analysis'], rank: 2},
+    {name: 'luxury', display: 'Luxury 💎', source: ['AI'], rank: 3},
+    {name: 'renovated', display: 'Renovated 🔨', source: ['AI'], rank: 3},
+    {name: 'open-house', display: 'Open House 🏠', source: ['AI'], rank: 3},
+    {name: 'furnished', display: 'Furnished 🛋️', source: ['AI'], rank: 3},
+    {name: 'home-office', display: 'Home Office 💻', source: ['AI'], rank: 3},
+    {name: 'pre-war', display: 'Pre-War 💥', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'brownstone', display: 'Brownstone 🏢', source: ['AI'], rank: 3},
+    {name: 'cozy', display: 'Cozy 🔥', source: ['AI'], rank: 3},
+    {name: 'high-ceilings', display: 'High Ceilings 🔝', source: ['AI'], rank: 3},
+    {name: 'natural-light', display: 'Natural Light ☀️', source: ['AI'], rank: 3}
   ],
   'Location': [
     {name: 'great-location', display: 'Great Location 🌟', source: ['Analysis'], rank: 1},
     {name: 'good-location', display: 'Good Location 👍', source: ['Analysis'], rank: 1},
     {name: 'fair-location', display: 'Fair Location 👌', source: ['Analysis'], rank: 1},
     {name: 'poor-location', display: 'Poor Location 👎', source: ['Analysis'], rank: 1},
-    {name: 'park-view', display: 'Park View 🌳', source: ['AI', 'Analysis'], rank: 2},
+    {name: 'park-view', display: 'Park View 🌳', source: ['AI'], rank: 2},
     // {name: 'city-center', display: 'City Center 🏙️', source: ['AI', 'Analysis'], rank: 2},
     // {name: 'prime-location', display: 'Prime Location 🌟', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'up-and-coming', display: 'Up and Coming 📈', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'quiet-neighborhood', display: 'Quiet Neighborhood 🤫', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'noisy-area', display: 'Noisy Area 🔊', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'waterfront', display: 'Waterfront 🌊', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'near-schools', display: 'Near Schools 🏫', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'near-shopping', display: 'Near Shopping 🛍️', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'remote-location', display: 'Remote Location 🏕️', source: ['AI', 'Analysis'], rank: 2}
+    {name: 'up-and-coming', display: 'Up and Coming 📈', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'quiet-neighborhood', display: 'Quiet Neighborhood 🤫', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'noisy-area', display: 'Noisy Area 🔊', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'waterfront', display: 'Waterfront 🌊', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'restaurants-nearby', display: 'Restaurants Nearby 🍽️', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'gyms-nearby', display: 'Gyms Nearby 🏋️', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'groceries-nearby', display: 'Groceries Nearby 🛒', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'parks-nearby', display: 'Parks Nearby 🌲', source: ['AI', 'Analysis'], rank: 3}
   ],
   'Popularity': [
     {name: 'new', display: 'New ✨', source: ['Analysis'], rank: 1},
@@ -90,40 +92,40 @@ export const tagCategories = {
     {name: 'in-demand', display: 'In Demand 🚀', source: ['Analysis'], rank: 1},
     {name: 'short-term', display: 'Short Term 🕒', source: ['Analysis'], rank: 1},
     {name: 'trending', display: 'Trending 📈', source: ['Analysis'], rank: 1},
-    {name: 'long-time-listed', display: 'Long Time Listed 📆', source: ['Analysis'], rank: 1}
+    {name: 'long-time-listed', display: 'Listed Long 📆', source: ['Analysis'], rank: 1}
   ],
   'Amenities': [
-    {name: 'great-amenities', display: 'Great Amenities 🌟', source: ['Analysis'], rank: 1},
+    {name: 'great-amenities', display: 'Great Amenities 🌟', source: ['Analysis'], rank: 2},
     {name: 'good-amenities', display: 'Good Amenities 👍', source: ['Analysis'], rank: 1},
     {name: 'fair-amenities', display: 'Fair Amenities 👌', source: ['Analysis'], rank: 1},
     {name: 'poor-amenities', display: 'Poor Amenities 👎', source: ['Analysis'], rank: 1},
-    {name: 'pet-friendly', display: 'Pet Friendly 🐾', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'solar-powered', display: 'Solar Powered ☀️', source: ['AI'], rank: 2},
-    {name: 'eco-friendly', display: 'Eco Friendly 🌿', source: ['AI'], rank: 2},
-    {name: 'energy-efficient', display: 'Energy Efficient ⚡', source: ['AI'], rank: 2},
-    {name: 'modern-design', display: 'Modern Design 🆕', source: ['AI'], rank: 2},
-    {name: 'classic-design', display: 'Classic Design 🏛️', source: ['AI'], rank: 2},
-    {name: 'gym', display: 'Gym 💪', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'pool', display: 'Pool 🏊', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'rooftop-access', display: 'Rooftop Access 🚀', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'concierge-service', display: 'Concierge Service 🤵', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'in-unit-laundry', display: 'In Unit Laundry 🧺', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'dishwasher', display: 'Dishwasher 🧼', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'doorman', display: 'Doorman 🚪', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'private-balcony', display: 'Private Balcony 🪑', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'shared-outdoor-space', display: 'Shared Outdoor Space 🌳', source: ['AI', 'Analysis'], rank: 2}
+    {name: 'pet-friendly', display: 'Pet Friendly 🐾', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'solar-powered', display: 'Solar Powered ☀️', source: ['AI'], rank: 3},
+    {name: 'eco-friendly', display: 'Eco Friendly 🌿', source: ['AI'], rank: 3},
+    {name: 'energy-efficient', display: 'Energy Efficient ⚡', source: ['AI'], rank: 3},
+    {name: 'modern-design', display: 'Modern Design 🆕', source: ['AI'], rank: 3},
+    {name: 'classic-design', display: 'Classic Design 🏛️', source: ['AI'], rank: 3},
+    {name: 'gym', display: 'Gym 💪', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'pool', display: 'Pool 🏊', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'rooftop-access', display: 'Rooftop Access 🚀', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'concierge-service', display: 'Concierge Service 🤵', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'in-unit-laundry', display: 'In Unit Laundry 🧺', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'dishwasher', display: 'Dishwasher 🧼', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'doorman', display: 'Doorman 🚪', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'private-balcony', display: 'Private Balcony 🪑', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'shared-outdoor-space', display: 'Shared Outdoor Space 🌳', source: ['AI', 'Analysis'], rank: 3}
   ],
   'Transportation': [
-    {name: 'great-transportation', display: 'Great Transportation 🚄', source: ['Analysis'], rank: 1},
-    {name: 'fair-transportation', display: 'Fair Transportation 👌', source: ['Analysis'], rank: 1},
-    {name: 'good-transportation', display: 'Good Transportation 👍', source: ['Analysis'], rank: 1},
-    {name: 'poor-transportation', display: 'Poor Transportation 👎', source: ['Analysis'], rank: 1},
-    {name: 'close-to-bus-stop', display: 'Close to Bus Stop 🚌', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'far-from-bus-stop', display: 'Far from Bus Stop 🚖', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'close-to-subway', display: 'Close to Subway 🚉', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'far-from-subway', display: 'Far from Subway 🚖', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'bike-friendly', display: 'Bike Friendly 🚴', source: ['AI', 'Analysis'], rank: 2},
-    {name: 'parking-available', display: 'Parking Available 🚗', source: ['AI'], rank: 2}
+    {name: 'great-subway-access', display: 'Great Transportation 🚄', source: ['Analysis'], rank: 2},
+    {name: 'fair-subway-access', display: 'Fair Transportation 👌', source: ['Analysis'], rank: 2},
+    {name: 'good-subway-access', display: 'Good Transportation 👍', source: ['Analysis'], rank: 2},
+    {name: 'poor-subway-access', display: 'Poor Transportation 👎', source: ['Analysis'], rank: 2},
+    {name: 'close-to-bus-stop', display: 'Close to Bus Stop 🚌', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'far-from-bus-stop', display: 'Far from Bus Stop 🚖', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'close-to-subway', display: 'Close to Subway 🚉', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'far-from-subway', display: 'Far from Subway 🚖', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'bike-friendly', display: 'Bike Friendly 🚴', source: ['AI', 'Analysis'], rank: 3},
+    {name: 'parking-available', display: 'Parking Available 🚗', source: ['AI', 'Analysis'], rank: 3}
   ]
 };
 
@@ -197,13 +199,13 @@ export function findTagCategory(tagName: string): string | undefined {
  * @param toDisplay If true, converts from system to display format; if false, converts from display to system format
  */
 export function convertPropertyTags(property: Property | null, toDisplay: boolean = false): Property | null {
-  if (!property || !property.tag_list || property.tag_list.length === 0) {
+  if (!property || !property.combined_tag_list || property.combined_tag_list.length === 0) {
     return property;
   }
   
   return {
     ...property,
-    tag_list: property.tag_list.map(tag => toDisplay ? getDisplayTag(tag) : getSystemTag(tag))
+    combined_tag_list: property.combined_tag_list.map(tag => toDisplay ? getDisplayTag(tag) : getSystemTag(tag))
   };
 }
 

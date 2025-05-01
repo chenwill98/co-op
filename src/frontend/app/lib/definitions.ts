@@ -32,6 +32,9 @@ export type Property = {
     fct_price: number;
     live_days_on_market: number | null;
     actual_brokers_fee: number;
+    analytics_tags: string[];
+    combined_tag_list: string[];
+    additional_fees: JSON | null;
 }
 
 export interface Neighborhood {
@@ -53,7 +56,7 @@ export const propertyString = `Property = {
     borough: string;
     neighborhood: string;
     zipcode: string;
-    property_type: ['condo', 'rental', 'townhouse', 'house'];
+    property_type: ['condo', 'rental', 'townhouse', 'house', 'coop', 'multi-family', 'condop'];
     sqft: number;
     bedrooms: number;
     bathrooms: number;
@@ -121,14 +124,17 @@ export type PropertyAnalyticsDetails = {
   distinct_line_count?: number;
   amenity_score?: number;
   subway_access_percentile?: number;
+  poi_access_percentile?: number;
   amenity_percentile?: number;
   sqft_percentile?: number;
   price_percentile?: number;
   subway_borough_access_percentile?: number;
+  poi_borough_access_percentile?: number;
   amenity_borough_percentile?: number;
   sqft_borough_percentile?: number;
   price_borough_percentile?: number;
   subway_neighborhood_access_percentile?: number;
+  poi_neighborhood_access_percentile?: number;
   amenity_neighborhood_percentile?: number;
   sqft_neighborhood_percentile?: number;
   price_neighborhood_percentile?: number;

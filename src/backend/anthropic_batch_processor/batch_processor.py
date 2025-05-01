@@ -24,15 +24,14 @@ TAG_LIST = {
   ],
   'Location': [
     'park-view',
-    'city-center',
-    'prime-location',
     'up-and-coming',
     'quiet-neighborhood',
     'noisy-area',
     'waterfront',
-    'near-schools',
-    'near-shopping',
-    'remote-location'
+    'restaurants-nearby'
+    'gyms-nearby',
+    'groceries-nearby',
+    'parks-nearby'
   ],
   'Popularity': [
     # No AI-sourced popularity tags

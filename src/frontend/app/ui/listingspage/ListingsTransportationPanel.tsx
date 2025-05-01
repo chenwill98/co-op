@@ -75,8 +75,8 @@ export default function ListingsTransportationPanel({
               <h3 className="text-lg font-semibold text-base-content/80 mb-2">
                 Nearby Subway Lines
               </h3>
-              <div className="flex flex-wrap gap-1">
-                <TagList category="Transportation" tags={listingDetails.tag_list || []} />
+              <div className="flex flex-wrap gap-1 mb-2">
+                <TagList category="Transportation" tags={listingDetails.combined_tag_list || []} />
               </div>
               
               {/* Simple grid for subway stations */}

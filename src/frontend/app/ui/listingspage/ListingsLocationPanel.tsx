@@ -140,7 +140,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
                 Location
             </h2>
             <div className="flex flex-wrap gap-1">
-                <TagList category="Location" tags={listingDetails.tag_list || []} />
+                <TagList category="Location" tags={listingDetails.combined_tag_list || []} />
             </div>
             <h3 className="text-lg font-semibold text-base-content/80 mb-2">
                 Closest Locations

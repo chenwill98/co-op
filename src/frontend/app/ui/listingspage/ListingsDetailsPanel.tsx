@@ -18,7 +18,7 @@ export default function ListingsDetailsPanel({ listingDetails }: { listingDetail
               {listingDetails.address}
             </h1>
             <div className="flex flex-wrap gap-1">
-                <TagList category="Popularity" tags={listingDetails.tag_list || []} />
+                <TagList category="Popularity" tags={listingDetails.combined_tag_list || []} />
             </div>
             <p className="mt-1 text-sm text-base-content">
               {FormatDisplayText(listingDetails.property_type || '')} in {FormatDisplayText(listingDetails.neighborhood)},{" "}

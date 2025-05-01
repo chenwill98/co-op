@@ -42,7 +42,7 @@ export default function ListingsCard({ listing }: { listing: Property }) {
                 Rental unit in {FormatDisplayText(listing.neighborhood)}
             </p>
             <h2 className="hover:text-primary transition-colors">{listing.address}</h2>
-            <div className="text-base-content/60 text-sm space-x-1">
+            <div className="text-base-content/60 text-xs space-x-1">
                 <span>
                 {listing.bedrooms}{" "}
                 {listing.bedrooms === 1 ? "bed" : "beds"}
@@ -83,9 +83,9 @@ export default function ListingsCard({ listing }: { listing: Property }) {
             </div>
             </div>
             {!listing.no_fee && (
-            <div className="text-lg font-semibold">
-                ${Math.floor(listing.price + listing.price * listing.actual_brokers_fee).toLocaleString()}
-                <span className="text-gray-500 text-sm">
+            <div>
+                <span className="text-base-content text-lg font-semibold">${Math.floor(listing.price + listing.price * listing.actual_brokers_fee).toLocaleString()}</span>
+                <span className="text-base-content/60 text-xs">
                 {" "}
                 net effective rent
                 </span>
@@ -93,8 +93,8 @@ export default function ListingsCard({ listing }: { listing: Property }) {
             )}
         </div>
         <div className="flex flex-col mt-auto gap-2">
-            <TagList tags={listing.tag_list || []} />
-            <div className="text-xs text-gray-500">Listing on StreetEasy</div>
+            <TagList tags={listing.combined_tag_list || []} />
+            <div className="text-base-content/60 text-xs">Listing on StreetEasy</div>
         </div>
         </div>
     </Link>

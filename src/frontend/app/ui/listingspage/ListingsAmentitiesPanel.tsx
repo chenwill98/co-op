@@ -96,7 +96,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                 <TooltipIcon tooltipText="Key amenities are the most important features of a property that are typically highlighted in the description summary." />
             </div>
             <div className="flex flex-wrap gap-1">
-                <TagList category="Amenities" tags={listingDetails.tag_list || []} />
+                <TagList category="Amenities" tags={listingDetails.combined_tag_list || []} />
             </div>
             {/* Primary amenities */}
             <div className="grid grid-cols-4 gap-4 mt-2">

@@ -20,9 +20,19 @@ export function TagList({ category, tags }: { category?: keyof typeof tagCategor
     return null;
   }
   
+  // build map of tag name to its rank
+  const rankMap = Object.values(tagCategories).flat().reduce((acc, tagObj) => {
+    acc[tagObj.name] = tagObj.rank;
+    return acc;
+  }, {} as Record<string, number>);
+  // order by rank ascending and take first 5
+  const displayTags = [...filteredTags]
+    .sort((a, b) => (rankMap[a] ?? Infinity) - (rankMap[b] ?? Infinity))
+    .slice(0, 4);
+  
   return (
     <div className="flex flex-wrap gap-1">
-      {filteredTags.map(tag => (
+      {displayTags.map(tag => (
         <div 
           key={tag} 
           className="badge bg-primary/10 text-primary rounded-full text-xs"
