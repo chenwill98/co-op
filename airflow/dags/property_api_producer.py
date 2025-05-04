@@ -1,8 +1,8 @@
-from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow import DAG
 from airflow.sensors.python import PythonSensor
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
-from plugins.utils.lambda_helpers import check_processing_status
 from airflow.utils.log.logging_mixin import LoggingMixin
 from datetime import datetime, timedelta
 from pytz import timezone
@@ -43,6 +43,22 @@ def trigger_producer_lambda(api_type, **kwargs):
         logger.error(f"Failed to trigger Lambda for API type: {api_type}. Error: {str(e)}")
         raise
 
+# Function to check SQL threshold
+def check_property_threshold(**kwargs):
+    """
+    Check if the properties table has data for the current day by querying the count.
+    Returns True when the threshold condition is met.
+    """
+    hook = PostgresHook(postgres_conn_id='rds_postgres')
+    record = hook.get_first(
+        """
+        SELECT COUNT(*) 
+        FROM real_estate.fct_properties
+        WHERE DATE(loaded_datetime) = CURRENT_DATE
+        """
+    )
+    return record is not None and record[0] > 1000
+
 # Default DAG arguments
 default_args = {
     'owner': 'chenwill98',
@@ -70,15 +86,13 @@ with DAG(
         op_kwargs={'api_type': 'properties'},
     )
     
-    # Check processing status every 5 minutes until complete
-    wait_for_processing = PythonSensor(
-        task_id='wait_for_processing',
-        python_callable=check_processing_status,
-        op_kwargs={'check_type': 'fct_properties'},
-        poke_interval=300,  # 5 minutes in seconds
-        timeout=43200,  # 12 hours max wait time
+    # Sensor to check when properties table meets threshold
+    wait_for_properties = PythonSensor(
+        task_id='wait_for_properties',
+        python_callable=check_property_threshold,
         mode='poke',
-        soft_fail=False,
+        poke_interval=60,
+        timeout=30 * 60,
     )
     
     # Define the second Airflow task - property details API
@@ -99,6 +113,7 @@ with DAG(
     
     # Set task dependencies - property_details should run after properties are fully processed
     # and then trigger the enrichments DAG
-    trigger_properties_api >> wait_for_processing >> trigger_property_details_api >> trigger_enrichments_dag
+    trigger_properties_api >> wait_for_properties >> trigger_property_details_api
+    # trigger_property_details_api >> trigger_enrichments_dag
     
     logger.info("DAG task dependencies set up successfully")

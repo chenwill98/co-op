@@ -24,11 +24,16 @@ __pycache__/
 # Airflow related items
 airflow/airflow-webserver.pid
 airflow/airflow.db
+airflow/simple_auth_manager_passwords.json.generated
 airflow/logs
 webserver_config.py
 airflow-co-apt.pem
 nohup.out
 airflow-*
+airflow/.ruff_cache/
+airflow/airflow.cfg
+airflow/airflow.cfg.bak
+
 
 # AWS
 AWSCLIV2.pkg
