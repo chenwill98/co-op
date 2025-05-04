@@ -113,7 +113,6 @@ with DAG(
     
     # Set task dependencies - property_details should run after properties are fully processed
     # and then trigger the enrichments DAG
-    trigger_properties_api >> wait_for_properties >> trigger_property_details_api
-    # trigger_property_details_api >> trigger_enrichments_dag
+    trigger_properties_api >> wait_for_properties >> trigger_property_details_api >> trigger_enrichments_dag
     
     logger.info("DAG task dependencies set up successfully")
