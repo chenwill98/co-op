@@ -2,7 +2,6 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.sensors.python import PythonSensor
-from airflow.plugins.utils.lambda_helpers import check_processing_status
 from datetime import datetime, timedelta
 from pytz import timezone
 import boto3
@@ -176,22 +175,22 @@ with DAG(
     'property_data_enrichments',
     default_args=default_args,
     description='Trigger property data enrichment Lambda functions',
-    schedule_interval=None,  # Set to None so it's only triggered by other DAGs
+    schedule=None,  # Set to None so it's only triggered by other DAGs
     start_date=datetime(2025, 3, 4, tzinfo=timezone('America/New_York')),
     catchup=False,
 ) as dag:
     logger.info("Initializing property_data_enrichments DAG")
 
     # Check processing status every 5 minutes until complete
-    wait_for_processing = PythonSensor(
-        task_id='wait_for_processing',
-        python_callable=check_processing_status,
-        op_kwargs={'check_type': 'dim_property_details'},
-        poke_interval=300,  # 5 minutes in seconds
-        timeout=43200,  # 12 hours max wait time
-        mode='poke',
-        soft_fail=False,
-    )
+    # wait_for_processing = PythonSensor(
+    #     task_id='wait_for_processing',
+    #     python_callable=check_processing_status,
+    #     op_kwargs={'check_type': 'dim_property_details'},
+    #     poke_interval=300,  # 5 minutes in seconds
+    #     timeout=43200,  # 12 hours max wait time
+    #     mode='poke',
+    #     soft_fail=False,
+    # )
 
     # Step 1: Create Anthropic batch and get batch ID
     create_anthropic_batch = PythonOperator(
@@ -236,9 +235,9 @@ with DAG(
     )
     
     # Define the task dependencies
-    wait_for_processing >> create_anthropic_batch >> wait_for_anthropic_batch
-    wait_for_processing >> trigger_subway_data
-    wait_for_processing >> trigger_mapbox_data
+    create_anthropic_batch >> wait_for_anthropic_batch
+    trigger_subway_data
+    trigger_mapbox_data
     [trigger_subway_data, trigger_mapbox_data] >> trigger_analytics_tags
     
     logger.info("Property data enrichments DAG setup complete")

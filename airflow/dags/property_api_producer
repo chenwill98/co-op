@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.sensors.python import PythonSensor
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
-from airflow.plugins.utils.lambda_helpers import check_processing_status
+from plugins.utils.lambda_helpers import check_processing_status
 from airflow.utils.log.logging_mixin import LoggingMixin
 from datetime import datetime, timedelta
 from pytz import timezone
@@ -58,7 +58,7 @@ with DAG(
     'trigger_lambda_producer',
     default_args=default_args,
     description='Trigger APIProducerLambda based on API type',
-    schedule_interval='0 7 * * *',  # Run at 7 AM EST every day
+    schedule='0 7 * * *',  # Run at 7 AM EST every day
     start_date=datetime(2025, 3, 4, tzinfo=timezone('America/New_York')),
     catchup=False,
 ) as dag:
