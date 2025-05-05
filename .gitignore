@@ -33,6 +33,7 @@ airflow-*
 airflow/.ruff_cache/
 airflow/airflow.cfg
 airflow/airflow.cfg.bak
+airflow/airflow.db*
 
 
 # AWS

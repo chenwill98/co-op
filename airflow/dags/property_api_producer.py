@@ -44,7 +44,7 @@ def trigger_producer_lambda(api_type, **kwargs):
         raise
 
 # Function to check SQL threshold
-def check_property_threshold(**kwargs):
+def check_properties_threshold(**kwargs):
     """
     Check if the properties table has data for the current day by querying the count.
     Returns True when the threshold condition is met.
@@ -58,6 +58,23 @@ def check_property_threshold(**kwargs):
         """
     )
     return record is not None and record[0] > 1000
+
+# Function to check SQL threshold
+def check_property_details_threshold(**kwargs):
+    """
+    Check if the property_details table has data for the current day by querying the count.
+    Returns True when the threshold condition is met.
+    """
+    hook = PostgresHook(postgres_conn_id='rds_postgres')
+    record = hook.get_first(
+        """
+        SELECT COUNT(*) 
+        FROM real_estate.latest_property_details_view
+        WHERE DATE(loaded_datetime) = CURRENT_DATE
+        AND id IS NOT NULL
+        """
+    )
+    return record is not None and record[0] < 100
 
 # Default DAG arguments
 default_args = {
@@ -89,7 +106,7 @@ with DAG(
     # Sensor to check when properties table meets threshold
     wait_for_properties = PythonSensor(
         task_id='wait_for_properties',
-        python_callable=check_property_threshold,
+        python_callable=check_properties_threshold,
         mode='poke',
         poke_interval=60,
         timeout=30 * 60,
@@ -102,6 +119,14 @@ with DAG(
         op_kwargs={'api_type': 'property_details'},
     )
     
+    # Sensor to check when property_details table meets threshold
+    wait_for_property_details = PythonSensor(
+        task_id='wait_for_property_details',
+        python_callable=check_property_details_threshold,
+        mode='poke',
+        poke_interval=60,
+        timeout=30 * 60,
+    )    
     # Trigger the property_data_enrichments DAG after property_details_api completes
     trigger_enrichments_dag = TriggerDagRunOperator(
         task_id='trigger_enrichments_dag',
@@ -113,6 +138,6 @@ with DAG(
     
     # Set task dependencies - property_details should run after properties are fully processed
     # and then trigger the enrichments DAG
-    trigger_properties_api >> wait_for_properties >> trigger_property_details_api >> trigger_enrichments_dag
+    trigger_properties_api >> wait_for_properties >> trigger_property_details_api >> wait_for_property_details >> trigger_enrichments_dag
     
     logger.info("DAG task dependencies set up successfully")
