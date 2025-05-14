@@ -5,6 +5,7 @@ import numpy as np
 from sqlalchemy import text
 from aws_utils import get_secret, logger, get_db_session, execute_query
 
+
 # Create a simplified parent station dataframe with just the 3 columns
 def create_simple_parent_station_df(subway_df):
     """
@@ -232,166 +233,17 @@ def load_nearest_subways(session):
         if 'session' in locals():
             session.close()
 
-def load_mapbox_data(session):
-    pass
-
-def load_analytics_tags(session):
-    # OBVIOUSLY NEED TO CHANGE - ALSO I SHOULD ADD THE LOCATIONS TAGS TO EACH NEIGHBORHOOD
-    try:
-        logger.info("Fetching property coordinates")
-        query = """
-        SELECT id, latitude, longitude
-        FROM real_estate.latest_property_details_view
-        WHERE id IS NOT NULL
-          AND id NOT IN (
-              SELECT listing_id
-              FROM real_estate_analytics.dim_property_nearest_stations
-          );"""
-
-        listings = execute_query(session, query)
-        listings_df = pd.DataFrame(listings)
-        logger.info(f"Fetched {len(listings_df)} property coordinates")
-
-        logger.info(f"Inserting {len(listings_df)} nearest stations into dim_property_nearest_stations")
-        engine = session.get_bind()
-        listings_df.to_sql(
-            'dim_property_nearest_stations',
-            con=engine,
-            schema='real_estate_analytics',
-            if_exists='append',
-            index=False
-        )
-
-    except Exception as e:
-        logger.error(f"Error fetching property coordinates: {e}")
-        raise
-    finally:
-        if 'session' in locals():
-            session.close()
-
-def run_enhancement_loaders(load_type):
-    API_KEYS = get_secret(secret_name='COAPTAPIKeys')
-    logger.info(f"Fetching API payloads for {load_type}")
-    session = get_db_session()
-    
-    if load_type == "subway":
-        load_nearest_subways(session)
-    elif load_type == "mapbox":
-        load_mapbox_data(session)
-    elif load_type == "analytics_tags":
-        load_analytics_tags(session)
-    else:
-        raise ValueError(f"Unsupported API type: {load_type}")
 
 def lambda_handler(event, context):
-    load_type = event["load_type"]
+
+    session = get_db_session()
     
     try:
-        result = run_enhancement_loaders(load_type)
+        result = load_nearest_subways(session)
         # If result is returned (from loader functions), return it
         if result is not None:
             return {"statusCode": 200, "body": result}
             
     except Exception as e:
-        logger.error(f"Error processing api type {load_type}: {e}")
+        logger.error(f"Error processing api type subway: {e}")
         raise
-
-# def upsert_properties_to_rds(session, listings):
-#     """
-#     Upsert a batch of listings into the real_estate.fct_properties table.
-#     """
-#     # Delete query (commented out in original)
-#     # delete_query = """
-#     #     DELETE FROM real_estate.fct_properties
-#     #     WHERE "date" = CURRENT_DATE;
-#     # """
-
-#     upsert_query = """
-#         INSERT INTO real_estate.fct_properties (id, price, longitude, latitude, url, "date")
-#         VALUES (:id, :price, :longitude, :latitude, :url, CURRENT_DATE)
-#         ON CONFLICT (id, "date") DO UPDATE SET
-#             price = EXCLUDED.price,
-#             longitude = EXCLUDED.longitude,
-#             latitude = EXCLUDED.latitude,
-#             url = EXCLUDED.url;
-#     """
-
-#     try:
-#         # Uncomment if needed
-#         # execute_query(session, delete_query)
-#         # session.commit()
-        
-#         logger.info(f"Inserting {len(listings)} into real_estate.fct_properties Table")
-        
-#         for listing in listings:
-#             data_dict = {
-#                 'id': listing["id"],
-#                 'price': listing["price"],
-#                 'longitude': listing["longitude"],
-#                 'latitude': listing["latitude"],
-#                 'url': listing["url"],
-#             }
-            
-#             # Use the execute_query helper function
-#             execute_query(session, upsert_query, data_dict)
-        
-#         session.commit()
-#         logger.info(f"Successfully upserted {len(listings)} listings to fct_properties")
-#     except Exception as e:
-#         session.rollback()
-#         logger.error(f"Error upserting to fct_properties: {e}")
-#         raise
-
-# def fetch_and_store_data(message_list):
-#     """
-#     Fetch data from the given API URL, handle pagination, and store results in RDS.
-#     """
-#     properties_list = []
-#     for i, message in enumerate(message_list):
-#         logger.info(f"Processing message {i+1} of {len(message_list)}")
-#         try:
-#             offset = 0
-#             while True:
-#                 params = message['params']
-#                 params['offset'] = offset
-
-#                 logger.info(f"Making call with {params['areas']}")
-#                 response = requests.get(message['endpoint'], headers=message['headers'], params=params)
-#                 response.raise_for_status()
-#                 data = response.json()
-
-#                 listings = data.get("listings", [])
-#                 logger.info(f"Fetched {len(listings)} listings")
-#                 if listings:
-#                     properties_list.extend(listings)
-                    
-
-#                 pagination = data.get("pagination", {})
-#                 next_offset = pagination.get("nextOffset")
-
-#                 # If there's no nextOffset or no new offset to move to, break the loop
-#                 if not next_offset or next_offset <= offset:
-#                     break
-#                 logger.info(f"Setting offset to {next_offset}")
-#                 offset = next_offset
-
-#         except Exception as e:
-#             logger.info(f"Error processing {message}: {e}")
-#             raise
-
-#     try:
-#         # Get a SQLAlchemy session
-#         logger.info("Creating SQLAlchemy session")
-#         session = get_db_session()
-
-#         logger.info(f"Inserting {len(properties_list)} into real_estate.fct_properties Table")
-#         upsert_properties_to_rds(session, properties_list)
-
-#     except Exception as e:
-#         logger.info(f"Error upserting properties: {e}")
-#         raise
-    
-#     finally:
-#         if 'session' in locals():
-#             logger.info("Closing SQLAlchemy session")
-#             session.close()

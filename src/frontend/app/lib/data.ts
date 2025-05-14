@@ -82,7 +82,7 @@ export async function fetchPropertiesRDS(params: {
     // Execute the query if we have one from Claude
     const properties = params.text 
       ? await prisma.$queryRaw<any[]>(claudeQuery)
-      : await prisma.latest_property_details_view.findMany({
+      : await prisma.latest_properties_materialized.findMany({
           where: { id: { not: null } },
           take: limit,
           skip: skip,
@@ -104,10 +104,8 @@ export async function fetchPropertiesRDS(params: {
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-      actual_brokers_fee: property.actual_brokers_fee.toNumber(),
+      enhanced_brokers_fee: property.enhanced_brokers_fee.toNumber(),
       // Convert any emoji tags to system tags
-      tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
-      analytics_tags: property.analytics_tags ? property.analytics_tags.map((tag: string) => tag) : [],
       combined_tag_list: property.combined_tag_list ? property.combined_tag_list.map((tag: string) => tag) : [],
       additional_fees: property.additional_fees ? property.additional_fees : null,
     }));
@@ -123,7 +121,7 @@ export async function fetchPropertiesRDS(params: {
 export async function fetchPropertiesRDSById(id: string): Promise<Property> {
 
   try {
-    const property = await prisma.latest_property_details_view.findFirst({
+    const property = await prisma.latest_properties_materialized.findFirst({
       where: { fct_id: id },
     }); 
 
@@ -143,10 +141,8 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-      actual_brokers_fee: property.actual_brokers_fee.toNumber(),
+      enhanced_brokers_fee: property.enhanced_brokers_fee.toNumber(),
       // Convert any emoji tags to system tags
-      tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
-      analytics_tags: property.analytics_tags ? property.analytics_tags.map((tag: string) => tag) : [],
       combined_tag_list: property.combined_tag_list ? property.combined_tag_list.map((tag: string) => tag) : [],
       additional_fees: property.additional_fees ? property.additional_fees : null,
     };
@@ -180,8 +176,8 @@ export async function fetchPropertyDetailsById(id: string): Promise<PropertyDeta
     const items = response.Responses?.PropertyMediaDetails ?? [];
     
     // Convert any item with tags to use system tags
-    if (items.length > 0 && items[0].tag_list) {
-      items[0].tag_list = items[0].tag_list.map((tag: string) => tag);
+    if (items.length > 0 && items[0].combined_tag_list) {
+      items[0].combined_tag_list = items[0].combined_tag_list.map((tag: string) => tag);
     }
     
     return items.length > 0 ? items[0] as PropertyDetails : null;
@@ -279,7 +275,6 @@ export async function fetchPropertyAnalyticsById(id: string): Promise<PropertyAn
 
     const formattedAnalytics = analytics ? {
       ...analytics,
-      price_band: analytics.price_band?.toNumber(),
       price: analytics.price?.toNumber(),
       amenity_score: analytics.amenity_score?.toNumber()
     } : null;

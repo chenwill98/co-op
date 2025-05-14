@@ -79,12 +79,12 @@ export default function ListingsCard({ listing }: { listing: Property }) {
             <div className="badge bg-primary/10 text-primary rounded-full text-xs">
                 {listing.no_fee
                 ? "No Fee"
-                : `Fees: ~$${Math.floor(listing.price * listing.actual_brokers_fee).toLocaleString()}`}
+                : `Fees: ~$${Math.floor(listing.price * listing.enhanced_brokers_fee).toLocaleString()}`}
             </div>
             </div>
             {!listing.no_fee && (
             <div>
-                <span className="text-base-content text-lg font-semibold">${Math.floor(listing.price + listing.price * listing.actual_brokers_fee).toLocaleString()}</span>
+                <span className="text-base-content text-lg font-semibold">${(listing.price + listing.price * listing.enhanced_brokers_fee).toLocaleString()}</span>
                 <span className="text-base-content/60 text-xs">
                 {" "}
                 net effective rent

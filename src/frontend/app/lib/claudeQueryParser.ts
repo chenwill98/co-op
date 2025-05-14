@@ -456,7 +456,7 @@ export async function parseClaudeResultsToPrismaSQL(
                  INTERSECT 
                  SELECT unnest(${tagValues})
                ), 1) as tag_match_count
-        FROM "real_estate"."latest_property_details_view"
+        FROM "real_estate"."latest_properties_materialized"
         ${Prisma.raw(whereClause)}
       )
       SELECT * FROM matched_properties
@@ -466,7 +466,7 @@ export async function parseClaudeResultsToPrismaSQL(
     // If no tags, use a simpler query
     baseQuery = Prisma.sql`
       SELECT * 
-      FROM "real_estate"."latest_property_details_view"
+      FROM "real_estate"."latest_properties_materialized"
       ${Prisma.raw(whereClause)}
     `;
   }

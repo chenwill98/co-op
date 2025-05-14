@@ -26,15 +26,13 @@ export type Property = {
     tag_list: string[];
     loaded_datetime: string;
     brokers_fee: number | null;
+    additional_fees: JSON | null;
     url: string;
     date: string;
     fct_id: string;
     fct_price: number;
-    live_days_on_market: number | null;
-    actual_brokers_fee: number;
-    analytics_tags: string[];
+    enhanced_brokers_fee: number;
     combined_tag_list: string[];
-    additional_fees: JSON | null;
 }
 
 export interface Neighborhood {
@@ -120,7 +118,7 @@ export type PropertyNearestPois = {
 // PropertyAnalyticsDetails is kept separate from station data
 export type PropertyAnalyticsDetails = {
   listing_id: string;
-  price_band: number;
+  price_band: string;
   distinct_line_count?: number;
   amenity_score?: number;
   subway_access_percentile?: number;

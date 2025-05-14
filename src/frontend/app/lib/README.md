@@ -32,7 +32,7 @@ const claudeResults = {
 const prismaQuery = parseClaudeResultsToPrismaQuery(claudeResults);
 
 // Use in Prisma query
-const properties = await prisma.latest_property_details_view.findMany({
+const properties = await prisma.latest_properties_materialized.findMany({
   where: prismaQuery,
   take: 10,
   skip: 0,
@@ -52,7 +52,7 @@ async function handleSearchQuery(searchText) {
   const prismaQuery = parseClaudeResultsToPrismaQuery(claudeResults);
   
   // Execute database query with the filters
-  const properties = await prisma.latest_property_details_view.findMany({
+  const properties = await prisma.latest_properties_materialized.findMany({
     where: prismaQuery,
     take: 10,
     skip: 0,

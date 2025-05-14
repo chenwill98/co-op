@@ -97,13 +97,27 @@ Resources:
             BatchSize: 50 # Process 50 messages at a time
             MaximumBatchingWindowInSeconds: 20
 
-  PropertyDataEnhancementLoader:
+  SubwayLoader:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: PropertyDataEnhancementLoader
-      Handler: loader.lambda_handler
-      CodeUri: property_data_enhancement_loader
+      FunctionName: SubwayLoader
+      Handler: subway_loader.lambda_handler
+      CodeUri: property_data_enhancement_loaders
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
+      MemorySize: 1024
+      Timeout: 900
+      Layers:
+        - !Ref AWSUtilsLayer
+  
+  MapboxLoader:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: MapboxLoader
+      Handler: mapbox_loader.lambda_handler
+      CodeUri: property_data_enhancement_loaders
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
+      MemorySize: 1024
+      Timeout: 900
       Layers:
         - !Ref AWSUtilsLayer
 

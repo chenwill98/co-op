@@ -1,6 +1,7 @@
 import json
 import boto3
 import anthropic
+import pandas as pd
 from datetime import datetime, timezone
 from sqlalchemy import text, ARRAY, String, bindparam
 from aws_utils import get_secret, logger, get_db_session, execute_query
@@ -76,6 +77,17 @@ def fetch_properties_without_summary(limit=1000):
     """
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table('PropertyMediaDetails')
+
+    query = """
+    SELECT fct_id
+    FROM real_estate.latest_property_details_view;"""
+
+    session = get_db_session()
+    listings = execute_query(session, query)
+    listings_df = pd.DataFrame(listings)
+
+    # Convert listings_df to just set of ids
+    listings_ids = set(listings_df['fct_id'])
     
     # Use a scan operation with a filter expression to find items without description_summary
     logger.info("Scanning DynamoDB for properties without description_summary")
@@ -84,7 +96,11 @@ def fetch_properties_without_summary(limit=1000):
         ProjectionExpression="id, description, loaded_datetime"
     )
     
-    items = response['Items']
+    # Filter items to only include those in listings_ids
+    filtered_items = [item for item in response['Items'] if item['id'] in listings_ids]
+    items = filtered_items
+    
+    logger.info(f"Found {len(items)} items that exist in RDS out of {len(response['Items'])} total items without summaries")
     
     # Handle pagination if there are more items and we haven't reached the limit
     while 'LastEvaluatedKey' in response and len(items) < limit:
@@ -94,7 +110,10 @@ def fetch_properties_without_summary(limit=1000):
             ProjectionExpression="id, description, loaded_datetime",
             ExclusiveStartKey=response['LastEvaluatedKey']
         )
-        items.extend(response['Items'])
+        
+        # Filter new items to only include those in listings_ids
+        new_items = [item for item in response['Items'] if item['id'] in listings_ids]
+        items.extend(new_items)
         
         # Exit the loop if we've reached or exceeded the limit
         if len(items) >= limit:
@@ -165,28 +184,32 @@ def create_batch():
                                                 ],
                                                 "additional_fees": [
                                                     {
-                                                        "name": "broker",
+                                                        "name": "brokers-fee",
                                                         "amount": 1.5,
                                                         "type": "months",
-                                                        "recurring": false
+                                                        "recurring": false,
+                                                        "notes": ""
                                                     },
                                                     {
-                                                        "name": "utility",
+                                                        "name": "utility-fee",
                                                         "amount": 100,
                                                         "type": "dollars",
-                                                        "recurring": true
+                                                        "recurring": true,
+                                                        "notes": ""
                                                     },
                                                     {
-                                                        "name": "HOA",
+                                                        "name": "hoa-fee",
                                                         "amount": 500,
                                                         "type": "dollars",
-                                                        "recurring": false
+                                                        "recurring": false,
+                                                        "notes": ""
                                                     },
                                                     {
-                                                        "name": "building",
+                                                        "name": "building-fee",
                                                         "amount": 16,
                                                         "type": "percentage",
-                                                        "recurring": true
+                                                        "recurring": true,
+                                                        "notes": ""
                                                     }
                                                 ]
                                                 })
@@ -205,13 +228,15 @@ def create_batch():
                                                     "name": "courtyard grills",
                                                     "amount": null,
                                                     "type": "dollars",
-                                                    "recurring": true
+                                                    "recurring": true,
+                                                    "notes": ""
                                                     },
                                                 {
-                                                    "name": "broker",
+                                                    "name": "brokers-fee",
                                                     "amount": 1,
                                                     "type": "months",
-                                                    "recurring": false
+                                                    "recurring": false,
+                                                    "notes": ""
                                                     }
                                                 ]
                                                 </EXAMPLE_OF_FATAL_OUTPUT_AVOID_AT_ALL_COST >
@@ -277,7 +302,7 @@ def create_batch():
                                         "recurring"
                                         ]
                                     },
-                                    "description": "CRITICALLY IMPORTANT: Return an array containing ONLY fees that have EXPLICIT NUMERICAL amounts stated in the description. Rules: 1) A fee MUST have an explicit numerical value in the description to be included. 2) NEVER include fees described as 'nominal' or with any non-numerical terms. 3) NEVER include fees where no specific amount is mentioned (e.g., 'broker fees apply' with no amount = DO NOT INCLUDE). 4) For discounts/free periods, include with positive numbers (e.g., '2 months free' = {name: 'rent-free', amount: 2, type: 'months'}). 5) For complementary items, use negative numbers to indicate value given to renter. 6) Convert annual fees to monthly (divide by 12). 7) Percentage values must be between 0-100. 8) If no fees with explicit numerical values exist, return an empty array []."
+                                    "description": "CRITICALLY IMPORTANT: Return an array containing ONLY fees that have been EXPLICITLY MENTIONED in the description. Rules: 1) If a broker's fee is mentioned but NO SPECIFIC NUMERIC VALUE is mentioned, MAKE IT NULL (e.g., 'This unit has a broker's fee' = {name: 'brokers-fee', amount: NULL, type: '', notes: 'Brokers fees applies'}) 2) For fees where no specific amount is mentioned or described as 'nominal' or with any non-numerical terms, ALWAYS FILL THE AMOUNT AS NULL and describe the fee in the notes field EXCEPT IF IT'S A BROKER'S FEE. (e.g., 'HOA fee applies' = {name: 'hoa-fee', amount: NULL, type: '', notes: 'HOA fees applies'}) 3) For fees that only have time period specified and that value isn't relative to the rent amount, FILL THE AMOUNT AS NULL and describe the fee in the notes field. (e.g., '1-year of free WIFI/Cable' = {name: 'free-wifi-cable', amount: NULL, type: '', notes: '1 year of free Wifi/Cable'})  4) For discounts/free periods, include with negative numbers (e.g., '2 months free' = {name: 'rent-free', amount: 2, type: 'months'}). 5) For complementary items, use negative numbers to indicate value given to renter. 6) Convert annual fees to monthly (divide by 12). 7) Percentage values must be between 0-100. 8) If no fees with explicit numerical values exist, return an empty array []."
                                     },
                                     "input_description": {
                                     "type": "string",
@@ -308,7 +333,7 @@ def create_batch():
         logger.error(f"Error creating Anthropic batch: {str(e)}")
         raise
 
-def update_dynamodb_with_summary(property_summaries):
+def update_dynamodb(property_dynamodb_data):
     """
     Update the PropertyMediaDetails DynamoDB table with generated summaries for multiple properties.
     Uses batch operations for better performance.
@@ -320,7 +345,7 @@ def update_dynamodb_with_summary(property_summaries):
                 {"property_id": "456", "summary": "summary text 2"}
             ]
     """
-    if not property_summaries:
+    if not property_dynamodb_data:
         logger.info("No property summaries to update")
         return
     
@@ -334,8 +359,8 @@ def update_dynamodb_with_summary(property_summaries):
         success_count = 0
         
         # Process in batches of 25 items
-        for i in range(0, len(property_summaries), batch_size):
-            batch_items = property_summaries[i:i+batch_size]
+        for i in range(0, len(property_dynamodb_data), batch_size):
+            batch_items = property_dynamodb_data[i:i+batch_size]
             batch_requests = []
             
             for item in batch_items:
@@ -365,45 +390,81 @@ def update_dynamodb_with_summary(property_summaries):
         logger.error(f"Error updating DynamoDB with batch property summaries: {str(e)}")
         raise
 
-def update_rds_with_tags(property_tags_data):
+
+def extract_brokers_fee(property_id, additional_fees, listings_df):
+    brokers_fee = None
+    
+    for fee in additional_fees:
+        if 'broker' in fee['name']:
+            if fee['amount'] is not None:
+                if fee['type'] == 'months':
+                    brokers_fee = float(fee['amount']) / 12
+                elif fee['type'] == 'dollars':
+                    brokers_fee = float(fee['amount']) * 12 / listings_df[listings_df['fct_id'] == property_id]['price'].values[0]
+                elif fee['type'] == 'percentage':
+                    brokers_fee = float(fee['amount']) / 100
+                else:
+                    brokers_fee = None
+    
+    return brokers_fee
+    
+
+def update_rds(property_RDS_data):
     """
     Update the real_estate.dim_property_details table with the generated tags for multiple properties in a single transaction.
     
     Args:
         property_tags_data (list): List of dictionaries containing property_id and tag_list for each property
     """
-    if not property_tags_data:
+    if not property_RDS_data:
         logger.info("No property tags data to update")
         return
     
     try:
         # Get a database session
         session = get_db_session()
+
+        query = """
+        SELECT fct_id, price
+        FROM real_estate.latest_property_details_view;"""
+
+        listings = execute_query(session, query)
+        listings_df = pd.DataFrame(listings)
         
         # Process each property in the same transaction
-        for property_data in property_tags_data:
+        for property_data in property_RDS_data:
             property_id = property_data.get('property_id')
             tag_list = property_data.get('tag_list', [])
             tag_list = [str(tag) for tag in tag_list]
+            additional_fees = property_data.get('additional_fees', [])
+            brokers_fee = extract_brokers_fee(property_id, additional_fees, listings_df)
             
             if property_id and tag_list:
-                logger.info(f"Updating RDS for property {property_id} with tags {tag_list}")
+                # logger.info(f"Updating RDS for property {property_id} with tags {tag_list}")
                 
-                # Simple update query using string formatting for the array
+                # Update query with array for tag_list and jsonb for additional_fees
                 query = """
                 UPDATE real_estate.dim_property_details
                 SET tag_list = array(
                     SELECT DISTINCT t
                     FROM unnest(tag_list || :tag_list) AS t
-                )
+                ),
+                additional_fees = :additional_fees,
+                brokers_fee = :brokers_fee
                 WHERE id = :property_id;
                 """
                 
-                execute_query(session, query, {"tag_list": tag_list, "property_id": property_id})
+                # Convert additional_fees to JSON string for JSONB field
+                execute_query(session, query, {
+                    "tag_list": tag_list, 
+                    "additional_fees": json.dumps(additional_fees), 
+                    "brokers_fee": brokers_fee,
+                    "property_id": property_id
+                })
         
         # Commit the transaction once for all updates
         session.commit()
-        logger.info(f"Updated RDS for {len(property_tags_data)} properties with tags in a single transaction")
+        logger.info(f"Updated RDS for {len(property_RDS_data)} properties with tags in a single transaction")
         
     except Exception as e:
         if 'session' in locals():
@@ -441,11 +502,15 @@ def process_completed_batch_results(message_batch):
         batch_results = client.beta.messages.batches.results(message_batch.id)
         
         # Collect all property data for batch processing
-        property_tags_data = []
-        property_summaries = []
+        property_RDS_data = []
+        property_dynamodb_data = []
+        
+        # Convert batch_results iterator to a list for processing
+        processed_count = 0
         
         # Process each result
         for message in batch_results:
+            processed_count += 1
             try:
                 # Get property ID from custom_id
                 property_id = message.custom_id
@@ -462,17 +527,19 @@ def process_completed_batch_results(message_batch):
                         # Extract summary and tag_list from tool input
                         summary = tool_use.input.get("summary", "")
                         tag_list = tool_use.input.get("tag_list", [])
+                        additional_fees = tool_use.input.get("additional_fees", [])
                         
                         # Collect property summary data for batch update
-                        property_summaries.append({
+                        property_dynamodb_data.append({
                             "property_id": property_id,
                             "summary": summary
                         })
                         
                         # Collect property tag data for batch update
-                        property_tags_data.append({
+                        property_RDS_data.append({
                             "property_id": property_id,
-                            "tag_list": tag_list
+                            "tag_list": tag_list,
+                            "additional_fees": additional_fees
                         })
                     else:
                         logger.warning(f"No tool use found in message for property {property_id}")
@@ -482,15 +549,15 @@ def process_completed_batch_results(message_batch):
                 logger.error(f"Error processing message for property {property_id}: {str(e)}")
 
         # Update all property tags in RDS at once
-        if property_tags_data:
-            update_rds_with_tags(property_tags_data)
+        if property_RDS_data:
+            update_rds(property_RDS_data)
         
         # Update all property summaries in DynamoDB at once
-        if property_summaries:
-            update_dynamodb_with_summary(property_summaries)
+        if property_dynamodb_data:
+            update_dynamodb(property_dynamodb_data)
         
         
-        logger.info(f"Batch processing complete for batch ID: {message_batch.id} with {len(property_tags_data)}/{len(batch_results)}% success rate")
+        logger.info(f"Batch processing complete for batch ID: {message_batch.id} with {len(property_RDS_data)}/{processed_count} success rate")
         return True
         
     except Exception as e:
