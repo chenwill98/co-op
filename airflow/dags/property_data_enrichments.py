@@ -174,6 +174,8 @@ def refresh_analytics_views():
     hook.run("REFRESH MATERIALIZED VIEW CONCURRENTLY real_estate_analytics.dim_property_analytics_view")
     logger.info("Refreshing analytics tags view")
     hook.run("REFRESH MATERIALIZED VIEW CONCURRENTLY real_estate_analytics.dim_property_analytics_tags")
+    logger.info("Refreshing final materialized properties view")
+    hook.run("REFRESH MATERIALIZED VIEW CONCURRENTLY real_estate.latest_properties_materialized")
 
 # Default DAG arguments
 default_args = {
@@ -239,8 +241,6 @@ with DAG(
     
     # Define the task dependencies
     create_anthropic_batch >> wait_for_anthropic_batch
-    trigger_subway_data
-    trigger_mapbox_data
-    [trigger_subway_data, trigger_mapbox_data] >> refresh_analytics_views_task
+    [trigger_subway_data, trigger_mapbox_data, wait_for_anthropic_batch] >> refresh_analytics_views_task
     
     logger.info("Property data enrichments DAG setup complete")
