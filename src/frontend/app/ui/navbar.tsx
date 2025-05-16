@@ -87,21 +87,23 @@ export default function Navbar() {
         </div>
       </div>
       <div className="flex-none">
-        <Link href="/analytics">
-          <span className="text-primary font-semibold text-sm hover:text-primary/70 transition-colors duration-200 px-4 py-2 cursor-pointer">
-            Analytics for Nerds
-          </span>
+        <Link href="/analytics" className="btn rounded-full bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 border-0 mr-2">
+          Analytics for Nerds
         </Link>
-        <Link href="/saved" onClick={handleSavedClick}>
-          <div className="indicator mr-2">
-            {newBookmarksCount > 0 && (
-              <span className="indicator-item badge badge-primary badge-sm transition-all duration-300 ease-in-out">{newBookmarksCount}</span>
-            )}
-            <span className="text-primary font-semibold text-sm hover:text-primary/70 transition-colors duration-200 px-4 py-2 cursor-pointer">
-              Saved
+        <div className="indicator mr-2">
+          {newBookmarksCount > 0 && (
+            <span className="indicator-item badge badge-primary badge-sm transition-all duration-300 ease-in-out">
+              {newBookmarksCount}
             </span>
-          </div>
-        </Link>
+          )}
+          <Link
+            href="/saved"
+            onClick={handleSavedClick}
+            className="btn rounded-full bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 border-0 mr-2"
+          >
+            Saved
+          </Link>
+        </div>
         <label className="toggle text-base-content mr-2">
           <input 
             type="checkbox" 

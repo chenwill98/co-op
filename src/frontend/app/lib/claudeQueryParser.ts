@@ -80,7 +80,7 @@ export async function parseClaudeResultsToPrismaQuery(claudeResults: ClaudeRespo
       case 'bedrooms':
       case 'bathrooms':
       case 'built_in':
-      case 'live_days_on_market':
+      case 'days_on_market':
         whereCondition[key] = {};
         
         // If min and max are the same and not null, use equals
@@ -179,15 +179,15 @@ export async function parseClaudeResultsToPrismaQuery(claudeResults: ClaudeRespo
       // Handle tag_list field which is always an array in Claude's response
       case 'tag_list':
         if (Array.isArray(value) && value.length > 0) {
-          // Use combined_tag_list instead of tag_list for the query
-          whereCondition['combined_tag_list'] = { 
+          // Use tag_list instead of tag_list for the query
+          whereCondition['tag_list'] = { 
             hasSome: value 
           };
           // Store in tagArray for result ranking
           tagArray.push(...value);
           console.log('Added tags to tagArray:', value);
           
-          // Remove the original tag_list condition since we're using combined_tag_list
+          // Remove the original tag_list condition since we're using tag_list
           delete whereCondition[key];
         }
         break;
@@ -235,7 +235,7 @@ export async function parseClaudeResultsToPrismaSQL(
   orderBy?: Record<string, string>,
   limit?: number,
   offset?: number
-): Promise<Prisma.Sql> {
+): Promise<[Prisma.Sql, Record<string, any>]> {
   // Initialize the where condition parts array and tag array
   const whereClauseParts: string[] = [];
   const tagArray: string[] = [];
@@ -250,14 +250,14 @@ export async function parseClaudeResultsToPrismaSQL(
       claudeResults = JSON.parse(claudeResults);
     } catch (error) {
       console.log('Failed to parse claudeResults string (SQL):', error);
-      return Prisma.empty;
+      return [Prisma.empty, {}];
     }
   }
   
   // Return empty query if claudeResults is empty or undefined
   if (!claudeResults || Object.keys(claudeResults).length === 0) {
     console.log('Claude results is empty or undefined (SQL)');
-    return Prisma.empty;
+    return [Prisma.empty, {}];
   }
   
   console.log('Processing Claude results (SQL):', JSON.stringify(claudeResults, null, 2));
@@ -275,7 +275,8 @@ export async function parseClaudeResultsToPrismaSQL(
       case 'bedrooms':
       case 'bathrooms':
       case 'built_in':
-      case 'live_days_on_market':
+      case 'brokers_fee':
+      case 'days_on_market':
         // If min and max are the same and not null, use equals
         if (value.min !== null && value.min === value.max && value.min > 0) {
           whereClauseParts.push(`${key} = ${Number(value.min)}`);
@@ -359,9 +360,9 @@ export async function parseClaudeResultsToPrismaSQL(
       // Handle tag_list field which is always an array in Claude's response
       case 'tag_list':
         if (Array.isArray(value) && value.length > 0) {
-          // Use combined_tag_list for the query
+          // Use tag_list for the query
           const tagsArray = value.map(tag => `'${tag}'`).join(',');
-          whereClauseParts.push(`combined_tag_list && ARRAY[${tagsArray}]`);
+          whereClauseParts.push(`tag_list && ARRAY[${tagsArray}]`);
           
           // Store in tagArray for ranking
           tagArray.push(...value);
@@ -381,6 +382,13 @@ export async function parseClaudeResultsToPrismaSQL(
       case 'no_fee':
         if (typeof value === 'boolean') {
           whereClauseParts.push(`${key} = ${value}`);
+        }
+        break;
+
+      // Handle address field, match on lower case
+      case 'address':
+        if (typeof value === 'string') {
+          whereClauseParts.push(`LOWER(${key}) ILIKE '%${value.toLowerCase()}%'`);
         }
         break;
 
@@ -417,7 +425,7 @@ export async function parseClaudeResultsToPrismaSQL(
     
     // Primary sort by tag match count
     orderByClause = `ORDER BY array_length(array(
-      SELECT unnest(combined_tag_list) 
+      SELECT unnest(tag_list) 
       INTERSECT 
       SELECT unnest(ARRAY[${tagsArrayStr}])
     ), 1) DESC NULLS LAST`;
@@ -452,7 +460,7 @@ export async function parseClaudeResultsToPrismaSQL(
       WITH matched_properties AS (
         SELECT *, 
                array_length(array(
-                 SELECT unnest(combined_tag_list) 
+                 SELECT unnest(tag_list) 
                  INTERSECT 
                  SELECT unnest(${tagValues})
                ), 1) as tag_match_count
@@ -492,7 +500,7 @@ export async function parseClaudeResultsToPrismaSQL(
   
   console.log('Generated SQL query for use with $queryRaw:', baseQuery);
   
-  return baseQuery;
+  return [baseQuery, claudeResults];
 }
 
 /**

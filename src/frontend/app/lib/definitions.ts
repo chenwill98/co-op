@@ -23,7 +23,6 @@ export type Property = {
     agents: string[];
     no_fee: boolean;
     thumbnail_image: string;
-    tag_list: string[];
     loaded_datetime: string;
     brokers_fee: number | null;
     additional_fees: JSON | null;
@@ -31,8 +30,7 @@ export type Property = {
     date: string;
     fct_id: string;
     fct_price: number;
-    enhanced_brokers_fee: number;
-    combined_tag_list: string[];
+    tag_list: string[];
 }
 
 export interface Neighborhood {
@@ -45,9 +43,7 @@ export interface Neighborhood {
 
 // Slightly modified version of the Property type to incorporate max and min prices
 export const propertyString = `Property = {
-    status: string;
     listed_at: string;
-    closed_at: string;
     available_from: string;
     address: string;
     price: number;
@@ -72,12 +68,9 @@ export const propertyString = `Property = {
     'roof_rights', 'patio', 'wood_fireplace', 'assigned_parking', 'parking', 'package_room', 
     'skyline_view', 'live_in_super', 'storage', 'nyc_evacuation_5'];
     built_in: number;
-    agents: string[];
     no_fee: boolean;
+    brokers_fee: number;
     tag_list: string[];
-    url: string;
-    date: string;
-    live_days_on_market: number;
   }
 `
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { BookmarkSquareIcon as BookmarkOutlineIcon } from "@heroicons/react/24/outline";
-import { BookmarkSquareIcon as BookmarkSolidIcon } from "@heroicons/react/24/solid";
+import { HeartIcon as HeartOutlineIcon } from "@heroicons/react/24/outline";
+import { HeartIcon as HeartSolidIcon } from "@heroicons/react/24/solid";
 import { Property } from "@/app/lib/definitions";
 
 
@@ -180,15 +180,15 @@ export default function BookmarkIcon({ property, onClick, className }: BookmarkI
     >
       <div
         ref={bookmarkRef}
-        className="w-6 h-6 text-primary cursor-pointer hover:text-primary-focus active:scale-90 transition"
+        className="btn btn-ghost btn-circle text-primary/80 cursor-pointer hover:text-primary active:scale-90 transition"
         onClick={toggleBookmark}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {isBookmarked || isHovered ? (
-          <BookmarkSolidIcon className="w-6 h-6" />
+          <HeartSolidIcon className="w-6 h-6" />
         ) : (
-          <BookmarkOutlineIcon className="w-6 h-6" />
+          <HeartOutlineIcon className="w-6 h-6" />
         )}
       </div>
     </div>

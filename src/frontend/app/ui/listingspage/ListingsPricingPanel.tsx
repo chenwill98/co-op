@@ -22,7 +22,7 @@ export default function ListingsPricingPanel({
     <div className="flex flex-col">
       <h2 className="text-2xl font-semibold text-base-content mb-1">Price</h2>
       <div className="flex flex-wrap gap-1 mb-2">
-          <TagList category="Price" tags={listingDetails.combined_tag_list || []} />
+          <TagList category="Price" tags={listingDetails.tag_list || []} />
       </div>
       <div>
         <div className="text-2xl font-bold mb-1">
@@ -30,13 +30,13 @@ export default function ListingsPricingPanel({
         </div>
         {!listingDetails.no_fee && (
           <div className="text-lg font-semibold mb-1">
-            ${(listingDetails.price + listingDetails.price * listingDetails.enhanced_brokers_fee).toLocaleString()}
+            ${(listingDetails.price + listingDetails.price * listingDetails.brokers_fee).toLocaleString()}
             <span className="text-base-content/60 text-sm"> net effective rent</span>
           </div>
         )}
         {!listingDetails.no_fee && (
           <div className="text-lg font-semibold mb-1">
-            ${(listingDetails.price * listingDetails.enhanced_brokers_fee * 12).toLocaleString()}
+            ${(listingDetails.price * listingDetails.brokers_fee * 12).toLocaleString()}
             <span className="text-base-content/60 text-sm"> total fees</span>
           </div>
         )}

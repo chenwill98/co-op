@@ -85,8 +85,7 @@ model latest_properties_materialized {
   date            DateTime  @default(now()) @db.Date
   fct_id          String    @id @db.VarChar(100)
   fct_price       Int?
-  enhanced_brokers_fee Decimal  @db.Decimal(10, 2)
-  combined_tag_list String[]
+  tag_list String[]
 
   @@map("latest_properties_materialized") 
   @@schema("real_estate")

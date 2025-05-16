@@ -199,13 +199,13 @@ export function findTagCategory(tagName: string): string | undefined {
  * @param toDisplay If true, converts from system to display format; if false, converts from display to system format
  */
 export function convertPropertyTags(property: Property | null, toDisplay: boolean = false): Property | null {
-  if (!property || !property.combined_tag_list || property.combined_tag_list.length === 0) {
+  if (!property || !property.tag_list || property.tag_list.length === 0) {
     return property;
   }
   
   return {
     ...property,
-    combined_tag_list: property.combined_tag_list.map(tag => toDisplay ? getDisplayTag(tag) : getSystemTag(tag))
+    tag_list: property.tag_list.map(tag => toDisplay ? getDisplayTag(tag) : getSystemTag(tag))
   };
 }
 

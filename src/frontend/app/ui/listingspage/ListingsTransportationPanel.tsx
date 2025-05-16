@@ -76,7 +76,7 @@ export default function ListingsTransportationPanel({
                 Nearby Subway Lines
               </h3>
               <div className="flex flex-wrap gap-1 mb-2">
-                <TagList category="Transportation" tags={listingDetails.combined_tag_list || []} />
+                <TagList category="Transportation" tags={listingDetails.tag_list || []} />
               </div>
               
               {/* Simple grid for subway stations */}

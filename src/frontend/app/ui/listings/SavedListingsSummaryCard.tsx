@@ -85,7 +85,7 @@ export default function SavedListingsSummaryCard({
   }, [sortedListings]);
 
   return (
-    <div className="card border-primary bg-base-100 shadow-xl col-span-3 p-6 rounded">
+    <div className="card border border-base-content/10 bg-base-100 shadow-xl col-span-3 p-6 rounded">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>

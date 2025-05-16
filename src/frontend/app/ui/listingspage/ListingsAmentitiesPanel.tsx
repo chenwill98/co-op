@@ -1,12 +1,13 @@
 'use client';
 
 import { CombinedPropertyDetails } from "@/app/lib/definitions";
-import { TagList } from "@/app/ui/utilities";
+import { TagList, formatAmenityName } from "@/app/ui/utilities";
 import { useState } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon";
 import PercentileCards from "@/app/ui/analytics/PercentileCards";
+
 
 export default function ListingsAmentitiesPanel({ listingDetails }: { listingDetails: CombinedPropertyDetails }) {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -41,41 +42,6 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
         'concierge', 'live_in_super', 'childrens_playroom', 'wheelchair_access'
     ];
     
-    // Special formatting for certain amenities
-    const amenityNameOverrides: Record<string, string> = {
-        "central_ac": "Central AC",
-        "pied_a_terre": "Pied-à-terre",
-        "washer_dryer": "In-Unit Washer/Dryer",
-        "nyc_evacuation_1": "NYC Evacuation Zone 1",
-        "nyc_evacuation_2": "NYC Evacuation Zone 2",
-        "nyc_evacuation_3": "NYC Evacuation Zone 3",
-        "nyc_evacuation_5": "NYC Evacuation Zone 5",
-        "nyc_evacuation_6": "NYC Evacuation Zone 6",
-        "fios_available": "Fios Available",
-        "co_purchase": "Co-Purchase Allowed",
-        "childrens_playroom": "Children's Playroom",
-        "live_in_super": "Live-in Super",
-        "full_time_doorman": "Full-Time Doorman",
-        "part_time_doorman": "Part-Time Doorman",
-        "virtual_doorman": "Virtual Doorman",
-        "pets": "Allows Pets"
-    };
-    
-    // Format amenity name for display
-    const formatAmenityName = (name: string) => {
-        // Check if we have an override for this amenity name
-        if (amenityNameOverrides[name]) {
-            return amenityNameOverrides[name];
-        }
-        
-        // Default formatting
-        return name
-            .replace(/_/g, ' ')
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-    };
-    
     // Get available amenities from a list, excluding key amenities
     const getAvailableAmenities = (amenityList: string[]) => {
         return amenityList.filter(amenity => 
@@ -96,7 +62,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                 <TooltipIcon tooltipText="Key amenities are the most important features of a property that are typically highlighted in the description summary." />
             </div>
             <div className="flex flex-wrap gap-1">
-                <TagList category="Amenities" tags={listingDetails.combined_tag_list || []} />
+                <TagList category="Amenities" tags={listingDetails.tag_list || []} />
             </div>
             {/* Primary amenities */}
             <div className="grid grid-cols-4 gap-4 mt-2">

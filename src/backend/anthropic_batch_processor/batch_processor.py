@@ -96,8 +96,8 @@ def fetch_properties_without_summary(limit=1000):
         ProjectionExpression="id, description, loaded_datetime"
     )
     
-    # Filter items to only include those in listings_ids
-    filtered_items = [item for item in response['Items'] if item['id'] in listings_ids]
+    # Filter items to only include those in listings_ids and with non-empty description
+    filtered_items = [item for item in response['Items'] if item['id'] in listings_ids and item.get('description', '').strip()]
     items = filtered_items
     
     logger.info(f"Found {len(items)} items that exist in RDS out of {len(response['Items'])} total items without summaries")
@@ -111,8 +111,8 @@ def fetch_properties_without_summary(limit=1000):
             ExclusiveStartKey=response['LastEvaluatedKey']
         )
         
-        # Filter new items to only include those in listings_ids
-        new_items = [item for item in response['Items'] if item['id'] in listings_ids]
+        # Filter new items to only include those in listings_ids and with non-empty description
+        new_items = [item for item in response['Items'] if item['id'] in listings_ids and item.get('description', '').strip()]
         items.extend(new_items)
         
         # Exit the loop if we've reached or exceeded the limit

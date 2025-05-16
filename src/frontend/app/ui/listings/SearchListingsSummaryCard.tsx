@@ -25,13 +25,13 @@ export default function SearchListingsSummaryCard({
   };
 
   return (
-    <div className="card border-primary bg-base-100 shadow-xl col-span-3 p-6 rounded">
+    <div className="card border border-base-content/10 bg-base-100 shadow-xl col-span-3 p-6 rounded">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
             <h2 className="text-2xl font-bold text-primary">
               {listings.length}{" "}
-              {listings.length === 1 ? "Property" : "Properties"} Found 🎉
+              {listings.length === 1 ? "Property" : "Properties"} Found {listings.length === 0 ? "😔" : "🎉"}
             </h2>
             <p className="text-base-content/60">
               {getSortText()}

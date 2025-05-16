@@ -64,7 +64,7 @@ export default function Page() {
       >
         <div className="text-6xl font-extrabold mb-20 text-primary p-6 overflow-hidden">
           <AnimatedText 
-            text="AI powered real estate analytics." 
+            text="AI-powered real estate intelligence." 
             charDelay={15}
             startDelay={3000} // 3 second delay before starting the animation
           />

@@ -1,38 +1,34 @@
 "use client";
 
+import { useState } from "react";
 import { MapIcon } from "@heroicons/react/24/outline";
-import Image from 'next/image';
-import { Property } from "@/app/lib/definitions";
+import { MapIcon as MapSolidIcon } from "@heroicons/react/24/solid";
 
 export interface MapButtonProps {
-  listing: Property;
-  onClick?: React.MouseEventHandler<HTMLDivElement>;
+  showingMap: boolean;
+  onToggleMap: (e: React.MouseEvent<HTMLDivElement>) => void;
   className?: string;
 }
 
-export default function MapButton({ listing, onClick, className }: MapButtonProps) {
+export default function MapButton({ showingMap, onToggleMap, className }: MapButtonProps) {
+  const [isHovered, setIsHovered] = useState(false);
   return (
     <div
-      onClick={onClick}
       className={className}
     >
-      <div className="dropdown dropdown-end dropdown-top">
-        <div 
-          tabIndex={0} 
-          role="button" 
-          className="btn btn-sm btn-ghost btn-circle"
-        >
+      <div
+        tabIndex={0}
+        role="button"
+        className="btn btn-ghost btn-circle text-primary/80 cursor-pointer hover:text-primary active:scale-90 transition"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={onToggleMap}
+      >
+        {(isHovered || showingMap) ? (
+          <MapSolidIcon className="w-5 h-5" />
+        ) : (
           <MapIcon className="w-5 h-5" />
-        </div>
-        <div tabIndex={0} className="dropdown-content z-[9999] mb-2 shadow-xl rounded-lg overflow-hidden w-64 h-64">
-          <Image
-            src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f74e4e(${listing.longitude || '-73.935242'},${listing.latitude || '40.730610'})/${listing.longitude || '-73.935242'},${listing.latitude || '40.730610'},12/300x300@2x?access_token=pk.eyJ1IjoiY2hlbndpbGw5OCIsImEiOiJjbTc4M2JiOWkxZWZtMmtweGRyMHRxenZnIn0.RmSgCA0jq_ejQqDHEUj5Pg`}
-            alt={`Map location for ${listing.address}`}
-            width={300}
-            height={300}
-            className="w-full h-full object-cover"
-          />
-        </div>
+        )}
       </div>
     </div>
   );

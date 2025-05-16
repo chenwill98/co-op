@@ -3,6 +3,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois } from './definitions';
 import { getSystemTag, tagCategories } from './tagUtils';
 import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+import { prompts } from './promptConfig';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import Anthropic from "@anthropic-ai/sdk";
 // Import the parser properly using ES module syntax
@@ -20,7 +21,7 @@ export async function fetchPropertiesRDS(params: {
   brokerFee: string; 
   sort?: string;
   tags?: string;
-}) {
+}): Promise<[Property[], Record<string, any>]> {
   const limit = 10;
   const page = 1;
   const skip = (page - 1) * limit;
@@ -28,6 +29,7 @@ export async function fetchPropertiesRDS(params: {
   // Destructure parameters
   const { neighborhood, minPrice, maxPrice, brokerFee, sort, tags } = params;
   let claudeQuery = Prisma.empty;
+  let queryRecord: Record<string, any> = {};
 
   // Get Claude results if text search is provided
   if (params.text) {
@@ -70,7 +72,7 @@ export async function fetchPropertiesRDS(params: {
       }
       
       // Parse claudeResults into Prisma filters - properly await the async function
-      claudeQuery = await parseClaudeResultsToPrismaSQL(claudeResults, orderBy, limit, skip);
+      [claudeQuery, queryRecord] = await parseClaudeResultsToPrismaSQL(claudeResults, orderBy, limit, skip);
 
     } catch (error) {
       console.error('Error processing Claude search results:', error);
@@ -104,13 +106,12 @@ export async function fetchPropertiesRDS(params: {
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-      enhanced_brokers_fee: property.enhanced_brokers_fee.toNumber(),
       // Convert any emoji tags to system tags
-      combined_tag_list: property.combined_tag_list ? property.combined_tag_list.map((tag: string) => tag) : [],
+      tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
       additional_fees: property.additional_fees ? property.additional_fees : null,
     }));
 
-    return formattedProperties as Property[];
+    return [formattedProperties as Property[], queryRecord] as [Property[], Record<string, any>];
   } catch (error) {
     console.error('Error fetching properties with Prisma:', error);
     throw error;
@@ -141,9 +142,8 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-      enhanced_brokers_fee: property.enhanced_brokers_fee.toNumber(),
       // Convert any emoji tags to system tags
-      combined_tag_list: property.combined_tag_list ? property.combined_tag_list.map((tag: string) => tag) : [],
+      tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
       additional_fees: property.additional_fees ? property.additional_fees : null,
     };
     return formattedProperty as Property;
@@ -176,8 +176,8 @@ export async function fetchPropertyDetailsById(id: string): Promise<PropertyDeta
     const items = response.Responses?.PropertyMediaDetails ?? [];
     
     // Convert any item with tags to use system tags
-    if (items.length > 0 && items[0].combined_tag_list) {
-      items[0].combined_tag_list = items[0].combined_tag_list.map((tag: string) => tag);
+    if (items.length > 0 && items[0].tag_list) {
+      items[0].tag_list = items[0].tag_list.map((tag: string) => tag);
     }
     
     return items.length > 0 ? items[0] as PropertyDetails : null;
@@ -310,234 +310,83 @@ export async function fetchPropertyPage(id: string): Promise<CombinedPropertyDet
   }
 }
 
-export async function fetchClaudeSearchResult(text: string): Promise<Record<string, any>>{
-
+export async function fetchClaudeSearchResult(text: string): Promise<Record<string, any>> {
   const anthropic = new Anthropic({
-    // defaults to process.env["ANTHROPIC_API_KEY"]
-    apiKey: process.env.ANTHROPIC_API_KEY,
+    apiKey: process.env.ANTHROPIC_API_KEY || "",
   });
 
   const model = "claude-3-5-haiku-20241022";
   const max_tokens = 8192;
   const temperature = 0;
 
-  
+  // Generate the tag list from the tag categories
   const TAG_LIST = JSON.stringify(
     Object.entries(tagCategories).reduce((result, [category, tags]) => {
       result[category] = tags
-        .filter(tag => tag.source.includes('AI'))
+        // .filter(tag => tag.source.includes('AI'))
         .map(tag => tag.name);
       return result;
     }, {} as Record<string, string[]>), 
     null, 
     2
   );
+  
+  // Get the database schema
   const DATABASE_SCHEMA = propertyString;
 
+  // Get the neighborhoods
   const NEIGHBORHOODS = await prisma.neighborhoods_enhanced_view.findMany({
     select: { name: true },
     where: { level: { in: [3, 4, 5] } }
   });
 
-  // // Get neighborhoods from cache or fetch them
-  // const allNeighborhoods = await getCachedNeighborhoods();
-  // const NEIGHBORHOODS = allNeighborhoods
-  //   .filter((n: Neighborhood) => [3, 4, 5].includes(n.level))
-  //   .map((n: Neighborhood) => ({ name: n.name }));
-
-  // Replace placeholders like {{DATABASE_SCHEMA}} with real values,
-  // because the SDK does not support variables.
   try {
-    const msg = await anthropic.messages.create({
-      model: model,
-      max_tokens: max_tokens,
-      temperature: temperature,
-      // cache_prompt: true,
-      // system: "You are a system that takes in a natural language text search and processes it into search parameters values that can be used to query a SQL database. Your job is to extract specific search criteria from user queries and map them to the appropriate database fields.\n\n" +
-      //     "Rules:\n" +
-      //     "1. Only use values from the provided neighborhoods, tags, and database schema\n" +
-      //     "2. For numeric ranges, set both min and max when possible (e.g., {\"min\": 2, \"max\": 2} for exactly 2 bedrooms)\n" +
-      //     "3. For open-ended ranges, use null for the unbounded side (e.g., {\"min\": null, \"max\": 3000} for less than $3000)\n" +
-      //     "4. If a query is vague, only include parameters that are explicitly mentioned or strongly implied\n" +
-      //     "5. For irrelevant or inappropriate queries, return an object with empty or null values for all fields\n" +
-      //     "6. Always include property_type as either \"rental\" or \"sale\" based on context",
-      system: `You are a system that takes in a natural language text search and processes it into search parameters values that can be used to query a SQL database. You must follow the following rules and guidance:
-      1. Your job is to extract specific search criteria from user queries and map them to the appropriate database fields.
-      2. The appropriate values for certain columns like neighborhoods, tags, and the database schema will be provided, so make sure that the responses strictly follow those values.
-      3. Make sure that the tags you return are ACTUALLY RELEVANT to the query.
-      4. Be fairly restrained with tag filters - for example, don't return tags like "luxury" or "renovated" if they're not explicitly mentioned in the query.
-      5. NEVER return data types (like 'string', 'integer', 'boolean', etc.) as field values. Either provide actual meaningful values (e.g., dates in YYYY-MM-DD format, specific prices, property types, etc.) or omit fields entirely if no value can be determined.
-      6. If the query is vague then don't make up a database schema or tag list and keep the responses reasonable in terms of how much data is queried. If the query is irrelevant to real estate or a provocation, then just return the object with empty values.`,
-      messages: [
-        {
-          "role": "user",
-          "content": [
-            {
-              "type": "text",
-              "text": `<example>
-                        <ideal_output>
-                        process_search_query({
-                          "search_query": "2 bedroom apartments in a charming neighborhood that has a modern waterfront and costs less than $3000",
-                          "database_schema": {
-                            "price": {"min": null, "max": 3000},
-                            "bedrooms": {"min": 2, "max": 2},
-                            "property_type": "rental",
-                            "neighborhood": ["Williamsburg", "East Village", "Upper West Side"],
-                            "tag_list": [
-                            "waterfront",
-                            "modern-design"
-                          ]
-                        }
-                        })
-                        </ideal_output>
-                        <BAD_OUTPUT>
-                        process_search_query({
-                          "search_query": "Apartments near Central Park",
-                          "database_schema": {
-                          "status": "string",
-                          "listed_at": "string",
-                          "closed_at": "string",
-                          "available_from": "string",
-                          "address": "string",
-                          "borough": {
-                            "equals": "string"
-                          },
-                          "zipcode": {
-                            "equals": "string"
-                          },
-                          "property_type": {
-                            "in": [
-                              "condo",
-                              "rental",
-                              "townhouse",
-                              "house"
-                            ]
-                          },
-                          "amenities": {
-                            "hasEvery": [
-                              "pets",
-                              "media_room",
-                              "hardwood_floors",
-                              "recreation_facilities",
-                              "dogs",
-                              "storage_room",
-                              "roofdeck",
-                              "childrens_playroom",
-                              "nyc_evacuation_1",
-                              "fios_available",
-                              "balcony",
-                              "doorman",
-                              "bike_room",
-                              "furnished",
-                              "hot_tub",
-                              "nyc_evacuation_6",
-                              "public_outdoor_space",
-                              "full_time_doorman",
-                              "locker_cage",
-                              "park_view",
-                              "nyc_evacuation_3",
-                              "garage",
-                              "waterview",
-                              "part_time_doorman",
-                              "tennis_court",
-                              "leed_registered",
-                              "garden",
-                              "valet",
-                              "fireplace",
-                              "gas_fireplace",
-                              "wheelchair_access",
-                              "deck",
-                              "waterfront",
-                              "city_view",
-                              "elevator",
-                              "co_purchase",
-                              "dishwasher",
-                              "courtyard",
-                              "washer_dryer",
-                              "pool",
-                              "garden_view",
-                              "sublets",
-                              "decorative_fireplace",
-                              "parents",
-                              "concierge",
-                              "terrace",
-                              "cold_storage",
-                              "virtual_doorman",
-                              "pied_a_terre",
-                              "guarantors",
-                              "smoke_free",
-                              "gym",
-                              "cats",
-                              "valet_parking",
-                              "laundry",
-                              "nyc_evacuation_2",
-                              "central_ac",
-                              "private_roof_deck",
-                              "roof_rights",
-                              "patio",
-                              "wood_fireplace",
-                              "assigned_parking",
-                              "parking",
-                              "package_room",
-                              "skyline_view",
-                              "live_in_super",
-                              "storage",
-                              "nyc_evacuation_5"
-                            ]
-                          },
-                          "agents": "string[]",
-                          "url": "string",
-                          "date": "string",
-                          "id": {
-                            "not": null
-                          }
-                        })
-                        </BAD_OUTPUT>
-                        </example>`        
-            },
-            {
-              "type": "text",
-              "text": `Query: ${text}`
-            }
-          ]
-        }
-      ],
-      tools: [
-        {
-          "name": "process_search_query",
-          "description": "Process a natural language text search into parameters that can be used to query a database. The system uses the provided database schema and tag list to generate the search filters.",
-          "cache_control": {"type": "ephemeral"},
-          "input_schema": {
-            "type": "object",
-            "properties": {
-              "search_query": {
-                "type": "string",
-                "description": "The natural language text search query to be processed into SQL query parameters."
-              },
-              "database_schema": {
-                "type": "object",
-                "description": `The SQL database schema detailing columns and their corresponding types are defined in <DATABASE_SCHEMA>${DATABASE_SCHEMA}</DATABASE_SCHEMA>. 
-                If the field is followed by a type (e.g. string), then that is the value type that can be used to filter the search. Dates should be in YYYY-MM-DD format. 
-                Number type columns should contain max and min values, and if it's an exact value then just have the min and max as the same. 
-                If it's followed by a list type, then that's a list of values that can be used to filter the search, with the exceptions of tag_list and neighborhood. 
-                The available tags for filtering in tag_list are defined in <TAG_LIST>${TAG_LIST}</TAG_LIST>. The neighborhood values are defined in <NEIGHBORHOODS>${NEIGHBORHOODS}</NEIGHBORHOODS>. The neighborhood values should always be a list. 
-                Make sure the output is a valid JSON object with the same keys as the database schema. If a field value would be null or you don't have a specific value for it, exclude that field entirely from the response. IMPORTANT: DO NOT return the type descriptions as values (e.g. NEVER return 'string', 'integer', etc as values). For example, instead of 'status: "string"' either provide an actual status value like 'status: "active"' or omit the field entirely.` 
-              }
-            },
-            "required": [
-              "search_query",
-              "database_schema"
-            ]
+    // Create a deep copy of the tools from the config
+    const tools = JSON.parse(JSON.stringify(prompts.searchQueryProcessing.tools));
+    
+    // Replace placeholders in the tool description
+    for (const tool of tools) {
+      if (tool.name === 'process_search_query') {
+        tool.input_schema.properties.database_schema.description = 
+          tool.input_schema.properties.database_schema.description
+            .replace('{{DATABASE_SCHEMA}}', DATABASE_SCHEMA)
+            .replace('{{TAG_LIST}}', TAG_LIST)
+            .replace('{{NEIGHBORHOODS}}', JSON.stringify(NEIGHBORHOODS, null, 2));
+      }
+    }
+    
+    // Create a deep copy of the example messages from the config
+    const exampleMessages = JSON.parse(JSON.stringify(prompts.searchQueryProcessing.exampleMessages));
+    
+    // Add the current query to the messages
+    const messages = [
+      {
+        role: "user" as const, // Explicitly type as 'user' for Anthropic API
+        content: [
+          ...exampleMessages[0].content,
+          {
+            type: "text" as const, // Explicitly type as 'text' for Anthropic API
+            text: `Query: ${text}`
           }
-        }
-      ]
+        ]
+      }
+    ];
+    
+    // Make the API call
+    const msg = await anthropic.messages.create({
+      model,
+      max_tokens,
+      temperature,
+      system: prompts.searchQueryProcessing.systemPrompt,
+      messages,
+      tools
     });
+    
     return msg;
-  }
-  catch (e) {
+  } catch (e) {
     console.error(e);
     return {};
-  } 
+  }
 }
 
 export async function getAllChildNeighborhoods(parentName: string) {
