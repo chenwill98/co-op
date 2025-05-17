@@ -86,7 +86,7 @@ export default function ChatBox({ queryRecord }: { queryRecord: Record<string, a
       if (arr.length > 3) {
         const remainingArr = arr.slice(1);
         return [
-          <div key={key} className="dropdown dropdown-hover dropdown-top dropdown-end inline-block">
+          <div key={key} className="dropdown dropdown-hover dropdown-top dropdown-end inline-block border border-base-content/10">
             <label tabIndex={0} className={BADGE_CLASS + " cursor-pointer"}>
               {label} • {arr[0]}
               <span className="cursor-help text-primary">+{arr.length - 1}</span>
@@ -148,9 +148,11 @@ export default function ChatBox({ queryRecord }: { queryRecord: Record<string, a
             <div className="card bg-base-100 border border-base-content/10 rounded-4xl shadow-lg mx-auto">
               <div className="card-body p-3">
                 <div className="flex flex-col">
-                  <div className="flex flex-row flex-wrap gap-1 p-1">
-                    {Object.entries(queryRecord).flatMap(formatEntry)}
-                  </div>
+                  {Object.entries(queryRecord).length > 0 && (
+                    <div className="flex flex-row flex-wrap gap-1 p-1">
+                      {Object.entries(queryRecord).flatMap(formatEntry)}
+                    </div>
+                  )}
                   <div className="flex flex-row items-center relative">
                     <input
                       type="text"

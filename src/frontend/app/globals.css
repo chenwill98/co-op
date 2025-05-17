@@ -21,6 +21,10 @@
   }
 }
 
+html {
+  font-family: var(--font-sen), ui-sans-serif, system-ui, sans-serif;
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;

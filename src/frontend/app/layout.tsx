@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { geistSans, geistMono } from "@/app/ui/fonts";
+import { geistSans, geistMono, notoSans, sen } from "@/app/ui/fonts";
 import "./globals.css";
 import Navbar from "@/app/ui/navbar";
 import CookieConsent from "@/app/ui/CookieConsent";
@@ -31,9 +31,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="autumn">
+    <html lang="en" data-theme="autumn" className={sen.variable}>
       <body
-        className={`${geistSans.className} ${geistMono.className} antialiased min-h-screen flex flex-col`}
+        className="antialiased min-h-screen flex flex-col"
       >
         <Navbar />
         <div>{children}</div>
