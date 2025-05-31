@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { ListingsProvider } from "@/app/context/ListingsContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,9 +37,11 @@ export default function RootLayout({
       <body
         className="antialiased min-h-screen flex flex-col"
       >
-        <Navbar />
-        <div>{children}</div>
-        <CookieConsent />
+        <ListingsProvider>
+          <Navbar />
+          <div>{children}</div>
+          <CookieConsent />
+        </ListingsProvider>
       </body>
     </html>
   );

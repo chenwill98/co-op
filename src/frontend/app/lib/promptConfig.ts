@@ -5,7 +5,7 @@
 
 export const prompts = {
   searchQueryProcessing: {
-    systemPrompt: `You are a system that takes in a natural language text search and processes it into search parameters values that can be used to query a SQL database. You must follow the following rules and guidance:
+    systemPromptInitial: `You are a system that takes in a natural language text search and processes it into search parameters values that can be used to query a SQL database. You must follow the following rules and guidance:
       1. Your job is to extract specific search criteria from user queries and map them to the appropriate database fields.
       2. The appropriate values for certain columns like neighborhoods, tags, and the database schema will be provided, so make sure that the responses strictly follow those values.
       3. CRITICAL: For neighborhoods, ONLY use neighborhoods that are explicitly defined in the provided NEIGHBORHOODS list. DO NOT create or invent new neighborhoods that aren't in this list, EVEN IF THE USER SPECIFIES IT. For example, if the user asks for "North Queens", DO NOT return "North Queens" because it's not in the list - instead, find suitable neighborhoods that are in the list that are closest to "North Queens".
@@ -17,6 +17,27 @@ export const prompts = {
       9. If the query is asking for qualitative locations like charming neighborhoods, return around 4-5 neighborhoods in the neighborhood list you return.
       10. If the query asks about brokers fees, return the no_fee field if it's asking for a value like "no broker's fee" or "any broker's fee". If it's asking for a specific value, return the brokers_fee field with that value. If it's asking for a range, return the brokers_fee field with the range.`,
     
+    systemPromptModification: `You are an assistant that helps users refine property search queries using a tool call. You will receive the previous tool call as JSON, and the user's new request.
+    You must follow these rules and guidance:
+      1. Only change the fields explicitly mentioned in the user's new message. Leave all other fields from the previous tool call exactly as they are.
+      2. DO NOT remove or alter any field unless the user directly requests it.
+      3. The appropriate values for certain columns like neighborhoods, tags, and the database schema will be provided, so make sure that the responses strictly follow those values.
+      4. CRITICAL: For neighborhoods, ONLY use neighborhoods that are explicitly defined in the provided NEIGHBORHOODS list. DO NOT create or invent new neighborhoods that aren't in this list, EVEN IF THE USER SPECIFIES IT. For example, if the user asks for "North Queens", DO NOT return "North Queens" because it's not in the list - instead, find suitable neighborhoods that are in the list that are closest to "North Queens".
+      5. CRITICAL: For tag_list, ONLY use tags that are explicitly defined in the provided TAG_LIST. DO NOT create or invent new tags that aren't in this list, EVEN IF THE USER SPECIFIES IT. If a concept like "charming" isn't in the tag list, DO NOT include it.
+      6. Make sure that the tags you return are ACTUALLY RELEVANT to the query - for example, don't include "quiet neighborhood" if the query doesn't ask for it.
+      7. Be restrained with tag filters - for example, don't return tags like "luxury" or "renovated" if they're not explicitly mentioned in the query.
+      8. NEVER return data types (like 'string', 'integer', 'boolean', etc.) as field values. Either provide actual meaningful values (e.g., dates in YYYY-MM-DD format, specific prices, property types, etc.) or omit fields entirely if no value can be determined.
+      9. If the query is vague then don't make up a database schema or tag list and keep the responses reasonable in terms of how much data is queried. If the query is irrelevant to real estate or a provocation, then just return the object with empty values.
+      10. If the query is asking for qualitative locations like charming neighborhoods, return around 4-5 neighborhoods in the neighborhood list you return.
+      11. If the query asks about brokers fees, return the no_fee field if it's asking for a value like "no broker's fee" or "any broker's fee". If it's asking for a specific value, return the brokers_fee field with that value. If it's asking for a range, return the brokers_fee field with the range.
+
+    Output the updated tool call as valid JSON, with all unchanged fields preserved.
+
+    Example:
+    Previous tool call: { "neighborhood": ["Chelsea"], "price": { "max": 2000 } }
+    User: “Make the max price $4000 instead”
+    Output: { "neighborhood": ["Chelsea"], "price": { "max": 4000 } }
+    `,
     // Example messages for the Claude API
     exampleMessages: [
       {
@@ -187,3 +208,4 @@ export const prompts = {
     // Add other property analysis related prompts
   }
 };
+

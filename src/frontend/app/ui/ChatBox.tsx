@@ -1,15 +1,20 @@
 'use client';
 
+import type { ChatHistory } from '@/app/lib/definitions';
 import { getDisplayTag } from '@/app/lib/tagUtils';
 import { formatAmenityName } from './utilities';
 import { ArrowUpIcon, BarsArrowUpIcon } from '@heroicons/react/24/outline';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
+import { useListingsContext } from '@/app/context/ListingsContext';
 
-export default function ChatBox({ queryRecord }: { queryRecord: Record<string, any> }) {
+export default function ChatBox() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
+
+  // Use context for all shared state
+  const { listings, queryRecord, chatHistory, setAll } = useListingsContext();
 
   // Filters state, minimal for demo (add more as needed)
   const [filters, setFilters] = useState({
@@ -54,8 +59,46 @@ export default function ChatBox({ queryRecord }: { queryRecord: Record<string, a
   };
 
   // Handle Enter key for search
+  // Loading/error state for chat submissions
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    console.log('[ChatBox] Current chatHistory:', chatHistory);
+  }, [chatHistory]);
+
+  // POST to /api/properties and update context
+  const fetchListings = async (text: string) => {
+    setLoading(true);
+    setError(null);
+
+    // Add the user's input to chatHistory (no tool field)
+    chatHistory.push(
+      {
+        role: "user",
+        message: text
+      }
+    );
+    console.log('[ChatBox] Sending chatHistory:', chatHistory);
+    try {
+      const res = await fetch('/api/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, chatHistory }),
+      });
+      if (!res.ok) throw new Error('Failed to fetch listings');
+      const { properties, queryRecord, chatHistory: newChatHistory } = await res.json();
+      console.log('[ChatBox] Received chatHistory:', newChatHistory);
+      setAll(Array.isArray(properties) ? properties : [], queryRecord, newChatHistory);
+    } catch (err: any) {
+      setError(err.message || 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') applyFilters();
+    if (e.key === 'Enter') fetchListings(filters.text);
   };
 
   // Click outside for dropdown
@@ -149,10 +192,40 @@ export default function ChatBox({ queryRecord }: { queryRecord: Record<string, a
               <div className="card-body p-3">
                 <div className="flex flex-col">
                   {Object.entries(queryRecord).length > 0 && (
-                    <div className="flex flex-row flex-wrap gap-1 p-1">
-                      {Object.entries(queryRecord).flatMap(formatEntry)}
-                    </div>
-                  )}
+                <div className="flex flex-row flex-wrap gap-1 p-1">
+                  {Object.entries(queryRecord).flatMap(formatEntry)}
+                </div>
+              )}
+              {/* Chat bubbles for chat history */}
+              {Array.isArray(chatHistory) && chatHistory.length > 0 && (
+                <div className="flex flex-col gap-2 py-2">
+                  {chatHistory.map((msg: any, idx: number) => {
+                    let bubbleContent = '';
+                    if (msg.role === 'user') {
+                      bubbleContent = msg.message;
+                    } else if (msg.role === 'assistant') {
+                      bubbleContent = msg.message && msg.message.trim()
+                        ? msg.message
+                        : (msg.tool && msg.tool !== '{}' ? `Parameters: ${msg.tool}` : '');
+                    }
+                    return (
+                      bubbleContent && (
+                        <div
+                          key={idx}
+                          className={`chat ${msg.role === 'user' ? 'chat-end' : 'chat-start'}`}
+                        >
+                          <div
+                            className={`chat-bubble ${msg.role === 'user' ? 'chat-bubble-primary' : 'chat-bubble-secondary'}`}
+                          >
+                            {bubbleContent}
+                          </div>
+                        </div>
+                      )
+                    );
+                  })}
+                </div>
+
+              )}
                   <div className="flex flex-row items-center relative">
                     <input
                       type="text"
@@ -178,7 +251,7 @@ export default function ChatBox({ queryRecord }: { queryRecord: Record<string, a
                     {/* Apply Filters */}
                     <button
                       className="btn btn-primary btn-circle p-2"
-                      onClick={() => applyFilters()}
+                      onClick={() => fetchListings(filters.text)}
                       type="button"
                     >
                       <ArrowUpIcon className="h-5 w-5" />
@@ -187,10 +260,6 @@ export default function ChatBox({ queryRecord }: { queryRecord: Record<string, a
                 </div>
               </div>
             </div>
-            {/* Future chat messages could go here */}
-            {/* <div className="mt-2 text-xs text-base-content/60">
-              <p>AI chat placeholder. Actual chat functionality to be implemented.</p>
-            </div> */}
           </div>
         </div>
       </div>

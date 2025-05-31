@@ -2,11 +2,11 @@
 
 import {
   SparklesIcon,
-  AdjustmentsHorizontalIcon,
 } from "@heroicons/react/24/outline";
 import TypingInput from "@/app/ui/search/TypingInput";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useListingsContext } from "@/app/context/ListingsContext";
 import AnimatedText from "./components/AnimatedText";
 import MapBackground from "./components/MapBackground";
 
@@ -15,28 +15,18 @@ export default function Page() {
 
   // Local state for each filter
   const [searchText, setSearchText] = useState("");
-  const [neighborhood, setNeighborhood] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [brokerFee, setBrokerFee] = useState("Any");
-  const [filtersVisible, setFiltersVisible] = useState(false);
 
-  const handleSearch = () => {
-    // Build query params
-    const params = new URLSearchParams({
-      text: searchText,
-      neighborhood,
-      minPrice,
-      maxPrice,
-      brokerFee,
+  const { setAll } = useListingsContext();
+
+  const handleSearch = async () => {
+    const res = await fetch("/api/properties", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: searchText }),
     });
-
-    // Navigate to /listings with those params (redirect)
-    router.push(`/listings?${params.toString()}`);
-  };
-
-  const toggleFilters = () => {
-    setFiltersVisible(!filtersVisible);
+    const { properties, queryRecord, chatHistory } = await res.json();
+    setAll(properties, queryRecord, chatHistory);
+    router.push("/listings");
   };
 
   // Handle key press event to check for Enter key

@@ -1,27 +1,28 @@
 // Import your database client/ORM here, e.g. Prisma
 import { PrismaClient, Prisma } from '@prisma/client';
 import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois } from './definitions';
-import { getSystemTag, tagCategories } from './tagUtils';
+import { tagCategories } from './tagUtils';
 import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { prompts } from './promptConfig';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import Anthropic from "@anthropic-ai/sdk";
 // Import the parser properly using ES module syntax
 import { parseClaudeResultsToPrismaSQL } from './claudeQueryParser';
-
-
+import { ChatHistory } from './definitions';
 
 const prisma = new PrismaClient();
 
 export async function fetchPropertiesRDS(params: {
-  text: string; 
-  neighborhood: string; 
-  minPrice: string; 
-  maxPrice: string; 
-  brokerFee: string; 
+  text: string;
+  neighborhood: string;
+  minPrice: string;
+  maxPrice: string;
+  brokerFee: string;
   sort?: string;
   tags?: string;
-}): Promise<[Property[], Record<string, any>]> {
+  chatHistory?: ChatHistory;
+}): Promise<[Property[], Record<string, any>, ChatHistory]>
+{
   const limit = 10;
   const page = 1;
   const skip = (page - 1) * limit;
@@ -32,9 +33,11 @@ export async function fetchPropertiesRDS(params: {
   let queryRecord: Record<string, any> = {};
 
   // Get Claude results if text search is provided
+  let updatedChatHistory = params.chatHistory ? [...params.chatHistory] : [];
   if (params.text) {
     try {
-      const claudeResults = await fetchClaudeSearchResult(params.text)
+      // Pass chatHistory to Claude
+      const claudeResults = await fetchClaudeSearchResult(params.text, updatedChatHistory)
         .then((results) => {
           console.log('Claude results:', results);
           // Ensure we're getting a proper object, not a string
@@ -48,9 +51,33 @@ export async function fetchPropertiesRDS(params: {
               return {};
             }
           }
+
+          // Extract the first text message from Claude's response or error
+          let messageText = '';
+          if (results && typeof results.message === 'string' && results.tool === '{}') {
+            // Overload or error case
+            messageText = results.message;
+          } else if (results?.content && Array.isArray(results.content)) {
+            // Find the first text item in the content array
+            const textItem = results.content.find((item: any) => item.type === 'text');
+            console.log('Found text message:', textItem);
+            if (textItem && textItem.text) {
+              messageText = textItem.text;
+            }
+          }
+      
+          // Append Claude's response to chatHistory with renamed 'tool' and new 'message' field
+          updatedChatHistory.push({
+            role: "assistant",
+            tool: JSON.stringify(dbSchema),
+            message: messageText
+          });
           return dbSchema ?? {};
         });
 
+      
+
+      console.log('updatedChatHistory FISHING', updatedChatHistory);
       // Define orderBy based on sort parameter
       let orderBy: any = undefined;
       
@@ -111,7 +138,7 @@ export async function fetchPropertiesRDS(params: {
       additional_fees: property.additional_fees ? property.additional_fees : null,
     }));
 
-    return [formattedProperties as Property[], queryRecord] as [Property[], Record<string, any>];
+    return [formattedProperties as Property[], queryRecord, updatedChatHistory] as [Property[], Record<string, any>, ChatHistory];
   } catch (error) {
     console.error('Error fetching properties with Prisma:', error);
     throw error;
@@ -310,7 +337,10 @@ export async function fetchPropertyPage(id: string): Promise<CombinedPropertyDet
   }
 }
 
-export async function fetchClaudeSearchResult(text: string): Promise<Record<string, any>> {
+export async function fetchClaudeSearchResult(
+  text: string,
+  chatHistory: ChatHistory = []
+): Promise<Record<string, any>> {
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY || "",
   });
@@ -358,33 +388,70 @@ export async function fetchClaudeSearchResult(text: string): Promise<Record<stri
     // Create a deep copy of the example messages from the config
     const exampleMessages = JSON.parse(JSON.stringify(prompts.searchQueryProcessing.exampleMessages));
     
-    // Add the current query to the messages
+    // Only include user messages with non-empty message and assistant messages with non-empty, non-'{}' tool
+    const historyMessages = chatHistory
+      .filter(msg =>
+        (msg.role === 'user' && msg.message && msg.message.trim() !== '') ||
+        (msg.role === 'assistant' && msg.tool && msg.tool !== '{}' && msg.tool.trim() !== '')
+      )
+      .map(msg => {
+        if (msg.role === 'assistant') {
+          return {
+            role: 'assistant',
+            content: [{ type: "text", text: `Previous tool call:\n\`\`\`json\n${msg.tool}\n\`\`\`` }]
+          };
+        }
+        return {
+          role: 'user',
+          content: [{ type: "text", text: msg.message }]
+        };
+      });
+    
+    // Add the latest user query as the last message
     const messages = [
+      ...exampleMessages, // optionally keep examples for grounding
+      ...historyMessages, 
       {
-        role: "user" as const, // Explicitly type as 'user' for Anthropic API
-        content: [
-          ...exampleMessages[0].content,
-          {
-            type: "text" as const, // Explicitly type as 'text' for Anthropic API
-            text: `Query: ${text}`
-          }
-        ]
+        role: "user" as const,
+        content: [{ type: "text" as const, text: `Query: ${text}` }]
       }
     ];
+
+    // Use initial prompt only if there is no meaningful assistant tool in chatHistory
+    const lastMeaningfulAssistant = [...chatHistory].reverse().find(
+      msg => msg.role === 'assistant' && msg.tool && msg.tool !== '{}' && msg.tool.trim() !== ''
+    );
+    const isInitial = !lastMeaningfulAssistant;
+    let systemPrompt;
+    if (isInitial) {
+      console.log('[Claude] Using initial system prompt');
+      systemPrompt = prompts.searchQueryProcessing.systemPromptInitial;
+    } else {
+      console.log('[Claude] Using modification system prompt');
+      systemPrompt = prompts.searchQueryProcessing.systemPromptModification;
+    }
     
     // Make the API call
     const msg = await anthropic.messages.create({
       model,
       max_tokens,
       temperature,
-      system: prompts.searchQueryProcessing.systemPrompt,
+      system: systemPrompt,
       messages,
       tools
     });
     
     return msg;
-  } catch (e) {
+  } catch (e: any) {
     console.error(e);
+    // Handle Claude overload error (529 or overloaded_error)
+    if (e?.status === 529 || e?.error?.type === 'overloaded_error' || (typeof e?.message === 'string' && e.message.includes('Overloaded'))) {
+      return {
+        content: [],
+        tool: '{}',
+        message: 'Claude is overloaded. Please try again later.'
+      };
+    }
     return {};
   }
 }

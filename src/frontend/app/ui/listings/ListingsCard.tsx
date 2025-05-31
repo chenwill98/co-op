@@ -17,7 +17,22 @@ export default function ListingsCard({ listing }: { listing: Property }) {
     >
       <figure className="h-3/7 relative bg-primary/10 overflow-hidden">
         <div className="overflow-hidden rounded relative w-full h-full">
-          {/* Property Image */}
+          {/* Map: always show for cards without a thumbnail, lazy-load for cards with a thumbnail */}
+          {(!listing.thumbnail_image || showMap) && (
+            <div
+              className="pointer-events-none absolute top-0 left-0 w-full h-full transition-opacity duration-500 opacity-100"
+              style={{ zIndex: 1 }}
+            >
+              <Image
+                src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f74e4e(${listing.longitude || '-73.935242'},${listing.latitude || '40.730610'})/${listing.longitude || '-73.935242'},${listing.latitude || '40.730610'},14/600x600@2x?access_token=pk.eyJ1IjoiY2hlbndpbGw5OCIsImEiOiJjbTc4M2JiOWkxZWZtMmtweGRyMHRxenZnIn0.RmSgCA0jq_ejQqDHEUj5Pg`}
+                alt={`Map location for ${listing.address}`}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+                className="thumbnail object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
+              />
+            </div>
+          )}
+          {/* Only render the thumbnail if it exists, on top of the map */}
           {listing.thumbnail_image && (
             <div
               className={`pointer-events-none absolute top-0 left-0 w-full h-full transition-opacity duration-500 ${showMap ? 'opacity-0' : 'opacity-100'}`}
@@ -26,21 +41,6 @@ export default function ListingsCard({ listing }: { listing: Property }) {
               <Image
                 src={listing.thumbnail_image}
                 alt={listing.address}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
-                className="thumbnail object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
-              />
-            </div>
-          )}
-          {/* Map Image (lazy loaded for fade) */}
-          {showMap && (
-            <div
-              className="pointer-events-none absolute top-0 left-0 w-full h-full transition-opacity duration-500 opacity-100"
-              style={{ zIndex: 1 }}
-            >
-              <Image
-                src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f74e4e(${listing.longitude || '-73.935242'},${listing.latitude || '40.730610'})/${listing.longitude || '-73.935242'},${listing.latitude || '40.730610'},14/600x600@2x?access_token=pk.eyJ1IjoiY2hlbndpbGw5OCIsImEiOiJjbTc4M2JiOWkxZWZtMmtweGRyMHRxenZnIn0.RmSgCA0jq_ejQqDHEUj5Pg`}
-                alt={`Map location for ${listing.address}`}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
                 className="thumbnail object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
