@@ -11,6 +11,15 @@ import Anthropic from "@anthropic-ai/sdk";
 import { parseClaudeResultsToPrismaSQL } from './claudeQueryParser';
 import { ChatHistory } from './definitions';
 
+// Global AWS SDK V3 clients for DynamoDB
+const ddbClient = new DynamoDBClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
 export async function fetchPropertiesRDS(params: {
   text: string;
@@ -181,14 +190,7 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
 }
 
 export async function fetchPropertyDetailsById(id: string): Promise<PropertyDetails | null> {
-  const client = new DynamoDBClient({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
-  });
-  const ddbDocClient = DynamoDBDocumentClient.from(client);
+  // Uses global ddbDocClient
 
   const params = {
     RequestItems: {
@@ -314,26 +316,44 @@ export async function fetchPropertyAnalyticsById(id: string): Promise<PropertyAn
 
 export async function fetchPropertyPage(id: string): Promise<CombinedPropertyDetails> {
   try {
-    const property = await fetchPropertiesRDSById(id);
-    const propertyDetails = await fetchPropertyDetailsById(id) || {};
-    const propertyAnalytics = await fetchPropertyAnalyticsById(id) || {};
-    const nearestStations = await fetchPropertyNearestStationsById(id) || [];
-    const nearestPois = await fetchPropertyNearestPoisById(id) || [];
-    
+    const [
+      property,
+      propertyDetails,
+      propertyAnalytics,
+      nearestStations,
+      nearestPois
+    ] = await Promise.all([
+      fetchPropertiesRDSById(id),
+      fetchPropertyDetailsById(id).then(details => details || {}),
+      fetchPropertyAnalyticsById(id).then(analytics => analytics || {}),
+      fetchPropertyNearestStationsById(id).then(stations => stations || []),
+      fetchPropertyNearestPoisById(id).then(pois => pois || [])
+    ]);
+
+    // Ensure property is not null or undefined before spreading
+    if (!property) {
+      throw new Error(`Property with fct_id ${id} not found via fetchPropertiesRDSById.`);
+    }
+
     // Properly combine objects with stations in a closest_stations array property
-    const propertyCombined = { 
-      ...propertyDetails, 
-      ...property,
-      ...propertyAnalytics,
-      closest_stations: nearestStations,
-      nearest_pois: nearestPois
+    const propertyCombined = {
+      ...(propertyDetails as PropertyDetails),
+      ...property, // property is already of type Property, ensured by the check above
+      ...(propertyAnalytics as PropertyAnalyticsDetails),
+      closest_stations: nearestStations as PropertyNearestStations[],
+      nearest_pois: nearestPois as PropertyNearestPois[]
     };
-    
+
     return propertyCombined as CombinedPropertyDetails;
-  
+
   } catch (error) {
     console.error(`Failed to fetch listing id ${id}:`, error);
-    throw new Error(`Failed to fetch listing id ${id}`);
+    // It's good practice to re-throw the original error or a new error that wraps it
+    // to preserve stack trace and context, especially if it's an Error instance.
+    if (error instanceof Error) {
+      throw new Error(`Failed to fetch page data for listing id ${id}: ${error.message}`);
+    }
+    throw new Error(`Failed to fetch page data for listing id ${id}: ${String(error)}`);
   }
 }
 
