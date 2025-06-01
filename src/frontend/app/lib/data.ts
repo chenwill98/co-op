@@ -257,21 +257,24 @@ export async function fetchPropertyNearestPoisById(id: string): Promise<Property
   try {
     // Use fixed categories
     const categories = ['fitness_center', 'food', 'grocery', 'park'];
-    let allPois: any[] = [];
     
-    // For each category, get the top 5 nearest POIs
-    for (const category of categories) {
-      const poisForCategory = await prisma.dim_property_nearest_pois.findMany({
+    // Create an array of promises, one for each category query
+    const poiPromises = categories.map(category => 
+      prisma.dim_property_nearest_pois.findMany({
         where: { 
           listing_id: id,
           category: category
         },
         orderBy: { distance: 'asc' },
         take: 5
-      });
-      
-      allPois = [...allPois, ...poisForCategory];
-    }
+      })
+    );
+
+    // Execute all POI queries in parallel
+    const resultsByCategory = await Promise.all(poiPromises);
+
+    // Flatten the array of arrays into a single array of POIs
+    const allPois = resultsByCategory.flat();
     
     if (allPois.length === 0) {
       return []; // Return empty array if none found
@@ -281,9 +284,9 @@ export async function fetchPropertyNearestPoisById(id: string): Promise<Property
     const formattedPois = allPois.map((poi) => ({
       listing_id: poi.listing_id,
       name: poi.name,
-      longitude: poi.longitude.toNumber(),
-      latitude: poi.latitude.toNumber(),
-      distance: Number(poi.distance),
+      longitude: poi.longitude.toNumber(), // Ensure longitude is a number
+      latitude: poi.latitude.toNumber(),   // Ensure latitude is a number
+      distance: Number(poi.distance),      // Ensure distance is a number
       address: poi.address,
       website: poi.website,
       category: poi.category,
@@ -291,7 +294,7 @@ export async function fetchPropertyNearestPoisById(id: string): Promise<Property
 
     return formattedPois as PropertyNearestPois[];
   } catch (error) {
-    console.error('Error fetching property analytics:', error);
+    console.error('Error fetching property nearest POIs:', error);
     return []; // Return empty array on error
   }
 }
