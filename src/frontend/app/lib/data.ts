@@ -1,5 +1,6 @@
 // Import your database client/ORM here, e.g. Prisma
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import prisma from './prisma'; // Import the serverless-friendly Prisma client
 import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois } from './definitions';
 import { tagCategories } from './tagUtils';
 import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
@@ -10,7 +11,6 @@ import Anthropic from "@anthropic-ai/sdk";
 import { parseClaudeResultsToPrismaSQL } from './claudeQueryParser';
 import { ChatHistory } from './definitions';
 
-const prisma = new PrismaClient();
 
 export async function fetchPropertiesRDS(params: {
   text: string;
