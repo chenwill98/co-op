@@ -184,7 +184,7 @@ def load_nearest_subways(session):
         FROM real_estate.latest_property_details_view
         WHERE id IS NOT NULL
           AND id NOT IN (
-              SELECT listing_id
+              SELECT DISTINCT listing_id
               FROM real_estate_analytics.dim_property_nearest_stations
           );"""
 
