@@ -1,5 +1,6 @@
 declare module '@mojs/core' {
-  // Simple declaration that allows accessing any property
+  // Simple declaration for mo.js library - types unavailable
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mojs: any;
   export = mojs;
 }

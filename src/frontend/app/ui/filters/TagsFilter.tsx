@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { tagCategories, getDisplayTag, getTagsInCategory } from "@/app/lib/tagUtils";
+import { tagCategories, getDisplayTag } from "@/app/lib/tagUtils";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface TagsFilterProps {

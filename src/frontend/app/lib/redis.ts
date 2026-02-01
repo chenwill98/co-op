@@ -3,6 +3,7 @@ import { createClient, RedisClientType } from 'redis';
 declare global {
   // This allows us to re-use the same Redis client across Hot Module Reloads in dev
   // and avoid creating multiple connections.
+  // eslint-disable-next-line no-var
   var __redis: RedisClientType | undefined;
 }
 

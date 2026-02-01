@@ -19,6 +19,7 @@ const sampleClaudeResponse = {
 };
 
 // Import the parser function
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { parseClaudeResultsToPrismaQuery } = require('./claudeQueryParser');
 
 // Test the parser function

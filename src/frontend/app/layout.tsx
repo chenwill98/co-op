@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { geistSans, geistMono, notoSans, sen } from "@/app/ui/fonts";
+import { sen } from "@/app/ui/fonts";
 import "./globals.css";
 import Navbar from "@/app/ui/navbar";
 import CookieConsent from "@/app/ui/CookieConsent";

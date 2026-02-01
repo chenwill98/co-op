@@ -29,7 +29,7 @@ TAG_LIST = {
     'quiet-neighborhood',
     'noisy-area',
     'waterfront',
-    'restaurants-nearby'
+    'restaurants-nearby',
     'gyms-nearby',
     'groceries-nearby',
     'parks-nearby'

@@ -16,6 +16,7 @@ export default function BookmarkIcon({ property, onClick, className }: BookmarkI
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [mojsInstance, setMojsInstance] = useState<any>(null);
   
   // Reference to the bookmark icon element
@@ -56,9 +57,9 @@ export default function BookmarkIcon({ property, onClick, className }: BookmarkI
   };
 
   // Convert BigInt values to regular numbers
-  const preparePropForStorage = (prop: Property): any => {
+  const preparePropForStorage = (prop: Property): Record<string, unknown> => {
     // Create a new object to avoid modifying the original
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     
     // Process each property, converting BigInt to number
     Object.entries(prop).forEach(([key, value]) => {

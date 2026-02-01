@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 
 // Hook to safely handle mo.js animations
 export function useMojs() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [mojs, setMojs] = useState<any>(null);
   const initialized = useRef(false);
 

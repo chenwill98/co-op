@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import CoAptLogo from "./co-apt-logo";
-import { ChartBarSquareIcon, BookmarkSquareIcon } from "@heroicons/react/24/outline";
 
 export default function Navbar() {
   // Keep the current theme in local state

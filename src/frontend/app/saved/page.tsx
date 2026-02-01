@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Property } from "@/app/lib/definitions";
 import SavedListingsGrid from "@/app/ui/listings/SavedListingsGrid";
 
@@ -45,9 +46,9 @@ export default function SavedListingsPage() {
             <p className="mt-2 text-gray-400">
               Bookmark properties you like to see them here
             </p>
-            <a href="/listings" className="btn btn-primary mt-4">
+            <Link href="/listings" className="btn btn-primary mt-4">
               Browse Listings
-            </a>
+            </Link>
           </div>
         )}
       </div>

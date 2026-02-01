@@ -25,8 +25,8 @@ const MapBackground = () => {
       const savedTheme = localStorage.getItem('co-apt-theme') || 'autumn';
       const initialLightPreset = getMapLightPresetFromTheme(savedTheme);
       setMapLightPreset(initialLightPreset);
-    } catch (error) {
-      console.error('Error accessing localStorage:', error);
+    } catch {
+      // localStorage not available
     }
 
     // Listen for theme changes
@@ -59,30 +59,26 @@ const MapBackground = () => {
     mapboxgl.accessToken = "pk.eyJ1IjoiY2hlbndpbGw5OCIsImEiOiJjbTc4M2JiOWkxZWZtMmtweGRyMHRxenZnIn0.RmSgCA0jq_ejQqDHEUj5Pg";
     
     try {
-      console.log('Initializing Mapbox map...');
-      
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
         style: 'mapbox://styles/chenwill98/cm784fxfi01az01s1fryjdv1u',
         center: initialCoordinates,
-        zoom: 15.59, // Updated zoom level
-        pitch: 57.70, // Added pitch
-        bearing: 0.00, // Added bearing
+        zoom: 15.59,
+        pitch: 57.70,
+        bearing: 0.00,
         interactive: false,
         attributionControl: false,
         antialias: true
       });
-      
+
       mapRef.current = map;
-      
+
       map.on('style.load', () => {
-        console.log('Map loaded successfully');
         // Set the initial light preset
         try {
           map.setConfigProperty('basemap', 'lightPreset', mapLightPreset);
-          console.log(`Initial map light preset set to: ${mapLightPreset}`);
-        } catch (error) {
-          console.error('Error setting light preset:', error);
+        } catch {
+          // Light preset not supported
         }
       });
 
@@ -91,24 +87,18 @@ const MapBackground = () => {
         if (!animationInitiated.current) {
           // Wait a couple seconds before starting the animation
           setTimeout(() => {
-            console.log('Starting slow panning animation to Jersey City...');
             map.flyTo({
               center: jerseyCity,
               duration: 600000, // Very slow animation (600 seconds)
-              essential: true, // This animation is considered essential with respect to prefers-reduced-motion
-              // zoom: 14.5, // Slightly adjust zoom during animation
-              curve: 0.5, // Make the flying curve gentler
+              essential: true,
+              curve: 0.5,
             });
           }, 2000);
           animationInitiated.current = true;
         }
       });
-      
-      map.on('error', (e) => {
-        console.error('Mapbox error:', e);
-      });
-    } catch (error) {
-      console.error('Error initializing map:', error);
+    } catch {
+      // Map initialization failed
     }
 
     // Cleanup function - properly remove map
@@ -125,9 +115,8 @@ const MapBackground = () => {
     if (mapRef.current && mapRef.current.isStyleLoaded()) {
       try {
         mapRef.current.setConfigProperty('basemap', 'lightPreset', mapLightPreset);
-        console.log(`Map light preset changed to: ${mapLightPreset}`);
-      } catch (error) {
-        console.error('Error updating light preset:', error);
+      } catch {
+        // Light preset not supported
       }
     }
   }, [mapLightPreset]);

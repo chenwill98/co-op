@@ -8,7 +8,7 @@ from aws_utils import get_secret, logger, get_db_session, execute_query
 
 def fetch_api_payloads(api_type, listing_type: Literal['sales', 'rentals'] = 'rentals'):
 
-    base_url = "https://streeteasy-api.p.rapidapi.com"
+    base_url = "https://nyc-real-estate-api.p.rapidapi.com"
     headers = get_secret(secret_name='RapidAPIKey')
 
     # Checks to make sure that the listing_type makes for a valid endpoint

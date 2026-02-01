@@ -54,35 +54,45 @@ def upsert_property_details_to_rds(session, listings):
         params_list = []
         
         for listing in listings:
-            # Convert Python lists to PostgreSQL array format
-            amenities_array = "{" + ",".join(f'"{item}"' for item in listing["amenities"]) + "}" if listing["amenities"] else "{}"
-            agents_array = "{" + ",".join(f'"{item}"' for item in listing["agents"]) + "}" if listing["agents"] else "{}"
+            # Convert Python lists to PostgreSQL array format with null checks
+            amenities = listing.get("amenities") or []
+            agents = listing.get("agents") or []
+            amenities_array = "{" + ",".join(f'"{item}"' for item in amenities) + "}" if amenities else "{}"
+            agents_array = "{" + ",".join(f'"{item}"' for item in agents) + "}" if agents else "{}"
             
+            # Safely extract building_id with null check
+            building = listing.get("building")
+            building_id = building.get("id") if building else None
+
+            # Safely extract thumbnail_image
+            images = listing.get("images")
+            thumbnail_image = images[0] if images and len(images) > 0 else None
+
             params_list.append({
-                'id': listing["id"],
-                'status': listing["status"],
-                'listed_at': listing["listedAt"],
-                'closed_at': listing["closedAt"],
-                'days_on_market': listing["daysOnMarket"],
-                'available_from': listing["availableFrom"],
-                'address': listing["address"],
-                'price': listing["price"],
-                'borough': listing["borough"],
-                'neighborhood': listing["neighborhood"],
-                'zipcode': listing["zipcode"],
-                'property_type': listing["propertyType"],
-                'sqft': listing["sqft"],
-                'bedrooms': listing["bedrooms"],
-                'bathrooms': listing["bathrooms"],
-                'type': listing["type"],
-                'latitude': listing["latitude"],
-                'longitude': listing["longitude"],
+                'id': listing.get("id"),
+                'status': listing.get("status"),
+                'listed_at': listing.get("listedAt"),
+                'closed_at': listing.get("closedAt"),
+                'days_on_market': listing.get("daysOnMarket"),
+                'available_from': listing.get("availableFrom"),
+                'address': listing.get("address"),
+                'price': listing.get("price"),
+                'borough': listing.get("borough"),
+                'neighborhood': listing.get("neighborhood"),
+                'zipcode': listing.get("zipcode"),
+                'property_type': listing.get("propertyType"),
+                'sqft': listing.get("sqft"),
+                'bedrooms': listing.get("bedrooms"),
+                'bathrooms': listing.get("bathrooms"),
+                'type': listing.get("type"),
+                'latitude': listing.get("latitude"),
+                'longitude': listing.get("longitude"),
                 'amenities': amenities_array,
-                'built_in': listing["builtIn"],
-                'building_id': listing["building"]["id"],
+                'built_in': listing.get("builtIn"),
+                'building_id': building_id,
                 'agents': agents_array,
-                'no_fee': listing["noFee"],
-                'thumbnail_image': listing["images"][0] if listing["images"] and len(listing["images"]) > 0 else None,
+                'no_fee': listing.get("noFee"),
+                'thumbnail_image': thumbnail_image,
             })
         
         # Execute a batch insert with executemany
@@ -100,15 +110,15 @@ def upsert_property_details_to_rds(session, listings):
 def upsert_property_media_details_to_dynamodb(listings):
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table('PropertyMediaDetails')
-    
+
     for listing in listings:
         table.put_item(
             Item={
-                'id': listing['id'],
-                'description': listing['description'],
-                'images': listing['images'],
-                'videos': listing['videos'],
-                'floorplans': listing['floorplans'],
+                'id': listing.get('id'),
+                'description': listing.get('description', ''),
+                'images': listing.get('images', []),
+                'videos': listing.get('videos', []),
+                'floorplans': listing.get('floorplans', []),
                 'loaded_datetime': datetime.now(timezone.utc).isoformat()
             }
         )
@@ -129,7 +139,7 @@ def fetch_and_store_data(message_list):
                 property_details_list.append(data)
 
         except Exception as e:
-            logger.info(f"Error fetching {message}: {e}")
+            logger.error(f"Error fetching {message}: {e}")
             raise
 
     try:
@@ -144,7 +154,7 @@ def fetch_and_store_data(message_list):
         upsert_property_media_details_to_dynamodb(property_details_list)
 
     except Exception as e:
-        logger.info(f"Error upserting property details: {e}")
+        logger.error(f"Error upserting property details: {e}")
         raise
     
     finally:

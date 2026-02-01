@@ -2,6 +2,22 @@ import { getAllChildNeighborhoods } from './data';
 import { Prisma } from '@prisma/client';
 
 /**
+ * Escapes a string value for safe use in SQL queries.
+ * Prevents SQL injection by escaping single quotes and other dangerous characters.
+ */
+function escapeSqlString(value: string): string {
+  return value.replace(/'/g, "''").replace(/\\/g, '\\\\');
+}
+
+/**
+ * Validates that a value is a safe SQL identifier (column name).
+ * Only allows alphanumeric characters and underscores.
+ */
+function isValidIdentifier(value: string): boolean {
+  return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(value);
+}
+
+/**
  * Interface representing the structure of Claude's response
  */
 export interface ClaudeResponse {
@@ -32,7 +48,7 @@ export interface ClaudeResponse {
     min: number | null;
     max: number | null;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -40,32 +56,24 @@ export interface ClaudeResponse {
  * @param claudeResults - The response from Claude AI
  * @returns A Prisma-compatible where condition object
  */
-export async function parseClaudeResultsToPrismaQuery(claudeResults: ClaudeResponse): Promise<[Record<string, any>, string[]]> {
+export async function parseClaudeResultsToPrismaQuery(claudeResults: ClaudeResponse): Promise<[Record<string, unknown>, string[]]> {
   // Initialize the where condition object
-  const whereCondition: Record<string, any> = {};
+  const whereCondition: Record<string, unknown> = {};
   const tagArray: string[] = [];
 
-  // Add debugging to check input type
-  console.log('Claude results type:', typeof claudeResults);
-  
   // Handle case where claudeResults is a string
   if (typeof claudeResults === 'string') {
     try {
-      console.log('Attempting to parse string claudeResults');
       claudeResults = JSON.parse(claudeResults);
-    } catch (error) {
-      console.error('Failed to parse claudeResults string:', error);
+    } catch {
       return [whereCondition, tagArray];
     }
   }
 
   // Return empty object if claudeResults is empty or undefined
   if (!claudeResults || Object.keys(claudeResults).length === 0) {
-    console.log('Claude results is empty or undefined');
     return [whereCondition, tagArray];
   }
-
-  console.log('Processing Claude results:', JSON.stringify(claudeResults, null, 2));
 
   // Process each key-value pair in claudeResults
   for (const [key, value] of Object.entries(claudeResults)) {
@@ -80,26 +88,30 @@ export async function parseClaudeResultsToPrismaQuery(claudeResults: ClaudeRespo
       case 'bedrooms':
       case 'bathrooms':
       case 'built_in':
-      case 'days_on_market':
-        whereCondition[key] = {};
-        
+      case 'days_on_market': {
+        const rangeValue = value as { min?: number | null; max?: number | null };
+        const minVal = rangeValue.min;
+        const maxVal = rangeValue.max;
+        const condition: { equals?: number; gte?: number; lte?: number } = {};
+
         // If min and max are the same and not null, use equals
-        if (value.min !== null && value.min === value.max && value.min > 0) {
-          whereCondition[key] = { equals: Number(value.min) };
+        if (minVal != null && minVal === maxVal && minVal > 0) {
+          condition.equals = Number(minVal);
         } else {
-          if (value.min !== null && value.min !== undefined && value.min > 0) {
-            whereCondition[key].gte = Number(value.min);
+          if (minVal != null && minVal > 0) {
+            condition.gte = Number(minVal);
           }
-          if (value.max !== null && value.max !== undefined && value.max > 0) {
-            whereCondition[key].lte = Number(value.max);
+          if (maxVal != null && maxVal > 0) {
+            condition.lte = Number(maxVal);
           }
         }
-        
-        // If the whereCondition[key] is empty, remove it
-        if (Object.keys(whereCondition[key]).length === 0) {
-          delete whereCondition[key];
+
+        // Only add if condition is not empty
+        if (Object.keys(condition).length > 0) {
+          whereCondition[key] = condition;
         }
         break;
+      }
 
       // Handle string fields that can be single values or arrays
       case 'property_type':
@@ -151,25 +163,24 @@ export async function parseClaudeResultsToPrismaQuery(claudeResults: ClaudeRespo
               const childNeighborhoods = await getAllChildNeighborhoods(neighborhood) as { name: string }[];
               
               // Format neighborhood names: lowercase and replace spaces with hyphens
-              const formattedNeighborhoods = childNeighborhoods.map((item: any) => 
+              const formattedNeighborhoods = childNeighborhoods.map((item: { name: string }) =>
                 item.name.toLowerCase().replace(/\s+/g, '-')
               );
               
               // Add to the complete list
               allNeighborhoods.push(...formattedNeighborhoods);
-            } catch (error) {
-              console.error(`Error getting child neighborhoods for ${neighborhood}:`, error);
+            } catch {
               // If there's an error, just add the original neighborhood
               allNeighborhoods.push(neighborhood.toLowerCase().replace(/\s+/g, '-'));
             }
           }
-          
+
           // Remove duplicates
           const uniqueNeighborhoods = [...new Set(allNeighborhoods)];
-          
+
           // Set the query condition if we have neighborhoods
           if (uniqueNeighborhoods.length > 0) {
-            whereCondition[key] = { 
+            whereCondition[key] = {
               in: uniqueNeighborhoods
             };
           }
@@ -179,14 +190,13 @@ export async function parseClaudeResultsToPrismaQuery(claudeResults: ClaudeRespo
       // Handle tag_list field which is always an array in Claude's response
       case 'tag_list':
         if (Array.isArray(value) && value.length > 0) {
-          // Use tag_list instead of tag_list for the query
-          whereCondition['tag_list'] = { 
-            hasSome: value 
+          // Use tag_list for the query
+          whereCondition['tag_list'] = {
+            hasSome: value
           };
           // Store in tagArray for result ranking
           tagArray.push(...value);
-          console.log('Added tags to tagArray:', value);
-          
+
           // Remove the original tag_list condition since we're using tag_list
           delete whereCondition[key];
         }
@@ -218,7 +228,6 @@ export async function parseClaudeResultsToPrismaQuery(claudeResults: ClaudeRespo
     }
   }
 
-  console.log('Returning tagArray:', tagArray);
   return [whereCondition, tagArray];
 }
 
@@ -235,32 +244,24 @@ export async function parseClaudeResultsToPrismaSQL(
   orderBy?: Record<string, string>,
   limit?: number,
   offset?: number
-): Promise<[Prisma.Sql, Record<string, any>]> {
+): Promise<[Prisma.Sql, Record<string, unknown>]> {
   // Initialize the where condition parts array and tag array
   const whereClauseParts: string[] = [];
   const tagArray: string[] = [];
-  
-  // Add debugging to check input type
-  console.log('Claude results type (SQL):', typeof claudeResults);
-  
+
   // Handle case where claudeResults is a string
   if (typeof claudeResults === 'string') {
     try {
-      console.log('Attempting to parse string claudeResults (SQL)');
       claudeResults = JSON.parse(claudeResults);
-    } catch (error) {
-      console.log('Failed to parse claudeResults string (SQL):', error);
+    } catch {
       return [Prisma.empty, {}];
     }
   }
-  
+
   // Return empty query if claudeResults is empty or undefined
   if (!claudeResults || Object.keys(claudeResults).length === 0) {
-    console.log('Claude results is empty or undefined (SQL)');
     return [Prisma.empty, {}];
   }
-  
-  console.log('Processing Claude results (SQL):', JSON.stringify(claudeResults, null, 2));
   
   // Process each key-value pair in claudeResults
   for (const [key, value] of Object.entries(claudeResults)) {
@@ -276,36 +277,40 @@ export async function parseClaudeResultsToPrismaSQL(
       case 'bathrooms':
       case 'built_in':
       case 'brokers_fee':
-      case 'days_on_market':
+      case 'days_on_market': {
+        const rangeValue = value as { min?: number | null; max?: number | null };
+        const minVal = rangeValue.min;
+        const maxVal = rangeValue.max;
         // If min and max are the same and not null, use equals
-        if (value.min !== null && value.min === value.max && value.min > 0) {
-          whereClauseParts.push(`${key} = ${Number(value.min)}`);
+        if (minVal != null && minVal === maxVal && minVal > 0) {
+          whereClauseParts.push(`${key} = ${Number(minVal)}`);
         } else {
-          if (value.min !== null && value.min !== undefined && value.min > 0) {
-            whereClauseParts.push(`${key} >= ${Number(value.min)}`);
+          if (minVal != null && minVal > 0) {
+            whereClauseParts.push(`${key} >= ${Number(minVal)}`);
           }
-          if (value.max !== null && value.max !== undefined && value.max > 0) {
-            whereClauseParts.push(`${key} <= ${Number(value.max)}`);
+          if (maxVal != null && maxVal > 0) {
+            whereClauseParts.push(`${key} <= ${Number(maxVal)}`);
           }
         }
         break;
+      }
 
       // Handle string fields that can be single values or arrays
       case 'property_type':
         if (typeof value === 'string') {
-          whereClauseParts.push(`${key} = '${value}'`);
+          whereClauseParts.push(`${key} = '${escapeSqlString(value)}'`);
         } else if (Array.isArray(value) && value.length > 0) {
-          const valuesStr = value.map(v => `'${v}'`).join(',');
+          const valuesStr = value.map(v => `'${escapeSqlString(String(v))}'`).join(',');
           whereClauseParts.push(`${key} IN (${valuesStr})`);
         }
         break;
-        
+
       case 'borough':
         if (typeof value === 'string') {
-          whereClauseParts.push(`${key} = '${value.toLowerCase()}'`);
+          whereClauseParts.push(`${key} = '${escapeSqlString(value.toLowerCase())}'`);
         } else if (Array.isArray(value) && value.length > 0) {
-          const valuesStr = value.map(item => 
-            `'${typeof item === 'string' ? item.toLowerCase() : item}'`
+          const valuesStr = value.map(item =>
+            `'${escapeSqlString(typeof item === 'string' ? item.toLowerCase() : String(item))}'`
           ).join(',');
           whereClauseParts.push(`${key} IN (${valuesStr})`);
         }
@@ -313,9 +318,9 @@ export async function parseClaudeResultsToPrismaSQL(
 
       case 'zipcode':
         if (typeof value === 'string') {
-          whereClauseParts.push(`${key} = '${value}'`);
+          whereClauseParts.push(`${key} = '${escapeSqlString(value)}'`);
         } else if (Array.isArray(value) && value.length > 0) {
-          const valuesStr = value.map(v => `'${v}'`).join(',');
+          const valuesStr = value.map(v => `'${escapeSqlString(String(v))}'`).join(',');
           whereClauseParts.push(`${key} IN (${valuesStr})`);
         }
         break;
@@ -333,25 +338,24 @@ export async function parseClaudeResultsToPrismaSQL(
               const childNeighborhoods = await getAllChildNeighborhoods(neighborhood) as { name: string }[];
               
               // Format neighborhood names: lowercase and replace spaces with hyphens
-              const formattedNeighborhoods = childNeighborhoods.map((item: any) => 
+              const formattedNeighborhoods = childNeighborhoods.map((item: { name: string }) =>
                 item.name.toLowerCase().replace(/\s+/g, '-')
               );
               
               // Add to the complete list
               allNeighborhoods.push(...formattedNeighborhoods);
-            } catch (error) {
-              console.error(`Error getting child neighborhoods for ${neighborhood}:`, error);
+            } catch {
               // If there's an error, just add the original neighborhood
               allNeighborhoods.push(neighborhood.toLowerCase().replace(/\s+/g, '-'));
             }
           }
-          
+
           // Remove duplicates
           const uniqueNeighborhoods = [...new Set(allNeighborhoods)];
-          
+
           // Set the query condition if we have neighborhoods
           if (uniqueNeighborhoods.length > 0) {
-            const valuesStr = uniqueNeighborhoods.map(n => `'${n}'`).join(',');
+            const valuesStr = uniqueNeighborhoods.map(n => `'${escapeSqlString(n)}'`).join(',');
             whereClauseParts.push(`${key} IN (${valuesStr})`);
           }
         }
@@ -361,19 +365,18 @@ export async function parseClaudeResultsToPrismaSQL(
       case 'tag_list':
         if (Array.isArray(value) && value.length > 0) {
           // Use tag_list for the query
-          const tagsArray = value.map(tag => `'${tag}'`).join(',');
+          const tagsArray = value.map(tag => `'${escapeSqlString(String(tag))}'`).join(',');
           whereClauseParts.push(`tag_list && ARRAY[${tagsArray}]`);
-          
+
           // Store in tagArray for ranking
-          tagArray.push(...value);
-          console.log('Added tags to tagArray (SQL):', value);
+          tagArray.push(...value.map(String));
         }
         break;
 
       // Handle amenities field which is always an array in Claude's response
       case 'amenities':
         if (Array.isArray(value) && value.length > 0) {
-          const amenitiesArray = value.map(amenity => `'${amenity}'`).join(',');
+          const amenitiesArray = value.map(amenity => `'${escapeSqlString(String(amenity))}'`).join(',');
           whereClauseParts.push(`amenities && ARRAY[${amenitiesArray}]`);
         }
         break;
@@ -388,18 +391,21 @@ export async function parseClaudeResultsToPrismaSQL(
       // Handle address field, match on lower case
       case 'address':
         if (typeof value === 'string') {
-          whereClauseParts.push(`LOWER(${key}) ILIKE '%${value.toLowerCase()}%'`);
+          // Escape % and _ which are LIKE wildcards, then escape SQL quotes
+          const escapedValue = escapeSqlString(value.toLowerCase().replace(/%/g, '\\%').replace(/_/g, '\\_'));
+          whereClauseParts.push(`LOWER(${key}) ILIKE '%${escapedValue}%'`);
         }
         break;
 
       // Default case: assign value directly if it doesn't match any specific case
       default:
         // Only add if the value is not null or undefined
-        if (value !== null && value !== undefined) {
+        // Only handle known safe column names
+        if (value !== null && value !== undefined && isValidIdentifier(key)) {
           // For simplicity, we'll skip complex fields in the default case
           // and only handle strings and numbers
           if (typeof value === 'string') {
-            whereClauseParts.push(`${key} = '${value}'`);
+            whereClauseParts.push(`${key} = '${escapeSqlString(value)}'`);
           } else if (typeof value === 'number') {
             whereClauseParts.push(`${key} = ${value}`);
           }
@@ -415,37 +421,6 @@ export async function parseClaudeResultsToPrismaSQL(
   const whereClause = whereClauseParts.length > 0 
     ? `WHERE ${whereClauseParts.join(' AND ')}` 
     : '';
-  
-  // Build ORDER BY clause with tag matching if tags exist
-  let orderByClause = '';
-  
-  if (tagArray.length > 0) {
-    // Create a tag array string for the SQL query
-    const tagsArrayStr = tagArray.map(tag => `'${tag}'`).join(',');
-    
-    // Primary sort by tag match count
-    orderByClause = `ORDER BY array_length(array(
-      SELECT unnest(tag_list) 
-      INTERSECT 
-      SELECT unnest(ARRAY[${tagsArrayStr}])
-    ), 1) DESC NULLS LAST`;
-    
-    // Add secondary sort if provided
-    if (orderBy) {
-      const field = Object.keys(orderBy)[0];
-      const direction = orderBy[field];
-      orderByClause += `, ${field} ${direction}`;
-    }
-  } else if (orderBy) {
-    // If no tags but we have orderBy
-    const field = Object.keys(orderBy)[0];
-    const direction = orderBy[field];
-    orderByClause = `ORDER BY ${field} ${direction}`;
-  }
-  
-  // Add LIMIT and OFFSET if provided
-  const limitClause = limit ? `LIMIT ${limit}` : '';
-  const offsetClause = offset ? `OFFSET ${offset}` : '';
   
   // Create tag arrays for safe interpolation
   const tagValues = tagArray.length > 0 ? Prisma.sql`ARRAY[${Prisma.join(tagArray.map(tag => tag))}]` : Prisma.empty;
@@ -497,9 +472,7 @@ export async function parseClaudeResultsToPrismaSQL(
   if (offset) {
     baseQuery = Prisma.sql`${baseQuery} OFFSET ${offset}`;
   }
-  
-  console.log('Generated SQL query for use with $queryRaw:', baseQuery);
-  
+
   return [baseQuery, claudeResults];
 }
 

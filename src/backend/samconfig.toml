@@ -10,7 +10,7 @@ image_repositories = []
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-yw7ujcmlls1t"
 
 [default.build.parameters]
-template_file = "/Users/willchen/Documents/co-op/src/backend/template.yml"
+template_file = "template.yml"
 cached = true
 parallel = true
 use_container = true

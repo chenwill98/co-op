@@ -136,4 +136,5 @@ export type CombinedPropertyDetails = Property & PropertyDetails & PropertyAnaly
   nearest_pois?: PropertyNearestPois[];
 };
 
-export type ChatHistory = Array<{ role: "user" | "assistant", message?: string, tool?: string }>;
+export type ChatMessage = { role: "user" | "assistant"; message?: string; tool?: string };
+export type ChatHistory = ChatMessage[];

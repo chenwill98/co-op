@@ -23,40 +23,41 @@ const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
 export async function fetchPropertiesRDS(params: {
   text: string;
-  neighborhood: string;
-  minPrice: string;
-  maxPrice: string;
-  brokerFee: string;
+  neighborhood?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  brokerFee?: string;
   sort?: string;
   tags?: string;
   chatHistory?: ChatHistory;
-}): Promise<[Property[], Record<string, any>, ChatHistory]>
+}): Promise<[Property[], Record<string, unknown>, ChatHistory]>
 {
   const limit = 10;
   const page = 1;
   const skip = (page - 1) * limit;
 
-  // Destructure parameters
-  const { neighborhood, minPrice, maxPrice, brokerFee, sort, tags } = params;
+  // Extract sort from params (other params are for future use)
+  const { sort } = params;
   let claudeQuery = Prisma.empty;
-  let queryRecord: Record<string, any> = {};
+  let queryRecord: Record<string, unknown> = {};
 
   // Get Claude results if text search is provided
-  let updatedChatHistory = params.chatHistory ? [...params.chatHistory] : [];
+  const updatedChatHistory = params.chatHistory ? [...params.chatHistory] : [];
   if (params.text) {
     try {
       // Pass chatHistory to Claude
       const claudeResults = await fetchClaudeSearchResult(params.text, updatedChatHistory)
         .then((results) => {
-          console.log('Claude results:', results);
-          // Ensure we're getting a proper object, not a string
-          const dbSchema = results?.content?.[1]?.input?.database_schema;
-          console.log('dbSchema:', dbSchema);
+          // Find the tool_use block in content array (could be at any index)
+          const content = results?.content as Array<{ type: string; input?: { database_schema?: string } }> | undefined;
+          const toolUseBlock = content?.find(
+            (block) => block.type === 'tool_use'
+          );
+          const dbSchema = toolUseBlock?.input?.database_schema;
           if (typeof dbSchema === 'string') {
             try {
               return JSON.parse(dbSchema);
-            } catch (parseError) {
-              console.error('Error parsing Claude results string:', parseError);
+            } catch {
               return {};
             }
           }
@@ -65,16 +66,15 @@ export async function fetchPropertiesRDS(params: {
           let messageText = '';
           if (results && typeof results.message === 'string' && results.tool === '{}') {
             // Overload or error case
-            messageText = results.message;
-          } else if (results?.content && Array.isArray(results.content)) {
+            messageText = results.message as string;
+          } else if (content && Array.isArray(content)) {
             // Find the first text item in the content array
-            const textItem = results.content.find((item: any) => item.type === 'text');
-            console.log('Found text message:', textItem);
+            const textItem = content.find((item) => item.type === 'text') as { type: string; text?: string } | undefined;
             if (textItem && textItem.text) {
               messageText = textItem.text;
             }
           }
-      
+
           // Append Claude's response to chatHistory with renamed 'tool' and new 'message' field
           updatedChatHistory.push({
             role: "assistant",
@@ -83,12 +83,8 @@ export async function fetchPropertiesRDS(params: {
           });
           return dbSchema ?? {};
         });
-
-      
-
-      console.log('updatedChatHistory FISHING', updatedChatHistory);
       // Define orderBy based on sort parameter
-      let orderBy: any = undefined;
+      let orderBy: Record<string, string> | undefined = undefined;
       
       if (sort) {
         switch (sort) {
@@ -110,27 +106,42 @@ export async function fetchPropertiesRDS(params: {
       // Parse claudeResults into Prisma filters - properly await the async function
       [claudeQuery, queryRecord] = await parseClaudeResultsToPrismaSQL(claudeResults, orderBy, limit, skip);
 
-    } catch (error) {
-      console.error('Error processing Claude search results:', error);
+    } catch {
       // Continue with empty whereCondition if Claude search fails
     }
   }
 
   try {
+    // Define a type for the raw property result from database
+    type RawProperty = {
+      price?: { toNumber: () => number };
+      bathrooms?: { toNumber: () => number };
+      latitude?: unknown;
+      longitude?: unknown;
+      listed_at?: { toDateString: () => string };
+      closed_at?: { toDateString: () => string };
+      available_from?: { toDateString: () => string };
+      loaded_datetime?: { toDateString: () => string };
+      date?: { toDateString: () => string };
+      brokers_fee?: { toNumber: () => number };
+      tag_list?: string[];
+      additional_fees?: unknown;
+    };
+
     // Execute the query if we have one from Claude
-    const properties = params.text 
-      ? await prisma.$queryRaw<any[]>(claudeQuery)
-      : await prisma.latest_properties_materialized.findMany({
+    const properties = params.text
+      ? await prisma.$queryRaw<RawProperty[]>(claudeQuery)
+      : (await prisma.latest_properties_materialized.findMany({
           where: { id: { not: null } },
           take: limit,
           skip: skip,
           orderBy: sort ? {
-            [sort === 'newest' ? 'listed_at' : 'price']: 
+            [sort === 'newest' ? 'listed_at' : 'price']:
             sort === 'least_expensive' ? 'asc' : 'desc'
           } : undefined
-        });
-    
-    let formattedProperties = properties.map(property => ({
+        })) as unknown as RawProperty[];
+
+    const formattedProperties = properties.map((property: RawProperty) => ({
       ...property,
       price: property.price ? property.price.toNumber() : 0,
       bathrooms: property.bathrooms ? property.bathrooms.toNumber() : null,
@@ -142,14 +153,12 @@ export async function fetchPropertiesRDS(params: {
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-      // Convert any emoji tags to system tags
       tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
       additional_fees: property.additional_fees ? property.additional_fees : null,
     }));
 
-    return [formattedProperties as Property[], queryRecord, updatedChatHistory] as [Property[], Record<string, any>, ChatHistory];
+    return [formattedProperties as Property[], queryRecord, updatedChatHistory] as [Property[], Record<string, unknown>, ChatHistory];
   } catch (error) {
-    console.error('Error fetching properties with Prisma:', error);
     throw error;
   }
 }
@@ -184,7 +193,6 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
     };
     return formattedProperty as Property;
   } catch (error) {
-    console.error('Error fetching property:', error);
     throw error;
   }
 }
@@ -211,7 +219,6 @@ export async function fetchPropertyDetailsById(id: string): Promise<PropertyDeta
     
     return items.length > 0 ? items[0] as PropertyDetails : null;
   } catch (error) {
-    console.error('Error fetching property details:', error);
     throw error;
   }
 }
@@ -247,8 +254,7 @@ export async function fetchPropertyNearestStationsById(id: string): Promise<Prop
     }));
 
     return formattedStations as PropertyNearestStations[];
-  } catch (error) {
-    console.error('Error fetching property nearest stations:', error);
+  } catch {
     return []; // Return empty array on error
   }
 }
@@ -293,8 +299,7 @@ export async function fetchPropertyNearestPoisById(id: string): Promise<Property
     }));
 
     return formattedPois as PropertyNearestPois[];
-  } catch (error) {
-    console.error('Error fetching property nearest POIs:', error);
+  } catch {
     return []; // Return empty array on error
   }
 }
@@ -311,8 +316,7 @@ export async function fetchPropertyAnalyticsById(id: string): Promise<PropertyAn
       amenity_score: analytics.amenity_score?.toNumber()
     } : null;
     return formattedAnalytics as PropertyAnalyticsDetails | null;
-  } catch (error) {
-    console.error('Error fetching property analytics:', error);
+  } catch {
     return null;
   }
 }
@@ -350,9 +354,6 @@ export async function fetchPropertyPage(id: string): Promise<CombinedPropertyDet
     return propertyCombined as CombinedPropertyDetails;
 
   } catch (error) {
-    console.error(`Failed to fetch listing id ${id}:`, error);
-    // It's good practice to re-throw the original error or a new error that wraps it
-    // to preserve stack trace and context, especially if it's an Error instance.
     if (error instanceof Error) {
       throw new Error(`Failed to fetch page data for listing id ${id}: ${error.message}`);
     }
@@ -363,7 +364,7 @@ export async function fetchPropertyPage(id: string): Promise<CombinedPropertyDet
 export async function fetchClaudeSearchResult(
   text: string,
   chatHistory: ChatHistory = []
-): Promise<Record<string, any>> {
+): Promise<Record<string, unknown>> {
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY || "",
   });
@@ -445,15 +446,10 @@ export async function fetchClaudeSearchResult(
       msg => msg.role === 'assistant' && msg.tool && msg.tool !== '{}' && msg.tool.trim() !== ''
     );
     const isInitial = !lastMeaningfulAssistant;
-    let systemPrompt;
-    if (isInitial) {
-      console.log('[Claude] Using initial system prompt');
-      systemPrompt = prompts.searchQueryProcessing.systemPromptInitial;
-    } else {
-      console.log('[Claude] Using modification system prompt');
-      systemPrompt = prompts.searchQueryProcessing.systemPromptModification;
-    }
-    
+    const systemPrompt = isInitial
+      ? prompts.searchQueryProcessing.systemPromptInitial
+      : prompts.searchQueryProcessing.systemPromptModification;
+
     // Make the API call
     const msg = await anthropic.messages.create({
       model,
@@ -463,12 +459,12 @@ export async function fetchClaudeSearchResult(
       messages,
       tools
     });
-    
-    return msg;
-  } catch (e: any) {
-    console.error(e);
+
+    return msg as unknown as Record<string, unknown>;
+  } catch (e: unknown) {
     // Handle Claude overload error (529 or overloaded_error)
-    if (e?.status === 529 || e?.error?.type === 'overloaded_error' || (typeof e?.message === 'string' && e.message.includes('Overloaded'))) {
+    const err = e as { status?: number; error?: { type?: string }; message?: string };
+    if (err?.status === 529 || err?.error?.type === 'overloaded_error' || (typeof err?.message === 'string' && err.message.includes('Overloaded'))) {
       return {
         content: [],
         tool: '{}',
@@ -525,10 +521,9 @@ export async function getCachedNeighborhoods(): Promise<Neighborhood[]> {
     
     // Store in sessionStorage
     sessionStorage.setItem('neighborhoods', JSON.stringify(neighborhoods));
-    
+
     return neighborhoods;
-  } catch (error) {
-    console.error('Error fetching neighborhoods:', error);
+  } catch {
     return [] as Neighborhood[];
   }
 }
