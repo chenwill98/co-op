@@ -13,7 +13,7 @@ export default function ListingsCard({ listing }: { listing: Property }) {
     <Link
         href={`/listings/${listing.id}`}
         key={listing.id}
-        className="group card rounded border border-base-content/10 bg-base-100 h-[60vh] hover:bg-base-200 shadow-xl hover:shadow-2xl transform transition-all duration-500 hover:-translate-y-2"
+        className="group card rounded-2xl border border-base-300/50 bg-base-100/90 h-[60vh] hover:bg-base-100 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transform transition-all duration-300 hover:-translate-y-1 hover:border-primary/20"
     >
       <figure className="h-3/7 relative bg-primary/10 overflow-hidden">
         <div className="overflow-hidden rounded relative w-full h-full">

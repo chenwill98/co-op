@@ -245,7 +245,7 @@ export default function ChatBox() {
       <div className="container mx-auto pointer-events-auto w-5/7">
         <div className="flex flex-row">
           <div className="flex-grow p-4">
-            <div className="card bg-base-100 border border-base-content/10 rounded-4xl shadow-lg mx-auto">
+            <div className="card bg-base-100/80 backdrop-blur-lg border border-base-300/50 rounded-4xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] mx-auto">
               <div className="card-body p-3">
                 <div className="flex flex-col">
                   {/* Filter badges */}
@@ -311,7 +311,7 @@ export default function ChatBox() {
                     <input
                       type="text"
                       placeholder="Search for apartments... (e.g., '2br in Chelsea under $4000')"
-                      className="input input-ghost w-full focus:outline-none"
+                      className="input input-ghost w-full bg-transparent focus:bg-transparent focus:outline-none focus:border-none"
                       value={filters.text}
                       onChange={e => handleInputChange('text', e.target.value)}
                       onKeyDown={handleInputKeyDown}

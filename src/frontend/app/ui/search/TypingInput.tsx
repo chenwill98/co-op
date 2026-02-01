@@ -94,11 +94,15 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
       setUserHasClicked(true);
     }
     setIsEditable(true); // Stop auto-typing
-    
+
     // Trigger kbd animation after a tiny delay
     setTimeout(() => {
       setKbdVisible(true);
     }, 50);
+  };
+
+  const handleBlur = () => {
+    setKbdVisible(false);
   };
 
   // -----------------------
@@ -117,20 +121,25 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
   };
 
   return (
-    <div className="relative w-full">
-      <label className="input w-full">
-      <MagnifyingGlassIcon className="h-5 w-5 opacity-50" />
-      <div className="grow flex items-center overflow-hidden">
-        <span>{text}</span>
-        {!isEditable && showCursor && (
-          <div className="h-4 w-0.5 bg-gray-500 animate-pulse ml-0.5"></div>
+    <div className="relative w-full group">
+      <label className="input w-full border-0 bg-transparent outline-none focus-within:outline-none focus-within:ring-0 shadow-none transition-all duration-200">
+      <MagnifyingGlassIcon className="h-5 w-5 opacity-50 group-focus-within:opacity-70 group-focus-within:text-primary transition-all duration-200" />
+      <div className="grow flex items-center overflow-hidden relative">
+        {!isEditable && (
+          <>
+            <span className="text-base">{text}</span>
+            {showCursor && (
+              <div className="h-5 w-0.5 bg-primary animate-pulse ml-0.5"></div>
+            )}
+          </>
         )}
         <input
           type="text"
-          className="grow absolute opacity-0"
+          className={`bg-transparent outline-none text-base text-base-content caret-primary ${isEditable ? "grow w-full" : "absolute inset-0 opacity-0 cursor-text"}`}
           value={text}
           placeholder={userHasClicked ? "Search anything..." : ""}
           onFocus={handleFocus}
+          onBlur={handleBlur}
           onChange={handleChange}
         />
       </div>

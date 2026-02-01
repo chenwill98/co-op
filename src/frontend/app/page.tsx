@@ -52,33 +52,38 @@ export default function Page() {
       <main
         className="flex h-[calc(100vh-64px)] flex-col items-center justify-center relative z-10"
       >
-        <div className="text-6xl font-extrabold mb-20 text-primary p-6 overflow-hidden">
-          <AnimatedText 
-            text="AI-powered real estate intelligence." 
+        <div className="text-6xl font-bold mb-20 text-primary p-6 overflow-hidden
+          drop-shadow-sm [text-shadow:_0_2px_8px_rgb(255_255_255_/_40%)]">
+          <AnimatedText
+            text="AI-powered real estate intelligence."
             charDelay={15}
             startDelay={3000} // 3 second delay before starting the animation
           />
         </div>
-        <div 
-          className="card bg-primary rounded-full w-3/5 shadow-xl animate-fade-up-delayed mb-20"
+        <div
+          className="card w-3/5 animate-fade-up-delayed mb-20
+            bg-base-100/80 backdrop-blur-lg
+            border border-base-300/50
+            shadow-[0_8px_32px_rgba(0,0,0,0.08)]
+            rounded-[2rem]
+            transition-all duration-300
+            hover:shadow-[0_12px_48px_rgba(0,0,0,0.12)]
+            hover:border-primary/20"
         >
-          <div className="card-body">
-            <div className="flex flex-row gap-2">
-              {/* <button
-                className="btn btn-secondary text-white"
-                onClick={toggleFilters}
-              >
-                <AdjustmentsHorizontalIcon className="h-4 w-4" />
-              </button> */}
+          <div className="card-body py-4 px-6">
+            <div className="flex flex-row gap-3 items-center">
               <TypingInput onValueChange={(val) => setSearchText(val)} />
               <button
-                className="btn btn-primary text-primary-content text-lg"
+                className="btn btn-primary text-primary-content text-base
+                  rounded-full px-6
+                  shadow-md hover:shadow-lg
+                  transition-all duration-200
+                  hover:scale-[1.02] active:scale-[0.98]"
                 onClick={handleSearch}
               >
-                Search
-                <SparklesIcon className="h-4 w-4" />
+                <span>Search</span>
+                <SparklesIcon className="h-4 w-4 ml-1" />
               </button>
-              
             </div>
             {/* <div
               className={`transition-all duration-500 ease-in-out overflow-hidden ${filtersVisible ? "max-h-40" : "max-h-0"}`}

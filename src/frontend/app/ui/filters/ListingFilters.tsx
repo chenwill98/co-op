@@ -59,7 +59,7 @@ export default function ListingFilters() {
   };
 
   return (
-    <div className="card border-primary bg-base-100 shadow-lg sticky top-20 p-6 m-4 h-fit">
+    <div className="card bg-base-100/80 backdrop-blur-lg border border-base-300/50 shadow-[0_8px_32px_rgba(0,0,0,0.08)] sticky top-20 p-6 m-4 h-fit rounded-2xl">
       <div className="flex flex-col gap-4">
         {/* Sort Dropdown */}
         <div className="col-span-1">

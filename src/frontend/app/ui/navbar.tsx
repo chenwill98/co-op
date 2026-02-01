@@ -76,7 +76,7 @@ export default function Navbar() {
   }
 
   return (
-    <div className="navbar sticky z-10 top-0 bg-base-100 shadow-md">
+    <div className="navbar sticky z-10 top-0 bg-base-100/80 backdrop-blur-lg border-b border-base-300/50 shadow-[0_4px_16px_rgba(0,0,0,0.04)]">
       <div className="flex-1 px-2">
         <div className="inline-block">
           <Link href="/">
