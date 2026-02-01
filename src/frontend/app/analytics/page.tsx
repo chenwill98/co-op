@@ -3,7 +3,7 @@ import React from 'react';
 export default function AnalyticsPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
-      <div className="card w-full max-w-md bg-base-100 shadow-xl">
+      <div className="card w-full max-w-md glass-card rounded-2xl">
         <div className="card-body">
           <h2 className="card-title text-2xl font-bold justify-center mb-4">Analytics Dashboard</h2>
           

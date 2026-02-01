@@ -90,3 +90,30 @@ html {
   transform: translateY(20px);
   animation-fill-mode: forwards;
 }
+
+/* Glassmorphism utility classes */
+
+/* Primary glass container - cards, main panels */
+.glass-card {
+  @apply bg-base-100/80 backdrop-blur-lg border border-base-300/50 shadow-[0_8px_32px_rgba(0,0,0,0.08)];
+}
+
+/* Dropdown menus and overlays - slightly more opaque */
+.glass-dropdown {
+  @apply bg-base-100/85 backdrop-blur-md border border-base-300/50 shadow-[0_8px_32px_rgba(0,0,0,0.12)];
+}
+
+/* Primary-tinted badges */
+.glass-badge-primary {
+  @apply bg-primary/15 border border-primary/20;
+}
+
+/* Nested panels inside glass containers - no blur to avoid stacking */
+.glass-panel-nested {
+  @apply bg-base-200/60 border border-base-300/30;
+}
+
+/* Floating alerts/banners - more opaque */
+.glass-alert {
+  @apply bg-base-100/90 backdrop-blur-lg border border-base-300/50 shadow-[0_8px_32px_rgba(0,0,0,0.15)];
+}

@@ -119,7 +119,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
         const shortestTime = getShortestWalkingTime(category);
         
         return (
-            <div key={`card-${category}`} className="card bg-base-200">
+            <div key={`card-${category}`} className="card glass-panel-nested">
                 <div className="card-body p-4">
                     <h3 className="card-title text-base">{displayName}</h3>
                     <div className="text-base-content/70">
@@ -182,7 +182,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
                     {categories.map((category, index) => (
                         <React.Fragment key={`tab-group-${category}`}>
                             <input type="radio" name="location_tabs" className="tab tabs-sm transition-all duration-500 ease-in-out" aria-label={getCategoryDisplayName(category)} defaultChecked={index === 0} />
-                            <div className="tab-content bg-base-200 m-1 p-1">
+                            <div className="tab-content glass-panel-nested m-1 p-1">
                                 {renderPOITable(category)}
                             </div>
                         </React.Fragment>

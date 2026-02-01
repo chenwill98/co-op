@@ -177,7 +177,7 @@ export default function ChatBox() {
   };
 
   // Badge styling
-  const BADGE_CLASS = "badge bg-primary/10 text-primary rounded-full text-xs inline-flex items-center";
+  const BADGE_CLASS = "badge glass-badge-primary text-primary rounded-full text-xs inline-flex items-center";
 
   const formatEntry = ([key, val]: [string, unknown]) => {
     if (key === 'id') return [];
@@ -197,7 +197,7 @@ export default function ChatBox() {
               {label} • {arr[0]}
               <span className="cursor-help text-primary">+{arr.length - 1}</span>
             </label>
-            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box text-xs mt-1 min-w-max border border-base-content/10">
+            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 glass-dropdown rounded-box text-xs mt-1 min-w-max">
               {remainingArr.map((item, idx) => (
                 <li key={idx + 1} className="whitespace-nowrap">{item}</li>
               ))}
@@ -323,7 +323,7 @@ export default function ChatBox() {
                       <label tabIndex={0} className="btn btn-circle p-2 mr-2">
                         <BarsArrowUpIcon className="h-5 w-5" />
                       </label>
-                      <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[100] w-52 p-2 shadow-md border border-base-content/10">
+                      <ul tabIndex={0} className="dropdown-content menu glass-dropdown rounded-box z-[100] w-52 p-2">
                         {Object.entries(sortConfigs).map(([key, config]) => (
                           <li key={key} className={filters.sort === key ? 'bg-primary/10 rounded-lg' : ''}>
                             <a onClick={() => handleSortChange(key)}>{config.label}</a>

@@ -86,7 +86,7 @@ export default function TagsFilter({
           onFocus={() => setIsOpen(true)}
         />
         
-        <div className="dropdown-content outline outline-1 outline-primary p-4 shadow-sm bg-base-100 w-[1000px] max-h-[500px] overflow-auto z-10">
+        <div className="dropdown-content glass-dropdown outline outline-1 outline-primary p-4 w-[1000px] max-h-[500px] overflow-auto z-10">
           {Object.keys(filteredCategories).length === 0 ? (
             <div className="p-2 text-gray-500">No tags found</div>
           ) : (
@@ -140,7 +140,7 @@ export default function TagsFilter({
         {selectedTags.map(tag => (
           <div
             key={tag}
-            className="badge bg-primary/10 text-primary rounded-full text-xs flex items-center"
+            className="badge glass-badge-primary text-primary rounded-full text-xs flex items-center"
           >
             {getDisplayTag(tag)}
             <XMarkIcon

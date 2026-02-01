@@ -42,7 +42,7 @@ export default function CookieConsent() {
 
   return (
     <div className={`fixed bottom-4 left-0 right-0 flex justify-center z-50 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className={`card bg-base-100 shadow-xl mx-4 w-full max-w-2xl ${isVisible ? 'animate-fade-up-delayed' : ''}`}>
+      <div className={`card glass-alert mx-4 w-full max-w-2xl rounded-2xl ${isVisible ? 'animate-fade-up-delayed' : ''}`}>
         <div className="card-body p-6">
           <div className="flex justify-between items-start mb-3">
             <h3 className="card-title text-lg">Cookie Notice</h3>

@@ -85,7 +85,7 @@ export default function SavedListingsSummaryCard({
   }, [sortedListings]);
 
   return (
-    <div className="card border border-base-content/10 bg-base-100 shadow-xl col-span-3 p-6 rounded">
+    <div className="card glass-card col-span-3 p-6 rounded-2xl">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
@@ -115,7 +115,7 @@ export default function SavedListingsSummaryCard({
             {sortConfigs[sortOption].label}
             <ChevronDownIcon className="w-4 h-4 ml-1" />
           </div>
-          <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[100] w-52 p-2 shadow-md">
+          <ul tabIndex={0} className="dropdown-content menu glass-dropdown rounded-box z-[100] w-52 p-2">
             {Object.entries(sortConfigs).map(([key, config]) => (
               <li key={key} className={sortOption === key ? "bg-primary/10 rounded-lg" : ""}>
                 <a onClick={() => handleSortChange(key as SortOption)}>

@@ -25,7 +25,7 @@ export default function PercentileCards({
       <div className="text-base-content/80 mb-2">Percentile rankings:</div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         {/* All Listings Percentile */}
-        <div className="p-3 bg-base-200 rounded-lg flex flex-col items-center text-center">
+        <div className="p-3 glass-panel-nested rounded-lg flex flex-col items-center text-center">
           <div className="font-semibold text-lg mb-1">
             {allPercentile !== null ? Math.round(allPercentile) : "--"}th
           </div>
@@ -35,7 +35,7 @@ export default function PercentileCards({
         </div>
         
         {/* Borough Percentile */}
-        <div className="p-3 bg-base-200 rounded-lg flex flex-col items-center text-center">
+        <div className="p-3 glass-panel-nested rounded-lg flex flex-col items-center text-center">
           <div className="font-semibold text-lg mb-1">
             {boroughPercentile !== null ? Math.round(boroughPercentile) : "--"}th
           </div>
@@ -45,7 +45,7 @@ export default function PercentileCards({
         </div>
         
         {/* Neighborhood Percentile */}
-        <div className="p-3 bg-base-200 rounded-lg flex flex-col items-center text-center">
+        <div className="p-3 glass-panel-nested rounded-lg flex flex-col items-center text-center">
           <div className="font-semibold text-lg mb-1">
             {neighborhoodPercentile !== null ? Math.round(neighborhoodPercentile) : "--"}th
           </div>

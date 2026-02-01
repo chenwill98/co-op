@@ -81,7 +81,7 @@ export default function ListingsTransportationPanel({
               
               {/* Simple grid for subway stations */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-base-200 rounded-lg">
+                <div className="p-3 glass-panel-nested rounded-lg">
                   <div className="text-sm font-medium mb-2">Short Walk (&lt; 5 min)</div>
                   <div className="flex flex-wrap gap-2">
                     {sortedStations
@@ -95,7 +95,7 @@ export default function ListingsTransportationPanel({
                   </div>
                 </div>
                 
-                <div className="p-3 bg-base-200 rounded-lg">
+                <div className="p-3 glass-panel-nested rounded-lg">
                   <div className="text-sm font-medium mb-2">Medium Walk (5-10 min)</div>
                   <div className="flex flex-wrap gap-2">
                     {sortedStations
@@ -143,7 +143,7 @@ export default function ListingsTransportationPanel({
             </div>
             <div className="text-xs text-base-content/70">Peak times are weekdays 7:00am to 9:30am and 4:00pm to 7:00pm </div>
             <div className="text-xs text-base-content/70 mb-2">Late-night times are every day from midnight to 7:00am </div>
-            <div className="overflow-x-auto bg-base-200 pt-1 pb-3 p-0.5 rounded-lg">
+            <div className="overflow-x-auto glass-panel-nested pt-1 pb-3 p-0.5 rounded-lg">
               <table className="table zebra table-xs w-full">
                 <thead>
                   <tr>

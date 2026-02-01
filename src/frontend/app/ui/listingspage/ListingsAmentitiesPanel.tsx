@@ -120,7 +120,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                             {getAvailableAmenities(notableAmenities).map((amenity, index) => (
                                 <span 
                                     key={`notable-${index}`} 
-                                    className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                                    className="px-3 py-1 glass-badge-primary text-primary rounded-full text-sm"
                                 >
                                     {formatAmenityName(amenity)}
                                 </span>
@@ -143,7 +143,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                                 .map((amenity, index) => (
                                     <span 
                                         key={`misc-${index}`} 
-                                        className="px-3 py-1 bg-base-200 text-base-content rounded-full text-sm"
+                                        className="px-3 py-1 glass-panel-nested text-base-content rounded-full text-sm"
                                     >
                                         {formatAmenityName(amenity)}
                                     </span>
@@ -185,7 +185,7 @@ function AmenityCard({
     details?: string;
 }) {
     return (
-        <div className="p-2 bg-base-200 rounded-lg flex items-center justify-center text-center gap-1.5">
+        <div className="p-2 glass-panel-nested rounded-lg flex items-center justify-center text-center gap-1.5">
             <div>
                 <div className="font-small">{title}</div>
                 {details && <div className="text-xs text-base-content/60">{details}</div>}

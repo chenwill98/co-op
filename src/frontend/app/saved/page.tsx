@@ -41,7 +41,7 @@ export default function SavedListingsPage() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-64 bg-base-100 rounded-xl shadow-md">
+          <div className="flex flex-col items-center justify-center h-64 glass-card rounded-2xl">
             <div className="text-xl text-gray-500">No saved listings found</div>
             <p className="mt-2 text-gray-400">
               Bookmark properties you like to see them here

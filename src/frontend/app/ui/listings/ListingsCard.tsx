@@ -109,7 +109,7 @@ export default function ListingsCard({ listing }: { listing: Property }) {
             <div className="text-2xl font-bold">
                 ${listing.price.toLocaleString()}
             </div>
-            <div className="badge bg-primary/10 text-primary rounded-full text-xs">
+            <div className="badge glass-badge-primary text-primary rounded-full text-xs">
                 {listing.no_fee
                 ? "No Fee"
                 : `Fees: ~$${Math.floor(listing.price * (listing.brokers_fee || 0)).toLocaleString()}`}
