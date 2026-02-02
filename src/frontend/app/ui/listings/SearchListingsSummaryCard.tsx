@@ -3,6 +3,7 @@
 import { Property } from "@/app/lib/definitions";
 import { useSearchParams } from "next/navigation";
 import { useRef, useEffect, useState } from "react";
+import { useListingsContext } from "@/app/context/ListingsContext";
 
 const emptyMessages = [
   "No listings match your search criteria",
@@ -16,6 +17,7 @@ export default function SearchListingsSummaryCard({
 }: {
   listings: Property[];
 }) {
+  const { hasSearched } = useListingsContext();
   const searchParams = useSearchParams();
   const sort = searchParams.get("sort") || "";
   const previousCountRef = useRef<number>(listings.length);
@@ -33,6 +35,11 @@ export default function SearchListingsSummaryCard({
       return () => clearTimeout(timer);
     }
   }, [listings.length]);
+
+  // Hide entirely until first search completes
+  if (!hasSearched) {
+    return null;
+  }
 
   const getSortText = () => {
     switch (sort) {

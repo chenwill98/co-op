@@ -33,6 +33,7 @@ type ListingsContextType = {
   queryRecord: ClaudeResponse;
   threadId: string;
   isThreadIdReady: boolean;
+  hasSearched: boolean;
   pendingMessage: string | null;
   setAll: (
     listings: Property[],
@@ -55,6 +56,7 @@ export const ListingsProvider = ({ children }: { children: ReactNode }) => {
   // Initialize with empty string for SSR, will hydrate on client
   const [threadId, setThreadIdState] = useState<string>(() => getInitialThreadId());
   const [isThreadIdReady, setIsThreadIdReady] = useState<boolean>(() => typeof window !== "undefined");
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
   // Ensure threadId is initialized on client mount
@@ -74,6 +76,7 @@ export const ListingsProvider = ({ children }: { children: ReactNode }) => {
     setListings(newListings);
     setQueryRecord(newQueryRecord);
     setThreadIdState(newThreadId);
+    setHasSearched(true);
   };
 
   const setThreadId = (newThreadId: string) => {
@@ -86,6 +89,7 @@ export const ListingsProvider = ({ children }: { children: ReactNode }) => {
   const resetThreadId = (): string => {
     const newId = generateThreadId();
     setThreadIdState(newId);
+    setHasSearched(false);
     if (typeof window !== "undefined") {
       localStorage.setItem("chatThreadId", newId);
     }
@@ -138,7 +142,7 @@ export const ListingsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <ListingsContext.Provider value={{ listings, queryRecord, threadId, isThreadIdReady, pendingMessage, setAll, setThreadId, resetThreadId, setPendingMessage, clear, removeFilter, removeFromArrayFilter }}>
+    <ListingsContext.Provider value={{ listings, queryRecord, threadId, isThreadIdReady, hasSearched, pendingMessage, setAll, setThreadId, resetThreadId, setPendingMessage, clear, removeFilter, removeFromArrayFilter }}>
       {children}
     </ListingsContext.Provider>
   );
