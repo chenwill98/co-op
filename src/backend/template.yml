@@ -88,7 +88,7 @@ Resources:
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer
-      # ReservedConcurrentExecutions: 5  # Limit to 5 concurrent instances
+      ReservedConcurrentExecutions: 5  # Limit concurrent instances for DynamoDB throughput
       Events:
         MyQueueEvent:
           Type: SQS

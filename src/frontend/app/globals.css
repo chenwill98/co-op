@@ -117,3 +117,80 @@ html {
 .glass-alert {
   @apply bg-base-100/90 backdrop-blur-lg border border-base-300/50 shadow-[0_8px_32px_rgba(0,0,0,0.15)];
 }
+
+/* Glass badge variants */
+.glass-badge-success {
+  @apply bg-success/15 border border-success/20 text-success;
+}
+
+.glass-badge-warning {
+  @apply bg-warning/15 border border-warning/20 text-warning;
+}
+
+.glass-badge-error {
+  @apply bg-error/15 border border-error/20 text-error;
+}
+
+/* Fast fade-up animation for card entrances */
+@keyframes fadeUpFast {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up-fast {
+  animation-name: fadeUpFast;
+  animation-duration: 800ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+  opacity: 0;
+}
+
+/* Count pulse animation for result count changes */
+@keyframes countPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-count-pulse {
+  animation: countPulse 300ms ease-out;
+}
+
+/* Global button press feedback */
+.btn:active {
+  transform: scale(0.98);
+}
+
+/* Global focus ring for accessibility */
+input:focus,
+textarea:focus,
+select:focus,
+.input:focus,
+.textarea:focus,
+.select:focus {
+  @apply ring-2 ring-primary/50 outline-none;
+}
+
+/* Disable focus ring/outline for the chat input only */
+.chat-input:focus,
+.chat-input:focus-visible {
+  @apply ring-0 outline-none;
+  box-shadow: none;
+}
+
+/* Lighter skeleton background while preserving shimmer animation */
+.skeleton {
+  background-color: var(--color-base-200);
+}

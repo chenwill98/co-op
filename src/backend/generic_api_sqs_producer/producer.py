@@ -73,21 +73,20 @@ def fetch_api_neighorhood_strings():
 
 def fetch_api_property_ids():
     """
-    Establishes a connection to the RDS table, then fetches all property ids from fct_properties that either
-    are missing details or have details that are a week old using SQLAlchemy.
+    Establishes a connection to the RDS table, then fetches property ids from fct_properties
+    that are missing details using SQLAlchemy.
     """
     try:
         # Get a SQLAlchemy session
         logger.info("Creating SQLAlchemy session")
         session = get_db_session()
 
-        # Query the properties table
+        # Query the properties table - fetch only properties missing details
         logger.info("Querying property IDs that need details")
         query = """SELECT
                     fct_id
                     FROM real_estate.latest_property_details_view
                     WHERE id IS NULL
-                    OR (loaded_datetime < NOW() - INTERVAL '7 days' AND price <> fct_price)
                     LIMIT 2000;"""
         result = execute_query(session, query)
         rows = result.fetchall()

@@ -8,9 +8,8 @@ import {
   routeAfterValidation,
 } from "./nodes";
 
-// Track retry count to prevent infinite loops
+// Maximum retries for validation loop
 const MAX_RETRIES = 2;
-let retryCount = 0;
 
 /**
  * Build the search agent graph
@@ -19,11 +18,15 @@ function buildSearchAgentGraph() {
   const workflow = new StateGraph(SearchAgentState)
     // Add nodes
     .addNode("parseQuery", async (state) => {
+      console.log(`[graph:parseQuery] State BEFORE:`, JSON.stringify(state.searchFilters, null, 2));
       const result = await parseQueryNode(state);
+      console.log(`[graph:parseQuery] Result:`, JSON.stringify(result.searchFilters, null, 2));
       return result;
     })
     .addNode("validateFilters", async (state) => {
+      console.log(`[graph:validateFilters] State BEFORE:`, JSON.stringify(state.searchFilters, null, 2));
       const result = await validateFiltersNode(state);
+      console.log(`[graph:validateFilters] Result:`, JSON.stringify(result.searchFilters, null, 2));
       return result;
     })
     .addNode("executeSearch", async (state) => {
@@ -41,15 +44,13 @@ function buildSearchAgentGraph() {
     .addConditionalEdges("validateFilters", (state) => {
       const route = routeAfterValidation(state);
       if (route === "retry") {
-        retryCount++;
-        if (retryCount >= MAX_RETRIES) {
+        // Use state.retryCount instead of module-level variable to avoid race conditions
+        if (state.retryCount >= MAX_RETRIES) {
           // Hit retry limit, skip to formatResponse with error
-          retryCount = 0;
           return "continue";
         }
         return "retry";
       }
-      retryCount = 0;
       return "continue";
     }, {
       retry: "parseQuery",

@@ -7,13 +7,25 @@ import MapButton from "@/app/ui/icons/MapButton";
 
 import { useState } from "react";
 
-export default function ListingsCard({ listing }: { listing: Property }) {
+interface ListingsCardProps {
+  listing: Property;
+  animationIndex?: number;
+}
+
+export default function ListingsCard({ listing, animationIndex }: ListingsCardProps) {
   const [showMap, setShowMap] = useState(false);
+
+  // Calculate animation delay (50ms increments, capped at 400ms)
+  const animationDelay = animationIndex !== undefined
+    ? Math.min(animationIndex * 50, 400)
+    : 0;
+
   return (
     <Link
         href={`/listings/${listing.id}`}
         key={listing.id}
-        className="group card rounded-2xl border border-base-300/50 bg-base-100/90 h-[60vh] hover:bg-base-100 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transform transition-all duration-300 hover:-translate-y-1 hover:border-primary/20"
+        className={`group card rounded-2xl border border-base-300/50 bg-base-100/90 h-[60vh] hover:bg-base-100 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transform transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 ${animationIndex !== undefined ? 'animate-fade-up-fast' : ''}`}
+        style={animationIndex !== undefined ? { animationDelay: `${animationDelay}ms` } : undefined}
     >
       <figure className="h-3/7 relative bg-primary/10 overflow-hidden">
         <div className="overflow-hidden rounded relative w-full h-full">

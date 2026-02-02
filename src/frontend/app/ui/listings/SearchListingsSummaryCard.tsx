@@ -2,6 +2,14 @@
 
 import { Property } from "@/app/lib/definitions";
 import { useSearchParams } from "next/navigation";
+import { useRef, useEffect, useState } from "react";
+
+const emptyMessages = [
+  "No listings here... emptier than your wallet after KBBQ 💸",
+  "No results — like a subway car with a mysterious smell 🚇",
+  "Nothing found... like space on the PATH on the weekend 🚄",
+  "No results — like trying to find parking in Midtown 🚗",
+];
 
 export default function SearchListingsSummaryCard({
   listings,
@@ -10,6 +18,21 @@ export default function SearchListingsSummaryCard({
 }) {
   const searchParams = useSearchParams();
   const sort = searchParams.get("sort") || "";
+  const previousCountRef = useRef<number>(listings.length);
+  const [isPulsing, setIsPulsing] = useState(false);
+  const [emptyMessage] = useState(
+    () => emptyMessages[Math.floor(Math.random() * emptyMessages.length)]
+  );
+
+  // Trigger pulse animation when count changes
+  useEffect(() => {
+    if (previousCountRef.current !== listings.length) {
+      setIsPulsing(true);
+      previousCountRef.current = listings.length;
+      const timer = setTimeout(() => setIsPulsing(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [listings.length]);
 
   const getSortText = () => {
     switch (sort) {
@@ -25,13 +48,14 @@ export default function SearchListingsSummaryCard({
   };
 
   return (
-    <div className="card glass-card col-span-3 p-6 rounded-2xl">
+    <div className="card glass-card col-span-3 p-6 rounded-2xl animate-fade-up-fast">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-primary">
-              {listings.length}{" "}
-              {listings.length === 1 ? "Property" : "Properties"} Found {listings.length === 0 ? "😔" : "🎉"}
+            <h2 className={`text-2xl font-bold text-primary ${isPulsing ? 'animate-count-pulse' : ''}`}>
+              {listings.length === 0
+                ? emptyMessage
+                : `${listings.length} ${listings.length === 1 ? "Property" : "Properties"} Found 🎉`}
             </h2>
             <p className="text-base-content/60">
               {getSortText()}

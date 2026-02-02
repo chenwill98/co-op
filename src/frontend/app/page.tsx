@@ -10,28 +10,58 @@ import { useListingsContext } from "@/app/context/ListingsContext";
 import AnimatedText from "./components/AnimatedText";
 import MapBackground from "./components/MapBackground";
 
+const taglines = [
+  // The "connections" hustle
+  "Better than your friend's cousin's landlord.",
+  "Better than your coworker's ex's sublet.",
+  "For when your aunt's guy falls through.",
+  "Your bodega guy's tips, but accurate.",
+
+  // The desperate measures
+  "Better than refreshing StreetEasy at 3am.",
+  "Better than bribing the super.",
+  "Skip the 6am open house line.",
+
+  // The nightmare experiences
+  "Better than a broker who ghosts you.",
+  "Better than finding out it's actually in Jersey.",
+
+  // The competition
+  "Find out before it's already taken.",
+  "Better than losing another bidding war.",
+
+  // The vibes
+  "The apartment hunt, minus the existential crisis.",
+
+  // The absurd
+  "We put the NYC in 'the L train is fine.'",
+  "$300 energy bill, but actually has working heat and AC.",
+  "Floors that are mostly level.",
+  "Your toilet and kitchen can be in different rooms.",
+  "We do the doom-scrolling so you don't have to.",
+  "We deserve that 15% more than the brokers do.",
+];
+
 export default function Page() {
   const router = useRouter();
 
   // Local state for each filter
   const [searchText, setSearchText] = useState("");
+  const [tagline, setTagline] = useState("");
 
-  const { setAll } = useListingsContext();
+  const { setPendingMessage } = useListingsContext();
 
-  const handleSearch = async () => {
-    const res = await fetch("/api/properties", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: searchText }),
-    });
-    const { properties, queryRecord, chatHistory } = await res.json();
-    setAll(properties, queryRecord, chatHistory);
+  const handleSearch = () => {
+    if (!searchText.trim()) return;
+
+    // Store the query as a pending message and immediately redirect
+    setPendingMessage(searchText);
     router.push("/listings");
   };
 
   // Handle key press event to check for Enter key
   const handleKeyPress = (event: KeyboardEvent) => {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && searchText.trim()) {
       handleSearch();
     }
   };
@@ -39,12 +69,17 @@ export default function Page() {
   // Add event listener for Enter key
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
-    
+
     // Clean up the event listener on component unmount
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
   }, [searchText]); // Re-add the listener when searchText changes to ensure we have the latest value
+
+  // Pick a random tagline on mount
+  useEffect(() => {
+    setTagline(taglines[Math.floor(Math.random() * taglines.length)]);
+  }, []);
 
   return (
     <>
@@ -54,11 +89,13 @@ export default function Page() {
       >
         <div className="text-6xl font-bold mb-20 text-primary p-6 overflow-hidden
           drop-shadow-sm [text-shadow:_0_2px_8px_rgb(255_255_255_/_40%)]">
-          <AnimatedText
-            text="AI-powered real estate intelligence."
-            charDelay={15}
-            startDelay={3000} // 3 second delay before starting the animation
-          />
+          {tagline && (
+            <AnimatedText
+              text={tagline}
+              charDelay={15}
+              startDelay={3000} // 3 second delay before starting the animation
+            />
+          )}
         </div>
         <div
           className="card w-3/5 animate-fade-up-delayed mb-20
@@ -80,6 +117,7 @@ export default function Page() {
                   transition-all duration-200
                   hover:scale-[1.02] active:scale-[0.98]"
                 onClick={handleSearch}
+                disabled={!searchText.trim()}
               >
                 <span>Search</span>
                 <SparklesIcon className="h-4 w-4 ml-1" />

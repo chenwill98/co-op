@@ -19,7 +19,7 @@ export default function MapButton({ showingMap, onToggleMap, className }: MapBut
       <div
         tabIndex={0}
         role="button"
-        className="btn btn-ghost btn-circle text-primary/80 cursor-pointer hover:text-primary active:scale-90 transition"
+        className="btn btn-circle bg-base-100/70 backdrop-blur-sm border-0 text-primary cursor-pointer hover:bg-base-100/90 hover:text-primary active:scale-90 transition shadow-sm"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={onToggleMap}

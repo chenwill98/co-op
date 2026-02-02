@@ -1,5 +1,6 @@
 import { z } from "zod";
 import prisma from "../prisma";
+import { tagCategories } from "../tagUtils";
 
 // Valid neighborhoods loaded from DB at startup
 let validNeighborhoods: string[] = [];
@@ -88,6 +89,25 @@ const VALID_AMENITIES = [
   "nyc_evacuation_5",
 ] as const;
 
+// Build valid tags set from tagCategories
+function getValidTags(): Set<string> {
+  const tags = new Set<string>();
+  for (const category of Object.values(tagCategories)) {
+    for (const tag of category) {
+      tags.add(tag.name);
+    }
+  }
+  return tags;
+}
+
+const VALID_TAGS = getValidTags();
+
+// Build lowercase lookup map for case-insensitive matching
+const VALID_TAGS_LOWER = new Map<string, string>();
+for (const tag of VALID_TAGS) {
+  VALID_TAGS_LOWER.set(tag.toLowerCase(), tag);
+}
+
 // Range schema for numeric fields
 const RangeSchema = z
   .object({
@@ -152,8 +172,6 @@ export const SearchFiltersSchema = z.object({
   amenities: z.array(z.string()).optional(),
 
   no_fee: z.boolean().optional(),
-
-  address: z.string().optional(),
 });
 
 export type SearchFilters = z.infer<typeof SearchFiltersSchema>;
@@ -273,6 +291,37 @@ export function validateAmenities(amenities: string[]): {
   }
 
   return { valid, invalid };
+}
+
+/**
+ * Validate tags against known list from tagCategories
+ * Uses case-insensitive matching and normalizes to the correct case
+ */
+export function validateTags(tags: string[]): {
+  valid: string[];
+  invalid: string[];
+} {
+  const valid: string[] = [];
+  const invalid: string[] = [];
+
+  for (const tag of tags) {
+    // Case-insensitive lookup, return the correctly-cased valid tag
+    const normalizedTag = VALID_TAGS_LOWER.get(tag.toLowerCase());
+    if (normalizedTag) {
+      valid.push(normalizedTag);
+    } else {
+      invalid.push(tag);
+    }
+  }
+
+  return { valid, invalid };
+}
+
+/**
+ * Get list of valid tag names for error messages
+ */
+export function getValidTagNames(): string[] {
+  return Array.from(VALID_TAGS);
 }
 
 /**

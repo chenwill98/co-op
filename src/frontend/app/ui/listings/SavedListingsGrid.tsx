@@ -39,8 +39,8 @@ export default function ListingsGrid({
   return (
     <div className="grid grid-cols-3 gap-3 p-4 w-full">
       <SavedListingsSummaryCard listings={listings} />
-      {displayedListings.map((listing) => (
-        <ListingsCard key={listing.id} listing={listing} />
+      {displayedListings.map((listing, index) => (
+        <ListingsCard key={listing.id} listing={listing} animationIndex={index} />
       ))}
     </div>
   );

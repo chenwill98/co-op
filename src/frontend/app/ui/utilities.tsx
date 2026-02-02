@@ -33,9 +33,9 @@ export function TagList({ category, tags }: { category?: keyof typeof tagCategor
   return (
     <div className="flex flex-wrap gap-1">
       {displayTags.map(tag => (
-        <div 
-          key={tag} 
-          className="badge bg-primary/10 text-primary rounded-full text-xs"
+        <div
+          key={tag}
+          className="badge glass-badge-primary text-primary rounded-full text-xs"
           title={tag} // Show the system tag on hover for debugging
         >
           {getDisplayTag(tag)}

@@ -18,7 +18,7 @@ export default function Page() {
           </div>
         </div>
         {/* White gradient overlay at the bottom to prevent cards under the ChatBox */}
-        <div className="pointer-events-none fixed left-0 bottom-0 w-full h-16 z-20 bg-base-100 [mask-image:linear-gradient(to_top,white_80%,transparent_100%)]" />
+        <div className="pointer-events-none fixed left-0 bottom-0 w-full h-16 z-20 bg-base-300 [mask-image:linear-gradient(to_top,white_80%,transparent_100%)]" />
       </main>
       <ChatBox />
     </>

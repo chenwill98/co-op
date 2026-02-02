@@ -55,8 +55,18 @@ def upsert_properties_to_rds(session, listings):
 def fetch_and_store_data(message_list):
     """
     Fetch data from the given API URL, handle pagination, and store results in RDS.
+
+    Returns a dict with processing summary:
+        - successful: count of messages processed successfully
+        - failed: count of messages that failed
+        - properties_count: total properties fetched
+        - errors: list of error details for failed messages
     """
     properties_list = []
+    successful_count = 0
+    failed_count = 0
+    errors = []
+
     for i, message in enumerate(message_list):
         logger.info(f"Processing message {i+1} of {len(message_list)}")
         try:
@@ -74,7 +84,6 @@ def fetch_and_store_data(message_list):
                 logger.info(f"Fetched {len(listings)} listings")
                 if listings:
                     properties_list.extend(listings)
-                    
 
                 pagination = data.get("pagination", {})
                 next_offset = pagination.get("nextOffset")
@@ -85,9 +94,30 @@ def fetch_and_store_data(message_list):
                 logger.info(f"Setting offset to {next_offset}")
                 offset = next_offset
 
+            successful_count += 1
+
         except Exception as e:
-            logger.info(f"Error processing {message}: {e}")
-            raise
+            failed_count += 1
+            area = message.get('params', {}).get('areas', 'unknown')
+            error_detail = {"message_index": i, "area": area, "error": str(e)}
+            errors.append(error_detail)
+            logger.error(f"Error processing message {i+1} (area: {area}): {e}")
+            # Continue processing remaining messages instead of raising
+
+    # Log summary of message processing
+    logger.info(f"Message processing complete: {successful_count} successful, {failed_count} failed")
+    if errors:
+        logger.warning(f"Failed messages: {errors}")
+
+    # Only proceed with DB insert if we have properties to insert
+    if not properties_list:
+        logger.warning("No properties fetched from any messages, skipping database insert")
+        return {
+            "successful": successful_count,
+            "failed": failed_count,
+            "properties_count": 0,
+            "errors": errors
+        }
 
     try:
         # Get a SQLAlchemy session
@@ -98,24 +128,44 @@ def fetch_and_store_data(message_list):
         upsert_properties_to_rds(session, properties_list)
 
     except Exception as e:
-        logger.info(f"Error upserting properties: {e}")
+        logger.error(f"Error upserting properties: {e}")
         raise
-    
+
     finally:
         if 'session' in locals():
             logger.info("Closing SQLAlchemy session")
             session.close()
+
+    return {
+        "successful": successful_count,
+        "failed": failed_count,
+        "properties_count": len(properties_list),
+        "errors": errors
+    }
 
 def lambda_handler(event, context):
     message_list = []
     for record in event["Records"]:
         message_body = json.loads(record["body"])
         message_list.append(message_body)
-    
+
     try:
         logger.info(f"{len(message_list)} messages received. Processing:")
-        fetch_and_store_data(message_list)
-        return {"statusCode": 200, "body": "Messages processed successfully"}
+        result = fetch_and_store_data(message_list)
+
+        # If all messages failed, raise an error to trigger SQS retry
+        if result["failed"] == len(message_list):
+            raise Exception(f"All {len(message_list)} messages failed to process: {result['errors']}")
+
+        return {
+            "statusCode": 200,
+            "body": json.dumps({
+                "message": "Messages processed",
+                "successful": result["successful"],
+                "failed": result["failed"],
+                "properties_count": result["properties_count"]
+            })
+        }
     except Exception as e:
         logger.error(f"Error processing messages: {e}")
         raise

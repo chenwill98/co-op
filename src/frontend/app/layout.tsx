@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="autumn" className={sen.variable}>
       <body
-        className="antialiased min-h-screen flex flex-col"
+        className="antialiased min-h-screen flex flex-col bg-base-300"
       >
         <ListingsProvider>
           <Navbar />

@@ -369,7 +369,7 @@ export async function fetchClaudeSearchResult(
     apiKey: process.env.ANTHROPIC_API_KEY || "",
   });
 
-  const model = "claude-3-5-haiku-20241022";
+  const model = "claude-haiku-4-5-20251001";
   const max_tokens = 8192;
   const temperature = 0;
 

@@ -3,7 +3,7 @@
 import { getDisplayTag } from '@/app/lib/tagUtils';
 import { getRandomLoadingMessage } from '@/app/lib/loadingMessages';
 import { formatAmenityName } from './utilities';
-import { ArrowUpIcon, BarsArrowUpIcon } from '@heroicons/react/24/outline';
+import { ArrowUpIcon, BarsArrowUpIcon, ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useListingsContext } from '@/app/context/ListingsContext';
@@ -19,7 +19,7 @@ export default function ChatBox() {
   const { replace } = useRouter();
 
   // Use context for shared state
-  const { queryRecord, threadId, setAll, setThreadId } = useListingsContext();
+  const { queryRecord, threadId, isThreadIdReady, pendingMessage, setAll, resetThreadId, setPendingMessage, removeFilter, removeFromArrayFilter } = useListingsContext();
 
   // Local chat messages for display
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -37,21 +37,16 @@ export default function ChatBox() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize thread ID on mount
-  useEffect(() => {
-    if (!threadId) {
-      // Check localStorage first
-      const storedThreadId = localStorage.getItem('chatThreadId');
-      if (storedThreadId) {
-        setThreadId(storedThreadId);
-      } else {
-        // Generate new thread ID
-        const newThreadId = `thread-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-        localStorage.setItem('chatThreadId', newThreadId);
-        setThreadId(newThreadId);
-      }
-    }
-  }, [threadId, setThreadId]);
+  // Collapse state for chat
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Ref to prevent double-processing of pending message
+  const processingPendingRef = useRef(false);
+
+  // Ref for auto-scroll to bottom of chat
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // ThreadId is now initialized in context - no need for useEffect here
 
   // Rotate loading message every 2 seconds while loading
   useEffect(() => {
@@ -100,7 +95,7 @@ export default function ChatBox() {
 
   // Fetch listings using the new LangGraph chat API
   const fetchListings = useCallback(async (text: string) => {
-    if (!text.trim() || !threadId) return;
+    if (!text.trim() || !threadId || !isThreadIdReady) return;
 
     setLoading(true);
     setError(null);
@@ -121,7 +116,16 @@ export default function ChatBox() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to fetch listings');
+        // Try to extract detailed error from response
+        let errorDetail = 'Failed to fetch listings';
+        try {
+          const errorData = await res.json();
+          errorDetail = errorData.details || errorData.error || errorDetail;
+        } catch {
+          // If response isn't JSON, use status text
+          errorDetail = `Request failed: ${res.status} ${res.statusText}`;
+        }
+        throw new Error(errorDetail);
       }
 
       const data = await res.json();
@@ -147,7 +151,17 @@ export default function ChatBox() {
     } finally {
       setLoading(false);
     }
-  }, [threadId, queryRecord, setAll]);
+  }, [threadId, isThreadIdReady, queryRecord, setAll]);
+
+  // Process pending message from landing page redirect
+  useEffect(() => {
+    if (pendingMessage && isThreadIdReady && !processingPendingRef.current) {
+      processingPendingRef.current = true;
+      const message = pendingMessage;
+      setPendingMessage(null);
+      fetchListings(message);
+    }
+  }, [pendingMessage, isThreadIdReady, fetchListings, setPendingMessage]);
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -167,49 +181,100 @@ export default function ChatBox() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [sortDropdownOpen]);
 
+  // Auto-scroll to bottom when messages change or loading state changes
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, loading]);
+
   // Clear chat and start fresh
   const handleClearChat = () => {
     setChatMessages([]);
-    const newThreadId = `thread-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    localStorage.setItem('chatThreadId', newThreadId);
-    setThreadId(newThreadId);
+    processingPendingRef.current = false;
+    const newThreadId = resetThreadId();
     setAll([], {}, newThreadId);
   };
 
   // Badge styling
   const BADGE_CLASS = "badge glass-badge-primary text-primary rounded-full text-xs inline-flex items-center";
 
+  // Condensed badge with hover dropdown for arrays with many items
+  const CondensedBadge = ({ filterKey, label, items, formatted }: {
+    filterKey: string;
+    label: string;
+    items: string[];
+    formatted: string[];
+  }) => {
+    let displayText: string;
+    if (formatted.length <= 2) {
+      displayText = formatted.join(', ');
+    } else {
+      displayText = `${formatted.slice(0, 2).join(', ')}, +${formatted.length - 2}`;
+    }
+
+    return (
+      <div className="dropdown dropdown-top dropdown-hover">
+        <span tabIndex={0} className={BADGE_CLASS}>
+          {label} • {displayText}
+          <XMarkIcon
+            onClick={(e) => {
+              e.stopPropagation();
+              removeFilter(filterKey);
+            }}
+            className="h-3 w-3 cursor-pointer hover:text-error"
+          />
+        </span>
+        {formatted.length > 2 && (
+          <ul tabIndex={0} className="dropdown-content glass-dropdown rounded-box z-[100] p-2 text-xs max-h-48 overflow-y-auto min-w-max">
+            {formatted.map((item, idx) => (
+              <li key={idx} className="px-2 py-1 hover:bg-base-200 rounded flex items-center justify-between gap-2">
+                <span>{item}</span>
+                <XMarkIcon
+                  onClick={() => removeFromArrayFilter(filterKey, items[idx])}
+                  className="h-3 w-3 cursor-pointer hover:text-error flex-shrink-0"
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  };
+
   const formatEntry = ([key, val]: [string, unknown]) => {
     if (key === 'id') return [];
     const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-    // Arrays (amenities, tag_list, others)
+    // Special handling for neighborhoods - condense into single badge with hover dropdown
+    if (key === 'neighborhood' && Array.isArray(val) && val.length > 0) {
+      const arr = val as string[];
+      const formatted = arr.map(n =>
+        n.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+      );
+      return [<CondensedBadge key={key} filterKey={key} label={label} items={arr} formatted={formatted} />];
+    }
+
+    // Special handling for tag_list - condense into single badge with hover dropdown
+    if (key === 'tag_list' && Array.isArray(val) && val.length > 0) {
+      const arr = val as string[];
+      const formatted = arr.map(getDisplayTag);
+      return [<CondensedBadge key={key} filterKey={key} label="Tags" items={arr} formatted={formatted} />];
+    }
+
+    // Arrays (amenities, others) - render each item as individual badge with X
     if (Array.isArray(val)) {
       let arr = val as string[];
+      const originalArr = val as string[]; // Keep original for removal
       if (key === 'amenities') arr = arr.map(formatAmenityName);
-      if (key === 'tag_list') arr = arr.map(getDisplayTag);
 
-      if (arr.length > 3) {
-        const remainingArr = arr.slice(1);
-        return [
-          <div key={key} className="dropdown dropdown-hover dropdown-top dropdown-end inline-block border border-base-content/10">
-            <label tabIndex={0} className={BADGE_CLASS + " cursor-pointer"}>
-              {label} • {arr[0]}
-              <span className="cursor-help text-primary">+{arr.length - 1}</span>
-            </label>
-            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 glass-dropdown rounded-box text-xs mt-1 min-w-max">
-              {remainingArr.map((item, idx) => (
-                <li key={idx + 1} className="whitespace-nowrap">{item}</li>
-              ))}
-            </ul>
-          </div>
-        ];
-      }
-      return [
-        <span key={key} className={BADGE_CLASS}>
-          {label} • {arr.join(', ')}
+      return arr.map((item, idx) => (
+        <span key={`${key}-${idx}`} className={BADGE_CLASS}>
+          {label} • {item}
+          <XMarkIcon
+            onClick={() => removeFromArrayFilter(key, originalArr[idx])}
+            className="h-3 w-3 cursor-pointer hover:text-error"
+          />
         </span>
-      ];
+      ));
     }
 
     // Objects with min/max (range)
@@ -221,12 +286,32 @@ export default function ChatBox() {
           return [
             <span key={key} className={BADGE_CLASS}>
               {label} • {min}
+              <XMarkIcon
+                onClick={() => removeFilter(key)}
+                className="h-3 w-3 cursor-pointer hover:text-error"
+              />
             </span>
           ];
         }
         return [
-          ...(min != null ? [<span key={key + '-min'} className={BADGE_CLASS}>{`Min ${label} • ${min}`}</span>] : []),
-          ...(max != null ? [<span key={key + '-max'} className={BADGE_CLASS}>{`Max ${label} • ${max}`}</span>] : [])
+          ...(min != null ? [
+            <span key={key + '-min'} className={BADGE_CLASS}>
+              {`Min ${label} • ${min}`}
+              <XMarkIcon
+                onClick={() => removeFilter(key, 'min')}
+                className="h-3 w-3 cursor-pointer hover:text-error"
+              />
+            </span>
+          ] : []),
+          ...(max != null ? [
+            <span key={key + '-max'} className={BADGE_CLASS}>
+              {`Max ${label} • ${max}`}
+              <XMarkIcon
+                onClick={() => removeFilter(key, 'max')}
+                className="h-3 w-3 cursor-pointer hover:text-error"
+              />
+            </span>
+          ] : [])
         ];
       }
       return [];
@@ -236,6 +321,10 @@ export default function ChatBox() {
     return [
       <span key={key} className={BADGE_CLASS}>
         {label} • {String(val)}
+        <XMarkIcon
+          onClick={() => removeFilter(key)}
+          className="h-3 w-3 cursor-pointer hover:text-error"
+        />
       </span>
     ];
   };
@@ -245,10 +334,10 @@ export default function ChatBox() {
       <div className="container mx-auto pointer-events-auto w-5/7">
         <div className="flex flex-row">
           <div className="flex-grow p-4">
-            <div className="card bg-base-100/80 backdrop-blur-lg border border-base-300/50 rounded-4xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] mx-auto">
+            <div className="card bg-base-100/80 backdrop-blur-lg rounded-4xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] mx-auto">
               <div className="card-body p-3">
                 <div className="flex flex-col">
-                  {/* Filter badges */}
+                  {/* Filter badges - ALWAYS visible */}
                   {Object.entries(queryRecord).length > 0 && (
                     <div className="flex flex-row flex-wrap gap-1 p-1">
                       {Object.entries(queryRecord).flatMap(formatEntry)}
@@ -263,60 +352,87 @@ export default function ChatBox() {
                     </div>
                   )}
 
-                  {/* Error display */}
-                  {error && (
-                    <div className="alert alert-error text-sm py-2">
-                      {error}
-                    </div>
-                  )}
+                  {/* Collapsible section with animation - only chat messages, error, loading */}
+                  <div
+                    className={`transition-all duration-300 ease-in-out ${
+                      isCollapsed
+                        ? 'opacity-0 max-h-0 overflow-hidden'
+                        : 'opacity-100 max-h-96 overflow-visible'
+                    }`}
+                  >
+                    {/* Error display */}
+                    {error && (
+                      <div className="alert alert-error text-sm py-2">
+                        {error}
+                      </div>
+                    )}
 
-                  {/* Chat messages */}
-                  {chatMessages.length > 0 && (
-                    <div className="flex flex-col gap-2 py-2 max-h-48 overflow-y-auto">
-                      {chatMessages.map((msg, idx) => (
-                        <div
-                          key={idx}
-                          className={`chat ${msg.role === 'user' ? 'chat-end' : 'chat-start'}`}
-                        >
+                    {/* Chat messages */}
+                    {chatMessages.length > 0 && (
+                      <div
+                        className="flex flex-col gap-2 py-2 pt-4 max-h-48 overflow-y-auto"
+                        style={{
+                          maskImage: 'linear-gradient(to bottom, transparent 0%, black 16px)',
+                          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 16px)',
+                        }}
+                      >
+                        {chatMessages.map((msg, idx) => (
                           <div
-                            className={`chat-bubble ${msg.role === 'user' ? 'chat-bubble-primary' : 'chat-bubble-secondary'}`}
+                            key={idx}
+                            className={`chat ${msg.role === 'user' ? 'chat-end' : 'chat-start'}`}
                           >
-                            {msg.content}
+                            <div
+                              className={`chat-bubble ${msg.role === 'user' ? 'chat-bubble-primary' : 'chat-bubble-secondary'}`}
+                            >
+                              {msg.content}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
 
-                      {/* Loading indicator with NYC flavor */}
-                      {loading && (
-                        <div className="chat chat-start">
-                          <div className="chat-bubble chat-bubble-secondary flex items-center gap-2">
-                            <span className="loading loading-spinner loading-sm"></span>
-                            <span className="text-sm italic">{loadingMessage}</span>
+                        {/* Loading indicator with NYC flavor */}
+                        {loading && (
+                          <div className="chat chat-start">
+                            <div className="chat-bubble chat-bubble-secondary flex items-center gap-2">
+                              <span className="loading loading-spinner loading-sm"></span>
+                              <span className="text-sm italic">{loadingMessage}</span>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
 
-                  {/* Show loading even without messages */}
-                  {loading && chatMessages.length === 0 && (
-                    <div className="flex items-center gap-2 py-2">
-                      <span className="loading loading-spinner loading-sm"></span>
-                      <span className="text-sm italic text-base-content/70">{loadingMessage}</span>
-                    </div>
-                  )}
+                        {/* Scroll anchor for auto-scroll */}
+                        <div ref={chatEndRef} />
+                      </div>
+                    )}
+
+                    {/* Show loading even without messages */}
+                    {loading && chatMessages.length === 0 && (
+                      <div className="flex items-center gap-2 py-2">
+                        <span className="loading loading-spinner loading-sm"></span>
+                        <span className="text-sm italic text-base-content/70">{loadingMessage}</span>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Input area */}
                   <div className="flex flex-row items-center relative">
                     <input
                       type="text"
                       placeholder="Search for apartments... (e.g., '2br in Chelsea under $4000')"
-                      className="input input-ghost w-full bg-transparent focus:bg-transparent focus:outline-none focus:border-none"
+                      className="input input-ghost chat-input w-full bg-transparent border border-transparent focus:bg-transparent focus:border-transparent focus:outline-none focus:shadow-none focus-visible:outline-none focus-visible:shadow-none text-sm placeholder:text-base-content/50 placeholder:transition-opacity placeholder:duration-200 focus:placeholder:opacity-40"
                       value={filters.text}
                       onChange={e => handleInputChange('text', e.target.value)}
                       onKeyDown={handleInputKeyDown}
                       disabled={loading}
                     />
+
+                    {/* Collapse toggle button */}
+                    <button
+                      className="btn btn-circle btn-ghost btn-sm mr-1"
+                      onClick={() => setIsCollapsed(!isCollapsed)}
+                      title={isCollapsed ? "Expand chat" : "Collapse chat"}
+                    >
+                      {isCollapsed ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
+                    </button>
 
                     {/* Sort Dropdown */}
                     <div className="dropdown dropdown-top dropdown-end">
@@ -337,7 +453,7 @@ export default function ChatBox() {
                       className="btn btn-primary btn-circle p-2"
                       onClick={() => fetchListings(filters.text)}
                       type="button"
-                      disabled={loading || !filters.text.trim()}
+                      disabled={loading || !filters.text.trim() || !isThreadIdReady}
                     >
                       <ArrowUpIcon className="h-5 w-5" />
                     </button>

@@ -8,7 +8,7 @@ import type { Property } from "../definitions";
  * For arrays, new arrays replace old ones (not concatenated).
  * For objects with min/max, new values override old values field by field.
  */
-function deepMergeFilters(
+export function deepMergeFilters(
   left: ClaudeResponse,
   right: ClaudeResponse
 ): ClaudeResponse {
@@ -31,8 +31,8 @@ function deepMergeFilters(
       const rangeValue = value as { min?: number | null; max?: number | null };
       const existing = result[key] as { min?: number | null; max?: number | null } | undefined;
       result[key] = {
-        min: rangeValue.min !== undefined ? rangeValue.min : existing?.min ?? null,
-        max: rangeValue.max !== undefined ? rangeValue.max : existing?.max ?? null,
+        min: rangeValue.min != null ? rangeValue.min : existing?.min ?? null,
+        max: rangeValue.max != null ? rangeValue.max : existing?.max ?? null,
       };
     }
     // Arrays replace entirely (neighborhood, tag_list, amenities)
@@ -59,9 +59,9 @@ export const SearchAgentState = Annotation.Root({
     default: () => [],
   }),
 
-  // Filters MERGE across turns (key feature!)
+  // Filters REPLACE - client sends full filter state, node handles merging with AI output
   searchFilters: Annotation<ClaudeResponse>({
-    reducer: (left, right) => deepMergeFilters(left, right),
+    reducer: (_left, right) => right,
     default: () => ({}),
   }),
 
@@ -87,6 +87,12 @@ export const SearchAgentState = Annotation.Root({
   responseMessage: Annotation<string>({
     reducer: (_left, right) => right,
     default: () => "",
+  }),
+
+  // Retry count for validation loop (per-invocation, not global)
+  retryCount: Annotation<number>({
+    reducer: (_left, right) => right,
+    default: () => 0,
   }),
 });
 

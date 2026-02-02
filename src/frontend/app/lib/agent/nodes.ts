@@ -2,12 +2,13 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { AIMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
-import type { SearchAgentStateType } from "./state";
+import { type SearchAgentStateType, deepMergeFilters } from "./state";
 import {
   SearchFiltersSchema,
   loadValidNeighborhoods,
   validateNeighborhoods,
   validateAmenities,
+  validateTags,
   findSimilarNeighborhoods,
 } from "./schemas";
 import { parseClaudeResultsToPrismaSQL, type ClaudeResponse } from "../claudeQueryParser";
@@ -19,6 +20,11 @@ import { propertyString } from "../definitions";
 // Use Haiku 4.5 for faster, cheaper filter extraction
 const MODEL_ID = "claude-haiku-4-5-20251001";
 
+// Retry configuration for transient API errors
+const LLM_MAX_RETRIES = 3;
+const LLM_RETRY_BASE_DELAY_MS = 1000;
+
+
 // Create the LLM instance
 const llm = new ChatAnthropic({
   modelName: MODEL_ID,
@@ -26,6 +32,45 @@ const llm = new ChatAnthropic({
   maxTokens: 4096,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
 });
+
+/**
+ * Call LLM with retry logic for transient errors (429, 529, network issues)
+ */
+async function invokeLLMWithRetry<T>(
+  llmInstance: typeof llmWithTools,
+  messages: Array<{ role: string; content: string }>,
+  maxRetries: number = LLM_MAX_RETRIES
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await llmInstance.invoke(messages) as T;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // Check if this is a retryable error
+      const isRetryable =
+        (error as { status?: number })?.status === 529 || // Claude overloaded
+        (error as { status?: number })?.status === 429 || // Rate limited
+        (error as { code?: string })?.code === "ECONNRESET" ||
+        (error as { code?: string })?.code === "ETIMEDOUT";
+
+      if (isRetryable && attempt < maxRetries - 1) {
+        const delay = LLM_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+        console.log(`[invokeLLMWithRetry] Attempt ${attempt + 1} failed with retryable error, retrying in ${delay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      // Non-retryable error or last attempt
+      throw error;
+    }
+  }
+
+  // Should not reach here, but TypeScript needs it
+  throw lastError || new Error("Unknown error in LLM retry");
+}
 
 // Generate tag list from categories
 function getTagList(): Record<string, string[]> {
@@ -107,7 +152,6 @@ CRITICAL RULES:
         })
         .optional()
         .describe("Square footage range"),
-      address: z.string().optional().describe("Specific address to search for"),
     }),
   }
 );
@@ -168,19 +212,26 @@ Please fix the issue and try again. Original query: ${userQuery}`;
   const hasExistingFilters = Object.keys(state.searchFilters).length > 0;
   let contextMessage = "";
   if (hasExistingFilters) {
-    contextMessage = `
-Current active filters:
+    contextMessage = `IMPORTANT: The user has an active search with these filters:
 ${JSON.stringify(state.searchFilters, null, 2)}
 
-If the user is asking to modify these filters, update only the fields they mention and preserve the rest.`;
+They are asking to MODIFY this search. You MUST:
+1. Return ONLY the fields they want to change
+2. DO NOT return unchanged fields - they will be preserved automatically by the system
+3. For example, if they say "change max price to 5000", return only: {"price": {"max": 5000}}
+4. If they ask for a completely new search (e.g., "search for studios in Brooklyn"), return the full new filter set`;
   }
 
   try {
-    const response = await llmWithTools.invoke([
-      { role: "system", content: systemPrompt },
-      ...(contextMessage ? [{ role: "user", content: contextMessage }] : []),
-      { role: "user", content: queryPrompt },
-    ]);
+    // Use retry wrapper for transient API errors (429, 529, network issues)
+    const response = await invokeLLMWithRetry<Awaited<ReturnType<typeof llmWithTools.invoke>>>(
+      llmWithTools,
+      [
+        { role: "system", content: systemPrompt },
+        ...(contextMessage ? [{ role: "user", content: contextMessage }] : []),
+        { role: "user", content: queryPrompt },
+      ]
+    );
 
     // Extract the tool call from the response
     const toolCalls = response.tool_calls;
@@ -193,9 +244,16 @@ If the user is asking to modify these filters, update only the fields they menti
 
     const filterArgs = toolCalls[0].args as ClaudeResponse;
 
-    // Return the extracted filters (state reducer will merge with existing)
+    console.log(`[parseQueryNode] AI extracted filters:`, JSON.stringify(filterArgs, null, 2));
+
+    // Manually merge AI output with existing filters (from client's existingFilters)
+    // This is done here instead of in the reducer so that filter removals work correctly
+    const mergedFilters = deepMergeFilters(state.searchFilters, filterArgs);
+
+    console.log(`[parseQueryNode] Merged filters:`, JSON.stringify(mergedFilters, null, 2));
+
     return {
-      searchFilters: filterArgs,
+      searchFilters: mergedFilters,
       validationError: null,
     };
   } catch (error) {
@@ -214,13 +272,22 @@ export async function validateFiltersNode(
 ): Promise<Partial<SearchAgentStateType>> {
   const filters = state.searchFilters;
 
+  console.log(`[validateFiltersNode] Input state.searchFilters:`, JSON.stringify(filters, null, 2));
+
+  // Track if we need to update tag_list after stripping invalid tags
+  let strippedTagList: string[] | null = null;
+
+  // Helper to return validation error with incremented retry count
+  const validationError = (message: string) => ({
+    validationError: message,
+    retryCount: state.retryCount + 1,
+  });
+
   // 1. Zod schema validation
   const zodResult = SearchFiltersSchema.safeParse(filters);
   if (!zodResult.success) {
     const errorMessages = zodResult.error.issues.map((i) => i.message).join("; ");
-    return {
-      validationError: `Invalid filter format: ${errorMessages}`,
-    };
+    return validationError(`Invalid filter format: ${errorMessages}`);
   }
 
   // 2. Validate neighborhoods exist in DB
@@ -233,9 +300,7 @@ export async function validateFiltersNode(
       const suggestionText =
         suggestions.length > 0 ? ` Did you mean: ${suggestions.join(", ")}?` : "";
 
-      return {
-        validationError: `Unknown neighborhoods: ${invalid.join(", ")}.${suggestionText}`,
-      };
+      return validationError(`Unknown neighborhoods: ${invalid.join(", ")}.${suggestionText}`);
     }
   }
 
@@ -244,30 +309,43 @@ export async function validateFiltersNode(
     const amenityValidation = validateAmenities(filters.amenities as string[]);
     const invalid = amenityValidation.invalid;
     if (invalid.length > 0) {
-      return {
-        validationError: `Unknown amenities: ${invalid.join(", ")}. Check available amenities in the database schema.`,
-      };
+      return validationError(`Unknown amenities: ${invalid.join(", ")}. Check available amenities in the database schema.`);
     }
   }
 
-  // 4. Sanity checks on ranges
+  // 4. Validate tags - strip invalid ones immediately (don't retry)
+  if (filters.tag_list && filters.tag_list.length > 0) {
+    const tagValidation = validateTags(filters.tag_list as string[]);
+    if (tagValidation.invalid.length > 0) {
+      console.log(`[validateFiltersNode] Stripping invalid tags: ${tagValidation.invalid.join(", ")}`);
+      // Track the stripped tags but DON'T return early - let rest of validation run
+      strippedTagList = tagValidation.valid;
+    }
+  }
+
+  // 5. Sanity checks on ranges
   const price = filters.price as { min?: number | null; max?: number | null } | undefined;
   if (price?.min != null && price?.max != null && price.min > price.max) {
-    return {
-      validationError: `Price min ($${price.min}) cannot exceed max ($${price.max})`,
-    };
+    return validationError(`Price min ($${price.min}) cannot exceed max ($${price.max})`);
   }
 
   const bedrooms = filters.bedrooms as { min?: number | null; max?: number | null } | undefined;
   if (bedrooms?.min != null && bedrooms?.max != null && bedrooms.min > bedrooms.max) {
-    return {
-      validationError: `Bedrooms min (${bedrooms.min}) cannot exceed max (${bedrooms.max})`,
-    };
+    return validationError(`Bedrooms min (${bedrooms.min}) cannot exceed max (${bedrooms.max})`);
   }
 
-  // Validation passed
+  // Validation passed - reset retry count
+  // Build the final searchFilters, applying any tag stripping
+  const finalSearchFilters = strippedTagList !== null
+    ? { ...filters, tag_list: strippedTagList }
+    : filters;
+
+  console.log(`[validateFiltersNode] Returning finalSearchFilters:`, JSON.stringify(finalSearchFilters, null, 2));
+
   return {
     validationError: null,
+    retryCount: 0,
+    searchFilters: finalSearchFilters,
   };
 }
 
