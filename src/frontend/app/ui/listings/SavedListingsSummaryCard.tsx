@@ -85,13 +85,13 @@ export default function SavedListingsSummaryCard({
   }, [sortedListings]);
 
   return (
-    <div className="card glass-card col-span-3 p-6 rounded-2xl relative z-20">
+    <div className="card glass-card col-span-1 md:col-span-2 lg:col-span-3 p-6 rounded-2xl relative z-20">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
             <h2 className="text-2xl font-bold text-primary">
               {listings.length}{" "}
-              {listings.length === 1 ? "Property" : "Properties"} Saved 🎉
+              {listings.length === 1 ? "Property" : "Properties"} Saved
             </h2>
             <p className="text-base-content/60">
               {getSortText()}
@@ -117,7 +117,7 @@ export default function SavedListingsSummaryCard({
           </div>
           <ul tabIndex={0} className="dropdown-content menu glass-dropdown rounded-box z-[100] w-52 p-2">
             {Object.entries(sortConfigs).map(([key, config]) => (
-              <li key={key} className={sortOption === key ? "bg-primary/10 rounded-lg" : ""}>
+              <li key={key} className={sortOption === key ? "bg-primary/20 rounded-lg border-l-2 border-primary font-medium" : ""}>
                 <a onClick={() => handleSortChange(key as SortOption)}>
                   {config.label}
                 </a>

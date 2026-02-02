@@ -5,10 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { useRef, useEffect, useState } from "react";
 
 const emptyMessages = [
-  "No listings here... emptier than your wallet after KBBQ 💸",
-  "No results — like a subway car with a mysterious smell 🚇",
-  "Nothing found... like space on the PATH on the weekend 🚄",
-  "No results — like trying to find parking in Midtown 🚗",
+  "No listings match your search criteria",
+  "No results found for this search",
+  "Nothing found - try adjusting your filters",
+  "No matching properties available",
 ];
 
 export default function SearchListingsSummaryCard({
@@ -48,14 +48,14 @@ export default function SearchListingsSummaryCard({
   };
 
   return (
-    <div className="card glass-card col-span-3 p-6 rounded-2xl animate-fade-up-fast">
+    <div className="card glass-card col-span-1 md:col-span-2 lg:col-span-3 p-6 rounded-2xl animate-fade-up-fast">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
             <h2 className={`text-2xl font-bold text-primary ${isPulsing ? 'animate-count-pulse' : ''}`}>
               {listings.length === 0
                 ? emptyMessage
-                : `${listings.length} ${listings.length === 1 ? "Property" : "Properties"} Found 🎉`}
+                : `${listings.length} ${listings.length === 1 ? "Property" : "Properties"} Found`}
             </h2>
             <p className="text-base-content/60">
               {getSortText()}

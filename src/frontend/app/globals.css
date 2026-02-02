@@ -105,7 +105,7 @@ html {
 
 /* Primary-tinted badges */
 .glass-badge-primary {
-  @apply bg-primary/15 border border-primary/20;
+  @apply bg-primary/25 border border-primary/30 text-primary font-medium;
 }
 
 /* Nested panels inside glass containers - no blur to avoid stacking */
@@ -193,4 +193,76 @@ select:focus,
 /* Lighter skeleton background while preserving shimmer animation */
 .skeleton {
   background-color: var(--color-base-200);
+}
+
+/* Consistent shadow system */
+.shadow-subtle {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-elevated {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-floating {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Card hover state - consistent across all cards */
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+}
+
+/* Button hover state */
+.btn-hover {
+  @apply transition-transform hover:scale-105;
+}
+
+/* Focus ring for all interactive elements */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-base-100;
+}
+
+/* Table header styling for better visual hierarchy */
+.table thead th {
+  @apply bg-base-200/50 font-semibold text-base-content/80;
+}
+
+/* Table row hover */
+.table tbody tr:hover {
+  @apply bg-base-100/50;
+}
+
+/* Count-up animation for percentile numbers */
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-count-up {
+  animation: countUp 500ms ease-out forwards;
+}
+
+/* Badge scale animation for filter removal */
+@keyframes badgeRemove {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.animate-badge-remove {
+  animation: badgeRemove 200ms ease-out forwards;
 }

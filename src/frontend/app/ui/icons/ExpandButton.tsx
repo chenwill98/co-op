@@ -7,27 +7,29 @@ type ExpandButtonProps = {
   collapsedText?: string;
 };
 
-export default function ExpandButton({ 
-  isExpanded, 
-  onToggle, 
-  expandedText = "Less", 
-  collapsedText = "More" 
+export default function ExpandButton({
+  isExpanded,
+  onToggle,
+  expandedText = "Less",
+  collapsedText = "More"
 }: ExpandButtonProps) {
   return (
-    <div className="flex items-center gap-1">
-      <label className="text-primary cursor-pointer text-xs" onClick={onToggle}>
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex items-center gap-1.5 text-primary hover:text-primary/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 rounded-sm"
+    >
+      <span className="text-xs font-medium">
         {isExpanded ? expandedText : collapsedText}
-      </label>
-      <label className="swap swap-rotate">
-      {/* Controlled checkbox */}
-      <input type="checkbox" checked={isExpanded} onChange={onToggle} />
-
-      {/* hamburger icon (shown when checkbox is unchecked) */}
-      <PlusIcon className="swap-off text-primary" width={12} height={12} />
-
-      {/* close icon (shown when checkbox is checked) */}
-      <MinusIcon className="swap-on text-primary" width={12} height={12} />
-      </label>
-    </div>
+      </span>
+      <span className="swap swap-rotate">
+        <input type="checkbox" checked={isExpanded} readOnly className="hidden" />
+        {isExpanded ? (
+          <MinusIcon className="text-primary" width={14} height={14} />
+        ) : (
+          <PlusIcon className="text-primary" width={14} height={14} />
+        )}
+      </span>
+    </button>
   );
 }

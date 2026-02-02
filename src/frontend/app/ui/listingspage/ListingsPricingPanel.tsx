@@ -20,7 +20,7 @@ export default function ListingsPricingPanel({
 
   return (
     <div className="flex flex-col">
-      <h2 className="text-2xl font-semibold text-base-content mb-1">Price</h2>
+      <h2 className="text-xl font-semibold text-base-content mb-1">Price</h2>
       <div className="flex flex-wrap gap-1 mb-2">
           <TagList category="Price" tags={listingDetails.tag_list || []} />
       </div>

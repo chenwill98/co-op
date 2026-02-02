@@ -12,8 +12,8 @@ export default function ListingsDescriptionPanel({ listingDetails }: { listingDe
     };
     return (
         <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-semibold text-base-content">
-              Description Summary ✨
+            <h2 className="text-xl font-semibold text-base-content">
+              Description Summary
             </h2>
             <div className="flex flex-wrap gap-1">
                 <TagList category="Features" tags={listingDetails.tag_list || []} />

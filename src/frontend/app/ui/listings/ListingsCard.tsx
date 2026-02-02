@@ -86,7 +86,7 @@ export default function ListingsCard({ listing, animationIndex }: ListingsCardPr
             <p className="text-base-content/60 text-xs">
               Rental unit in {FormatDisplayText(listing.neighborhood)}
             </p>
-            <h2 className="hover:text-primary transition-colors">{listing.address}</h2>
+            <h2 className="hover:text-primary transition-colors truncate" title={listing.address}>{listing.address}</h2>
             <div className="text-base-content/60 text-xs space-x-1">
                 <span>
                 {listing.bedrooms}{" "}

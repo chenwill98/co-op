@@ -34,7 +34,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   ] as { type: string; url: string }[];
 
   return (
-    <main className="container mx-auto px-4 py-8 w-4/5">
+    <main className="container mx-auto px-4 py-8 w-full lg:w-4/5">
       {/* Breadcrumbs */}
       <div className="flex justify-between">
         <nav className="breadcrumbs" aria-label="breadcrumbs">
@@ -67,39 +67,40 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
       </div>
 
       {/* Two-Column Layout for Property Details */}
-      <div className="grid grid-cols-5 gap-20 mt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6 mt-4">
         {/* Carousel Section */}
-        <div className="flex flex-col col-span-3">
+        <div className="flex flex-col gap-4 lg:col-span-3">
           <ImageCarousel mediaItems={mediaItems} />
           {/* Description Section */}
-          <div className="border-t border-base-content/30 mt-4 pt-4">
+          <div className="bg-base-200/40 rounded-xl p-4">
             <ListingsDescriptionPanel listingDetails={listingDetails} />
           </div>
           {/* Amenities */}
-          <div className="border-t border-base-content/30 mt-4 pt-4">
+          <div className="bg-base-200/40 rounded-xl p-4">
             <ListingsAmenitiesPanel listingDetails={listingDetails} />
           </div>
         </div>
         {/* Right Column: Main Property Details */}
-        <div className="flex flex-col col-span-2">
+        <div className="flex flex-col gap-4 lg:col-span-2">
           {/* Property Title */}
-          <ListingsDetailsPanel listingDetails={listingDetails} />
+          <div className="bg-base-200/40 rounded-xl p-4">
+            <ListingsDetailsPanel listingDetails={listingDetails} />
+          </div>
 
           {/* Price and Basic Stats */}
-          <div className="border-t border-base-content/30 mt-4 pt-4">
+          <div className="bg-base-200/40 rounded-xl p-4">
             <ListingsPricingPanel listingDetails={listingDetails} />
           </div>
 
           {/* Transportation Info */}
-          <div className="border-t border-base-content/30 mt-4 pt-4">
+          <div className="bg-base-200/40 rounded-xl p-4">
             <ListingsTransportationPanel listingDetails={listingDetails} />
           </div>
 
           {/* Location Info */}
-          <div className="border-t border-base-content/30 mt-4 pt-4">
+          <div className="bg-base-200/40 rounded-xl p-4">
             <ListingsLocationPanel listingDetails={listingDetails} />
           </div>
-
         </div>
       </div>
     </main>

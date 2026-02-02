@@ -76,8 +76,8 @@ export default function Navbar() {
   }
 
   return (
-    <div className="navbar sticky z-10 top-0 bg-base-100/80 backdrop-blur-lg border-b border-base-300/50 shadow-[0_4px_16px_rgba(0,0,0,0.04)]">
-      <div className="flex-1 px-2">
+    <div className="navbar sticky z-10 top-0 bg-base-100/80 backdrop-blur-lg border-b border-base-300/50 shadow-[0_4px_16px_rgba(0,0,0,0.04)] px-4 lg:px-8 py-3">
+      <div className="flex-1">
         <div className="inline-block">
           <Link href="/">
             {/* Pass the current theme to CoAptLogo so it can swap emojis */}
@@ -85,11 +85,11 @@ export default function Navbar() {
           </Link>
         </div>
       </div>
-      <div className="flex-none">
-        <Link href="/analytics" className="btn rounded-full bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 border-0 mr-2">
+      <div className="flex-none flex items-center gap-3">
+        <Link href="/analytics" className="btn rounded-full bg-primary/10 text-primary hover:bg-primary/20 hover:scale-105 transition-all px-4 py-2 border-0">
           Analytics for Nerds
         </Link>
-        <div className="indicator mr-2">
+        <div className="indicator">
           {newBookmarksCount > 0 && (
             <span className="indicator-item badge badge-primary badge-sm transition-all duration-300 ease-in-out">
               {newBookmarksCount}
@@ -98,14 +98,14 @@ export default function Navbar() {
           <Link
             href="/saved"
             onClick={handleSavedClick}
-            className="btn rounded-full bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 border-0 mr-2"
+            className="btn rounded-full bg-primary/10 text-primary hover:bg-primary/20 hover:scale-105 transition-all px-4 py-2 border-0"
           >
             Saved
           </Link>
         </div>
-        <label className="toggle text-base-content mr-2">
-          <input 
-            type="checkbox" 
+        <label className="toggle text-base-content scale-110">
+          <input
+            type="checkbox"
             checked={theme === "abyss"}
             onChange={toggleTheme}
             className="theme-controller"

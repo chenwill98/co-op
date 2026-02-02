@@ -136,7 +136,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
 
     return (
         <div className="flex flex-col gap-1">
-            <h2 className="text-2xl font-semibold text-base-content">
+            <h2 className="text-xl font-semibold text-base-content">
                 Location
             </h2>
             <div className="flex flex-wrap gap-1">

@@ -331,7 +331,7 @@ export default function ChatBox() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 bg-transparent pointer-events-none">
-      <div className="container mx-auto pointer-events-auto w-5/7">
+      <div className="container mx-auto pointer-events-auto w-full px-4 md:w-5/6 lg:w-5/7">
         <div className="flex flex-row">
           <div className="flex-grow p-4">
             <div className="card bg-base-100/80 backdrop-blur-lg rounded-4xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] mx-auto">
@@ -441,7 +441,7 @@ export default function ChatBox() {
                       </label>
                       <ul tabIndex={0} className="dropdown-content menu glass-dropdown rounded-box z-[100] w-52 p-2">
                         {Object.entries(sortConfigs).map(([key, config]) => (
-                          <li key={key} className={filters.sort === key ? 'bg-primary/10 rounded-lg' : ''}>
+                          <li key={key} className={filters.sort === key ? 'bg-primary/20 rounded-lg border-l-2 border-primary font-medium' : ''}>
                             <a onClick={() => handleSortChange(key)}>{config.label}</a>
                           </li>
                         ))}

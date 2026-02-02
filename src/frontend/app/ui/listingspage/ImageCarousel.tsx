@@ -114,20 +114,24 @@ export default function ImageCarousel({
               )}
 
               {/* DaisyUI-style Navigation Controls */}
-              <div className="absolute left-5 right-5 top-1/2 flex -translate-y-1/2 transform justify-between">
+              <div className="absolute left-3 right-3 top-1/2 flex -translate-y-1/2 transform justify-between">
                 <a
                   href={`#slide${prevSlide}`}
-                  className="btn btn-circle"
+                  className="btn btn-circle btn-ghost bg-white/40 hover:bg-white/60 backdrop-blur-sm shadow-md border-0"
                   onClick={goToSlide}
                 >
-                  ❮
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                  </svg>
                 </a>
                 <a
                   href={`#slide${nextSlide}`}
-                  className="btn btn-circle"
+                  className="btn btn-circle btn-ghost bg-white/40 hover:bg-white/60 backdrop-blur-sm shadow-md border-0"
                   onClick={goToSlide}
                 >
-                  ❯
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
                 </a>
               </div>
             </div>

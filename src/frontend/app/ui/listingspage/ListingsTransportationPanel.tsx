@@ -67,7 +67,7 @@ export default function ListingsTransportationPanel({
 
   return (
     <div className="flex flex-col gap-1">
-      <h2 className="text-2xl font-semibold text-base-content">Transportation</h2>
+      <h2 className="text-xl font-semibold text-base-content">Transportation</h2>
       <div className="flex flex-col gap-4">
         <div className="flex-1">
           {/* Display subway lines */}

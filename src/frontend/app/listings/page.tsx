@@ -10,7 +10,7 @@ export default function Page() {
   return (
     <>
       <main className="z-0 relative">
-        <div className="container mx-auto w-5/7">
+        <div className="container mx-auto w-full px-4 md:w-5/6 lg:w-5/7">
           <div className="flex flex-row w-full">
             <div className="grow pb-24">
               <ListingsGrid listings={listings} />
