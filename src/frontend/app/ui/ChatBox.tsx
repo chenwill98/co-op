@@ -204,38 +204,50 @@ export default function ChatBox() {
     items: string[];
     formatted: string[];
   }) => {
-    let displayText: string;
+    const displayText = formatted.length <= 2
+      ? formatted.join(', ')
+      : `${formatted.slice(0, 2).join(', ')}, +${formatted.length - 2}`;
+
+    // Only use dropdown wrapper when there are items to expand (>2)
     if (formatted.length <= 2) {
-      displayText = formatted.join(', ');
-    } else {
-      displayText = `${formatted.slice(0, 2).join(', ')}, +${formatted.length - 2}`;
+      return (
+        <span className={BADGE_CLASS}>
+          {label} • {displayText}
+          <XMarkIcon
+            onClick={() => removeFilter(filterKey)}
+            className="h-3 w-3 cursor-pointer hover:text-error"
+          />
+        </span>
+      );
     }
 
     return (
       <div className="dropdown dropdown-top dropdown-hover">
         <span tabIndex={0} className={BADGE_CLASS}>
           {label} • {displayText}
-          <XMarkIcon
+          <button
             onClick={(e) => {
               e.stopPropagation();
+              e.preventDefault();
               removeFilter(filterKey);
             }}
-            className="h-3 w-3 cursor-pointer hover:text-error"
-          />
+            className="ml-1"
+            type="button"
+          >
+            <XMarkIcon className="h-3 w-3 cursor-pointer hover:text-error" />
+          </button>
         </span>
-        {formatted.length > 2 && (
-          <ul tabIndex={0} className="dropdown-content glass-dropdown rounded-box z-[100] p-2 text-xs max-h-48 overflow-y-auto min-w-max">
-            {formatted.map((item, idx) => (
-              <li key={idx} className="px-2 py-1 hover:bg-base-200 rounded flex items-center justify-between gap-2">
-                <span>{item}</span>
-                <XMarkIcon
-                  onClick={() => removeFromArrayFilter(filterKey, items[idx])}
-                  className="h-3 w-3 cursor-pointer hover:text-error flex-shrink-0"
-                />
-              </li>
-            ))}
-          </ul>
-        )}
+        <ul tabIndex={0} className="dropdown-content glass-dropdown rounded-box z-[100] p-2 text-xs max-h-48 overflow-y-auto min-w-max">
+          {formatted.map((item, idx) => (
+            <li key={idx} className="px-2 py-1 hover:bg-base-200 rounded flex items-center justify-between gap-2">
+              <span>{item}</span>
+              <XMarkIcon
+                onClick={() => removeFromArrayFilter(filterKey, items[idx])}
+                className="h-3 w-3 cursor-pointer hover:text-error flex-shrink-0"
+              />
+            </li>
+          ))}
+        </ul>
       </div>
     );
   };

@@ -1,4 +1,5 @@
 import json
+import re
 import boto3
 import anthropic
 import pandas as pd
@@ -159,7 +160,7 @@ def create_batch():
             {
                 "custom_id": property['id'],
                 "params": {
-                    "model": "claude-3-5-haiku-20241022",
+                    "model": "claude-haiku-4-5-20251001",
                     "max_tokens": 2000,
                     "temperature": 0.2,
                     "system": """You are an excellent real estate agent who's generating compelling but factually accurate and unbiased real estate description summaries, generating a list of tags from a predetermined list of tags based on a given description, and extracting any additional fees values like brokers fees ONLY IF EXPLICITLY MENTIONED. Do not leave out negative traits.""",
@@ -391,21 +392,64 @@ def update_dynamodb(property_dynamodb_data):
         raise
 
 
+def sanitize_fee_amount(amount):
+    """
+    Extract numeric value from fee amount, handling cases like '$700', '1.5 months', etc.
+    Returns float or None if no valid number found.
+    """
+    if amount is None:
+        return None
+    if isinstance(amount, (int, float)):
+        return float(amount)
+    if isinstance(amount, str):
+        # Remove currency symbols, commas, and extract numbers
+        cleaned = re.sub(r'[^\d.\-]', '', amount)
+        if cleaned:
+            try:
+                return float(cleaned)
+            except ValueError:
+                return None
+    return None
+
+def sanitize_additional_fees(additional_fees):
+    """
+    Clean up additional_fees array, ensuring amounts are numeric.
+    """
+    if not additional_fees:
+        return []
+
+    sanitized = []
+    for fee in additional_fees:
+        if not isinstance(fee, dict):
+            continue
+        sanitized_fee = {
+            'name': str(fee.get('name', '')),
+            'amount': sanitize_fee_amount(fee.get('amount')),
+            'type': fee.get('type', 'dollars') if fee.get('type') in ['dollars', 'percentage', 'months'] else 'dollars',
+            'recurring': bool(fee.get('recurring', False))
+        }
+        if fee.get('notes'):
+            sanitized_fee['notes'] = str(fee.get('notes'))
+        sanitized.append(sanitized_fee)
+    return sanitized
+
 def extract_brokers_fee(property_id, additional_fees, listings_df):
     brokers_fee = None
-    
+
     for fee in additional_fees:
-        if 'broker' in fee['name']:
-            if fee['amount'] is not None:
-                if fee['type'] == 'months':
-                    brokers_fee = float(fee['amount']) / 12
-                elif fee['type'] == 'dollars':
-                    brokers_fee = float(fee['amount']) * 12 / listings_df[listings_df['fct_id'] == property_id]['price'].values[0]
-                elif fee['type'] == 'percentage':
-                    brokers_fee = float(fee['amount']) / 100
-                else:
-                    brokers_fee = None
-    
+        if 'broker' in fee.get('name', '').lower():
+            amount = sanitize_fee_amount(fee.get('amount'))
+            if amount is not None:
+                fee_type = fee.get('type', '')
+                if fee_type == 'months':
+                    brokers_fee = float(amount) / 12
+                elif fee_type == 'dollars':
+                    price_rows = listings_df[listings_df['fct_id'] == property_id]['price']
+                    if len(price_rows) > 0 and price_rows.values[0]:
+                        brokers_fee = float(amount) * 12 / price_rows.values[0]
+                elif fee_type == 'percentage':
+                    brokers_fee = float(amount) / 100
+
     return brokers_fee
     
 
@@ -527,7 +571,7 @@ def process_completed_batch_results(message_batch):
                         # Extract summary and tag_list from tool input
                         summary = tool_use.input.get("summary", "")
                         tag_list = tool_use.input.get("tag_list", [])
-                        additional_fees = tool_use.input.get("additional_fees", [])
+                        additional_fees = sanitize_additional_fees(tool_use.input.get("additional_fees", []))
                         
                         # Collect property summary data for batch update
                         property_dynamodb_data.append({
