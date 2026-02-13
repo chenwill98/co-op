@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { CombinedPropertyDetails } from "@/app/lib/definitions";
 import { TagList } from "@/app/ui/utilities";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
@@ -27,6 +27,13 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
     
     // Get POIs from listing details
     const pois = listingDetails.nearest_pois || [];
+    const propertyLocation = useMemo(
+        () => ({
+            latitude: Number(listingDetails.latitude),
+            longitude: Number(listingDetails.longitude),
+        }),
+        [listingDetails.latitude, listingDetails.longitude]
+    );
     
     // Group POIs by category
     const poisByCategory = categories.reduce((acc, category) => {
@@ -174,7 +181,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
                 </div>
 
                 <div className="w-full mb-4">
-                    <ListingsPOIMap poiData={pois} propertyLocation={{latitude: Number(listingDetails.latitude), longitude: Number(listingDetails.longitude) }} />
+                    <ListingsPOIMap poiData={pois} propertyLocation={propertyLocation} />
                 </div>
 
                 {/* Auto-generated tabs based on categories */}

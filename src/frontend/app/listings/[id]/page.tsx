@@ -22,15 +22,18 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   // Fetch the combined property details (property, details, tags, etc.)
   const pageParams = await params;
   const listingDetails = await fetchPropertyPage(pageParams.id);
+  const mapboxToken = process.env.MAPBOX_TOKEN;
 
-  const mapImage = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f74e4e(${listingDetails.longitude || '-73.935242'},${listingDetails.latitude || '40.730610'})/${listingDetails.longitude || '-73.935242'},${listingDetails.latitude || '40.730610'},14/600x600@2x?access_token=pk.eyJ1IjoiY2hlbndpbGw5OCIsImEiOiJjbTc4M2JiOWkxZWZtMmtweGRyMHRxenZnIn0.RmSgCA0jq_ejQqDHEUj5Pg`;
+  const mapImage = mapboxToken
+    ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f74e4e(${listingDetails.longitude || '-73.935242'},${listingDetails.latitude || '40.730610'})/${listingDetails.longitude || '-73.935242'},${listingDetails.latitude || '40.730610'},14/600x600@2x?access_token=${mapboxToken}`
+    : null;
 
   // Combine images, videos, and floorplans into one array
   const mediaItems = [
     ...listingDetails.images.map((url) => ({ type: "image", url })),
     ...listingDetails.videos.map((url) => ({ type: "video", url })),
     ...listingDetails.floorplans.map((url) => ({ type: "floorplan", url })),
-    { type: "map", url: mapImage },
+    ...(mapImage ? [{ type: "map", url: mapImage }] : []),
   ] as { type: string; url: string }[];
 
   return (

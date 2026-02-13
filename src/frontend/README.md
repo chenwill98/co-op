@@ -49,7 +49,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 4. **Environment Variables**:
    - In your Vercel project settings, add all environment variables from your `.env` file
    - At minimum, make sure you add:
-     - `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN`
+     - `MAPBOX_TOKEN`
      - Any other keys used by your application
 
 5. **Deploy**:
@@ -91,4 +91,3 @@ Vercel automatically deploys:
 - **Styling**: Tailwind CSS 4 with DaisyUI 5
 - **Icons**: Heroicons 2
 - **Maps**: Mapbox GL
-
