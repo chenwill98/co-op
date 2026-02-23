@@ -6,6 +6,25 @@ import { tagCategories } from "../tagUtils";
 let validNeighborhoods: string[] = [];
 let neighborhoodsLoaded = false;
 
+// Valid NYC boroughs
+const VALID_BOROUGHS = [
+  "manhattan",
+  "brooklyn",
+  "queens",
+  "bronx",
+  "staten island",
+] as const;
+
+// Common borough aliases for fuzzy matching
+const BOROUGH_ALIASES: Record<string, string> = {
+  "new york": "manhattan",
+  "nyc": "manhattan",
+  "the bronx": "bronx",
+  "staten": "staten island",
+  "si": "staten island",
+  "bk": "brooklyn",
+};
+
 // Valid property types from the schema
 const VALID_PROPERTY_TYPES = [
   "condo",
@@ -272,21 +291,131 @@ export function findSimilarNeighborhoods(
 }
 
 /**
- * Validate amenities against known list
+ * Validate boroughs against known list with alias resolution
+ */
+export function validateBoroughs(boroughs: string[]): {
+  valid: string[];
+  invalid: string[];
+} {
+  const validSet = new Set(VALID_BOROUGHS as readonly string[]);
+  const valid: string[] = [];
+  const invalid: string[] = [];
+
+  for (const borough of boroughs) {
+    const lower = borough.toLowerCase().trim();
+    if (validSet.has(lower)) {
+      valid.push(lower);
+    } else if (BOROUGH_ALIASES[lower]) {
+      valid.push(BOROUGH_ALIASES[lower]);
+    } else {
+      invalid.push(borough);
+    }
+  }
+
+  return { valid, invalid };
+}
+
+/**
+ * Find similar borough names for suggestions
+ */
+export function findSimilarBoroughs(invalidNames: string[]): string[] {
+  const suggestions: string[] = [];
+  const allBoroughs = [...VALID_BOROUGHS];
+
+  for (const invalid of invalidNames) {
+    const invalidLower = invalid.toLowerCase();
+    const scored = allBoroughs
+      .map((valid) => ({
+        name: valid,
+        distance: levenshteinDistance(invalidLower, valid),
+      }))
+      .sort((a, b) => a.distance - b.distance);
+
+    if (scored[0] && scored[0].distance < Math.max(3, invalidLower.length / 2)) {
+      if (!suggestions.includes(scored[0].name)) {
+        suggestions.push(scored[0].name);
+      }
+    }
+  }
+
+  return suggestions;
+}
+
+// Build amenity lookup with common aliases for fuzzy matching
+const AMENITY_ALIASES: Record<string, string> = {
+  // Common natural language variations
+  "washer/dryer": "washer_dryer",
+  "washer and dryer": "washer_dryer",
+  "washer_and_dryer": "washer_dryer",
+  "laundry_in_unit": "washer_dryer",
+  "in_unit_laundry": "washer_dryer",
+  "in-unit laundry": "washer_dryer",
+  "ac": "central_ac",
+  "air_conditioning": "central_ac",
+  "air conditioning": "central_ac",
+  "a/c": "central_ac",
+  "hardwood": "hardwood_floors",
+  "pet_friendly": "pets",
+  "pet-friendly": "pets",
+  "dog_friendly": "dogs",
+  "cat_friendly": "cats",
+  "roof_deck": "roofdeck",
+  "roof deck": "roofdeck",
+  "outdoor_space": "public_outdoor_space",
+  "outdoor space": "public_outdoor_space",
+  "children_playroom": "childrens_playroom",
+  "childrens playroom": "childrens_playroom",
+  "bike_storage": "bike_room",
+  "bike storage": "bike_room",
+  "bicycle room": "bike_room",
+  "parking_garage": "garage",
+  "fitness": "gym",
+  "fitness_center": "gym",
+  "fitness center": "gym",
+  "swimming_pool": "pool",
+  "swimming pool": "pool",
+  "water_view": "waterview",
+  "water view": "waterview",
+};
+
+/**
+ * Validate amenities against known list with fuzzy matching
  */
 export function validateAmenities(amenities: string[]): {
   valid: string[];
   invalid: string[];
 } {
   const amenitySet = new Set(VALID_AMENITIES as readonly string[]);
+  // Build lowercase lookup for case-insensitive matching
+  const amenityLowerMap = new Map<string, string>();
+  for (const amenity of VALID_AMENITIES) {
+    amenityLowerMap.set(amenity.toLowerCase(), amenity);
+  }
+
   const valid: string[] = [];
   const invalid: string[] = [];
 
   for (const amenity of amenities) {
+    // Try exact match first
     if (amenitySet.has(amenity)) {
       valid.push(amenity);
-    } else {
-      invalid.push(amenity);
+    }
+    // Try case-insensitive match
+    else if (amenityLowerMap.has(amenity.toLowerCase())) {
+      valid.push(amenityLowerMap.get(amenity.toLowerCase())!);
+    }
+    // Try alias lookup
+    else if (AMENITY_ALIASES[amenity.toLowerCase()]) {
+      valid.push(AMENITY_ALIASES[amenity.toLowerCase()]);
+    }
+    // Try replacing spaces/hyphens with underscores
+    else {
+      const normalized = amenity.toLowerCase().replace(/[\s-]/g, "_");
+      if (amenityLowerMap.has(normalized)) {
+        valid.push(amenityLowerMap.get(normalized)!);
+      } else {
+        invalid.push(amenity);
+      }
     }
   }
 
