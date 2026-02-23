@@ -137,5 +137,24 @@ export type CombinedPropertyDetails = Property & PropertyDetails & PropertyAnaly
   nearest_pois?: PropertyNearestPois[];
 };
 
+export type AdditionalFee = {
+  name: string;
+  amount: number | null;
+  type: 'dollars' | 'percentage' | 'months' | '';
+  recurring: boolean;
+};
+
+export type PriceHistoryPoint = {
+  date: string;
+  price: number;
+};
+
+export type NeighborhoodContext = {
+  median_price: number | null;
+  avg_days_on_market: number | null;
+  active_listing_count: number | null;
+  avg_days_to_rent: number | null;
+};
+
 export type ChatMessage = { role: "user" | "assistant"; message?: string; tool?: string };
 export type ChatHistory = ChatMessage[];

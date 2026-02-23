@@ -1,5 +1,5 @@
 // /app/listings/[id]/page.tsx
-import { fetchPropertyPage } from "@/app/lib/data";
+import { fetchPropertyPage, fetchNeighborhoodContext } from "@/app/lib/data";
 import BookmarkIcon from "@/app/ui/icons/BookmarkIcon";
 import {
   LinkIcon
@@ -12,6 +12,8 @@ import ListingsAmenitiesPanel from "@/app/ui/listingspage/ListingsAmentitiesPane
 import ListingsLocationPanel from "@/app/ui/listingspage/ListingsLocationPanel";
 import ListingsTransportationPanel from "@/app/ui/listingspage/ListingsTransportationPanel";
 import ListingsDescriptionPanel from "@/app/ui/listingspage/ListingsDescriptionPanel";
+import DealScoreSummary from "@/app/ui/analytics/DealScoreSummary";
+import BuildingUnitsPanel from "@/app/ui/listingspage/BuildingUnitsPanel";
 import { FormatDisplayText } from "@/app/ui/utilities";
 
 interface PropertyPageProps {
@@ -22,6 +24,13 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   // Fetch the combined property details (property, details, tags, etc.)
   const pageParams = await params;
   const listingDetails = await fetchPropertyPage(pageParams.id);
+
+  // Fetch neighborhood context in parallel (cheap aggregate query)
+  const neighborhoodContext = await fetchNeighborhoodContext(
+    listingDetails.neighborhood,
+    listingDetails.bedrooms ?? 0
+  );
+
   const mapboxToken = process.env.MAPBOX_TOKEN;
 
   const mapImage = mapboxToken
@@ -40,7 +49,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     <main className="container mx-auto px-4 py-8 w-full lg:w-4/5">
       {/* Two-Column Layout for Property Details */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
-        {/* Carousel Section */}
+        {/* Left Column: Carousel, Description, Amenities, Building Units */}
         <div className="flex flex-col gap-4 lg:col-span-3">
           <div className="glass-panel p-4 md:p-5">
             {/* Breadcrumbs + Actions */}
@@ -83,17 +92,39 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           <div className="glass-panel p-4 md:p-5">
             <ListingsAmenitiesPanel listingDetails={listingDetails} />
           </div>
+          {/* Building Units */}
+          {listingDetails.building_id && (
+            <div className="glass-panel p-4 md:p-5">
+              <BuildingUnitsPanel
+                propertyId={listingDetails.id}
+                buildingId={listingDetails.building_id}
+                currentPrice={listingDetails.price}
+                currentSqft={listingDetails.sqft}
+              />
+            </div>
+          )}
         </div>
-        {/* Right Column: Main Property Details */}
+        {/* Right Column: Details, Deal Summary, Pricing, Transportation, Location */}
         <div className="flex flex-col gap-4 lg:col-span-2">
-          {/* Property Title */}
+          {/* Property Title + Timeline */}
           <div className="glass-panel p-4 md:p-5">
-            <ListingsDetailsPanel listingDetails={listingDetails} />
+            <ListingsDetailsPanel
+              listingDetails={listingDetails}
+              neighborhoodContext={neighborhoodContext}
+            />
           </div>
 
-          {/* Price and Basic Stats */}
+          {/* Deal Score Summary */}
           <div className="glass-panel p-4 md:p-5">
-            <ListingsPricingPanel listingDetails={listingDetails} />
+            <DealScoreSummary listingDetails={listingDetails} />
+          </div>
+
+          {/* Price, Fee Breakdown, Price History */}
+          <div className="glass-panel p-4 md:p-5">
+            <ListingsPricingPanel
+              listingDetails={listingDetails}
+              neighborhoodContext={neighborhoodContext}
+            />
           </div>
 
           {/* Transportation Info */}
