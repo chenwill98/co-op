@@ -454,14 +454,25 @@ export async function parseClaudeResultsToPrismaSQL(
     `;
   }
   
-  // Add ORDER BY if needed
-  if (tagArray.length > 0) {
+  // Add ORDER BY with default relevance sorting
+  if (tagArray.length > 0 && orderBy) {
+    // Tags + explicit sort: respect user's sort, use tag_match_count and relevance as tiebreakers
     baseQuery = Prisma.sql`${baseQuery}
-    ORDER BY tag_match_count DESC${orderBy ? Prisma.raw(`, ${Object.keys(orderBy)[0]} ${orderBy[Object.keys(orderBy)[0]]}`) : Prisma.empty}
+    ORDER BY ${Prisma.raw(`${Object.keys(orderBy)[0]} ${orderBy[Object.keys(orderBy)[0]]}`)}, tag_match_count DESC, relevance_score DESC NULLS LAST, listed_at DESC NULLS LAST
+    `;
+  } else if (tagArray.length > 0) {
+    // Tags, no explicit sort: rank by tag matches, then relevance, then recency
+    baseQuery = Prisma.sql`${baseQuery}
+    ORDER BY tag_match_count DESC, relevance_score DESC NULLS LAST, listed_at DESC NULLS LAST
     `;
   } else if (orderBy) {
+    // No tags, explicit sort: respect user's sort, use relevance as tiebreaker
     baseQuery = Prisma.sql`${baseQuery}
-    ORDER BY ${Prisma.raw(`${Object.keys(orderBy)[0]} ${orderBy[Object.keys(orderBy)[0]]}`)}`;
+    ORDER BY ${Prisma.raw(`${Object.keys(orderBy)[0]} ${orderBy[Object.keys(orderBy)[0]]}`)}, relevance_score DESC NULLS LAST, listed_at DESC NULLS LAST`;
+  } else {
+    // No tags, no explicit sort: default to relevance + recency
+    baseQuery = Prisma.sql`${baseQuery}
+    ORDER BY relevance_score DESC NULLS LAST, listed_at DESC NULLS LAST`;
   }
   
   // Add LIMIT and OFFSET
