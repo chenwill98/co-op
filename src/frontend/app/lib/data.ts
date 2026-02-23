@@ -187,8 +187,8 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-      fct_price: property.fct_price && typeof property.fct_price === 'object' && 'toNumber' in property.fct_price ? property.fct_price.toNumber() : Number(property.fct_price ?? 0),
-      relevance_score: property.relevance_score && typeof property.relevance_score === 'object' && 'toNumber' in property.relevance_score ? property.relevance_score.toNumber() : (property.relevance_score != null ? Number(property.relevance_score) : null),
+      fct_price: property.fct_price ?? 0,
+      relevance_score: property.relevance_score ? property.relevance_score.toNumber() : null,
       tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
       additional_fees: property.additional_fees ? property.additional_fees : null,
     };
