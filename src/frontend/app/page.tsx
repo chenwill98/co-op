@@ -5,7 +5,7 @@ import {
 } from "@heroicons/react/24/outline";
 import TypingInput from "@/app/ui/search/TypingInput";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useListingsContext } from "@/app/context/ListingsContext";
 import AnimatedText from "./components/AnimatedText";
 import MapBackground from "./components/MapBackground";
@@ -81,21 +81,64 @@ export default function Page() {
     setTagline(taglines[Math.floor(Math.random() * taglines.length)]);
   }, []);
 
+  // Auto-fit tagline font size to stay on one line
+  const taglineRef = useRef<HTMLDivElement>(null);
+  const [taglineFontSize, setTaglineFontSize] = useState<number | null>(null);
+
+  const fitTagline = useCallback(() => {
+    const el = taglineRef.current;
+    if (!el || !tagline) return;
+
+    const maxFontSize = 60; // text-6xl equivalent in px
+    const minFontSize = 24;
+    const containerWidth = el.parentElement!.clientWidth;
+
+    // Binary search for the largest font size that fits on one line
+    let low = minFontSize;
+    let high = maxFontSize;
+    el.style.whiteSpace = 'nowrap';
+
+    while (high - low > 1) {
+      const mid = Math.floor((low + high) / 2);
+      el.style.fontSize = `${mid}px`;
+      if (el.scrollWidth <= containerWidth) {
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+
+    el.style.whiteSpace = '';
+    setTaglineFontSize(low);
+  }, [tagline]);
+
+  useEffect(() => {
+    fitTagline();
+    window.addEventListener('resize', fitTagline);
+    return () => window.removeEventListener('resize', fitTagline);
+  }, [fitTagline]);
+
   return (
     <>
       <MapBackground />
       <main
         className="flex h-[calc(100vh-64px)] flex-col items-center justify-center relative z-10"
       >
-        <div className="text-6xl font-bold mb-10 text-primary p-6 text-center max-w-[75%]
-          drop-shadow-sm [text-shadow:_0_2px_8px_rgb(255_255_255_/_40%)]">
-          {tagline && (
-            <AnimatedText
-              text={tagline}
-              charDelay={15}
-              startDelay={3000} // 3 second delay before starting the animation
-            />
-          )}
+        <div className="w-[75%] mb-10 p-6 text-center">
+          <div
+            ref={taglineRef}
+            className="font-bold text-primary whitespace-nowrap
+              drop-shadow-sm [text-shadow:_0_2px_8px_rgb(255_255_255_/_40%)]"
+            style={{ fontSize: taglineFontSize ? `${taglineFontSize}px` : '60px' }}
+          >
+            {tagline && (
+              <AnimatedText
+                text={tagline}
+                charDelay={15}
+                startDelay={3000}
+              />
+            )}
+          </div>
         </div>
         <div
           className="card w-3/5 animate-fade-up-delayed mb-20
