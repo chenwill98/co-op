@@ -7,6 +7,7 @@ import { ArrowUpIcon, BarsArrowUpIcon, XMarkIcon } from '@heroicons/react/24/out
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useListingsContext } from '@/app/context/ListingsContext';
+import Markdown from 'react-markdown';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -31,6 +32,9 @@ export default function ChatBox() {
   });
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Suggested queries from conversational responses
+  const [suggestedQueries, setSuggestedQueries] = useState<string[]>([]);
 
   // Loading state with NYC flavor text
   const [loading, setLoading] = useState(false);
@@ -97,12 +101,14 @@ export default function ChatBox() {
   };
 
   // Fetch listings using the new LangGraph chat API
-  const fetchListings = useCallback(async (text: string) => {
+  // freshSearch=true skips sending existing filters (used for suggested query chips)
+  const fetchListings = useCallback(async (text: string, freshSearch: boolean = false) => {
     if (!text.trim() || !threadId || !isThreadIdReady) return;
 
     setLoading(true);
     setIsCollapsed(false);
     setError(null);
+    setSuggestedQueries([]);
 
     // Add user message to chat
     setChatMessages(prev => [...prev, { role: 'user', content: text }]);
@@ -115,7 +121,7 @@ export default function ChatBox() {
           message: text,
           threadId,
           stream: false,
-          existingFilters: queryRecord,
+          existingFilters: freshSearch ? {} : queryRecord,
         }),
       });
 
@@ -134,16 +140,25 @@ export default function ChatBox() {
 
       const data = await res.json();
 
-      // Update context with results
-      setAll(
-        Array.isArray(data.results) ? data.results : [],
-        data.searchFilters || {},
-        threadId
-      );
+      // Only update listings/filters for search responses
+      if (data.responseType !== "conversational") {
+        setAll(
+          Array.isArray(data.results) ? data.results : [],
+          data.searchFilters || {},
+          threadId
+        );
+      }
 
       // Add assistant message to chat
       if (data.responseMessage) {
         setChatMessages(prev => [...prev, { role: 'assistant', content: data.responseMessage }]);
+      }
+
+      // Store suggested queries for rendering as clickable chips
+      if (data.suggestedQueries?.length > 0) {
+        setSuggestedQueries(data.suggestedQueries);
+      } else {
+        setSuggestedQueries([]);
       }
 
       // Clear the input
@@ -205,6 +220,7 @@ export default function ChatBox() {
   // Clear chat and start fresh
   const handleClearChat = () => {
     setChatMessages([]);
+    setSuggestedQueries([]);
     processingPendingRef.current = false;
     const newThreadId = resetThreadId();
     setAll([], {}, newThreadId);
@@ -412,10 +428,34 @@ export default function ChatBox() {
                             <div
                               className={`chat-bubble ${msg.role === 'user' ? 'chat-bubble-primary' : 'bg-primary/15 text-base-content'}`}
                             >
-                              {msg.content}
+                              {msg.role === 'assistant' ? (
+                                <div className="chat-markdown prose prose-sm max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_strong]:font-semibold">
+                                  <Markdown>{msg.content}</Markdown>
+                                </div>
+                              ) : (
+                                msg.content
+                              )}
                             </div>
                           </div>
                         ))}
+
+                        {/* Suggested query chips */}
+                        {suggestedQueries.length > 0 && !loading && (
+                          <div className="flex flex-wrap gap-2 px-2 py-1">
+                            {suggestedQueries.map((query, idx) => (
+                              <button
+                                key={idx}
+                                className="badge badge-outline badge-primary cursor-pointer hover:badge-primary hover:text-primary-content text-xs"
+                                onClick={() => {
+                                  setSuggestedQueries([]);
+                                  fetchListings(query, true);
+                                }}
+                              >
+                                {query}
+                              </button>
+                            ))}
+                          </div>
+                        )}
 
                         {/* Loading indicator with NYC flavor */}
                         {loading && (

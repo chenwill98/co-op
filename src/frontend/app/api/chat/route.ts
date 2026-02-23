@@ -38,6 +38,8 @@ export async function POST(request: Request) {
         resultCount: result.resultCount,
         searchFilters: result.searchFilters,
         responseMessage: result.responseMessage,
+        responseType: result.intent || "search",
+        suggestedQueries: result.suggestedQueries || [],
       });
     }
 

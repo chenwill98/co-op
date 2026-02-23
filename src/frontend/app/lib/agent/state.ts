@@ -89,6 +89,18 @@ export const SearchAgentState = Annotation.Root({
     default: () => "",
   }),
 
+  // Intent classification: search or conversational
+  intent: Annotation<"search" | "conversational">({
+    reducer: (_left, right) => right,
+    default: () => "search" as const,
+  }),
+
+  // Suggested search queries for conversational responses
+  suggestedQueries: Annotation<string[]>({
+    reducer: (_left, right) => right,
+    default: () => [],
+  }),
+
   // Retry count for validation loop (per-invocation, not global)
   retryCount: Annotation<number>({
     reducer: (_left, right) => right,
