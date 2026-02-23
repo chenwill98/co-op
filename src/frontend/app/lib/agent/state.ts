@@ -18,7 +18,13 @@ export function deepMergeFilters(
   const result: ClaudeResponse = { ...left };
 
   for (const [key, value] of Object.entries(right)) {
-    if (value === null || value === undefined) {
+    // Explicit null means "remove this filter"
+    if (value === null) {
+      delete result[key];
+      continue;
+    }
+
+    if (value === undefined) {
       continue;
     }
 
@@ -105,6 +111,12 @@ export const SearchAgentState = Annotation.Root({
   retryCount: Annotation<number>({
     reducer: (_left, right) => right,
     default: () => 0,
+  }),
+
+  // Warning message from validation (e.g., stripped tags)
+  validationWarning: Annotation<string | null>({
+    reducer: (_left, right) => right,
+    default: () => null,
   }),
 });
 

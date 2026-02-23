@@ -35,6 +35,7 @@ function makeState(
     intent: "search",
     suggestedQueries: [],
     retryCount: 0,
+    validationWarning: null,
     ...overrides,
   };
 }

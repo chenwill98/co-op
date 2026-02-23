@@ -7,6 +7,8 @@ import {
   SearchFiltersSchema,
   loadValidNeighborhoods,
   validateNeighborhoods,
+  validateBoroughs,
+  findSimilarBoroughs,
   validateAmenities,
   validateTags,
   findSimilarNeighborhoods,
@@ -97,61 +99,96 @@ CRITICAL RULES:
 2. For tags, only use tags from the provided TAG_LIST
 3. For range fields (price, bedrooms, bathrooms, sqft), use min/max objects
 4. If a value isn't specified, omit the field entirely
-5. Be conservative - don't add filters the user didn't ask for`,
+5. Be conservative - don't add filters the user didn't ask for
+6. To REMOVE a filter (e.g., "remove the price filter"), set it to null`,
     schema: z.object({
       price: z
         .object({
           min: z.number().nullable().optional().describe("Minimum price"),
           max: z.number().nullable().optional().describe("Maximum price"),
         })
+        .nullable()
         .optional()
-        .describe("Price range filter"),
+        .describe("Price range filter. Set to null to remove."),
       bedrooms: z
         .object({
-          min: z.number().nullable().optional().describe("Minimum bedrooms"),
-          max: z.number().nullable().optional().describe("Maximum bedrooms"),
+          min: z.number().nullable().optional().describe("Minimum bedrooms (0 = studio)"),
+          max: z.number().nullable().optional().describe("Maximum bedrooms (0 = studio)"),
         })
+        .nullable()
         .optional()
-        .describe("Bedroom count filter"),
+        .describe("Bedroom count filter. Use min:0, max:0 for studios. Set to null to remove."),
       bathrooms: z
         .object({
           min: z.number().nullable().optional().describe("Minimum bathrooms"),
           max: z.number().nullable().optional().describe("Maximum bathrooms"),
         })
+        .nullable()
         .optional()
-        .describe("Bathroom count filter"),
+        .describe("Bathroom count filter. Set to null to remove."),
       property_type: z
         .union([z.string(), z.array(z.string())])
+        .nullable()
         .optional()
-        .describe("Property type: condo, rental, townhouse, house, coop, multi-family, condop"),
+        .describe("Property type: condo, rental, townhouse, house, coop, multi-family, condop. Set to null to remove."),
       neighborhood: z
         .array(z.string())
+        .nullable()
         .optional()
-        .describe("Neighborhoods to search in"),
+        .describe("Neighborhoods to search in. Set to null to remove."),
       borough: z
         .union([z.string(), z.array(z.string())])
+        .nullable()
         .optional()
-        .describe("Borough: manhattan, brooklyn, queens, bronx, staten island"),
+        .describe("Borough: manhattan, brooklyn, queens, bronx, staten island. Set to null to remove."),
       zipcode: z
         .union([z.string(), z.array(z.string())])
+        .nullable()
         .optional()
-        .describe("ZIP codes to search"),
+        .describe("ZIP codes to search. Set to null to remove."),
       tag_list: z
         .array(z.string())
+        .nullable()
         .optional()
-        .describe("Property tags like 'luxury', 'pet-friendly', 'renovated'"),
+        .describe("Property tags like 'luxury', 'pet-friendly', 'renovated'. Set to null to remove."),
       amenities: z
         .array(z.string())
+        .nullable()
         .optional()
-        .describe("Amenities like 'gym', 'pool', 'doorman'"),
-      no_fee: z.boolean().optional().describe("True for no broker fee properties"),
+        .describe("Amenities like 'gym', 'pool', 'doorman'. Set to null to remove."),
+      no_fee: z.boolean().nullable().optional().describe("True for no broker fee properties. Set to null to remove."),
       sqft: z
         .object({
           min: z.number().nullable().optional(),
           max: z.number().nullable().optional(),
         })
+        .nullable()
         .optional()
-        .describe("Square footage range"),
+        .describe("Square footage range. Set to null to remove."),
+      days_on_market: z
+        .object({
+          min: z.number().nullable().optional().describe("Minimum days on market"),
+          max: z.number().nullable().optional().describe("Maximum days on market"),
+        })
+        .nullable()
+        .optional()
+        .describe("How long the property has been listed. E.g., 'listed in the last 7 days' → max: 7. Set to null to remove."),
+      built_in: z
+        .object({
+          min: z.number().nullable().optional().describe("Earliest year built"),
+          max: z.number().nullable().optional().describe("Latest year built"),
+        })
+        .nullable()
+        .optional()
+        .describe("Year the building was constructed. E.g., 'before 1940' → max: 1940. Set to null to remove."),
+      brokers_fee: z
+        .object({
+          min: z.number().nullable().optional().describe("Minimum broker fee percentage"),
+          max: z.number().nullable().optional().describe("Maximum broker fee percentage"),
+        })
+        .nullable()
+        .optional()
+        .describe("Broker fee percentage range. Set to null to remove."),
     }),
   }
 );
@@ -256,11 +293,15 @@ Please fix the issue and try again. Original query: ${userQuery}`;
     contextMessage = `IMPORTANT: The user has an active search with these filters:
 ${JSON.stringify(state.searchFilters, null, 2)}
 
-They are asking to MODIFY this search. You MUST:
-1. Return ONLY the fields they want to change
-2. DO NOT return unchanged fields - they will be preserved automatically by the system
-3. For example, if they say "change max price to 5000", return only: {"price": {"max": 5000}}
-4. If they ask for a completely new search (e.g., "search for studios in Brooklyn"), return the full new filter set`;
+They may be MODIFYING this search or starting a COMPLETELY NEW search. You MUST:
+1. For MODIFICATIONS: Return ONLY the fields they want to change. Unchanged fields are preserved automatically.
+   Example: "change max price to 5000" → {"price": {"max": 5000}}
+2. To REMOVE a filter: Set it to null.
+   Example: "remove the price filter" → {"price": null}
+3. For a COMPLETELY NEW search (e.g., "search for studios in Brooklyn" or "something completely different"):
+   Return ALL fields for the new search AND set removed filters to null.
+   Example: If old filters have price and neighborhood, but new search is just "studios in Queens":
+   → {"bedrooms": {"min": 0, "max": 0}, "borough": "queens", "price": null, "neighborhood": null}`;
   }
 
   try {
@@ -329,6 +370,7 @@ They are asking to MODIFY this search. You MUST:
       searchFilters: mergedFilters,
       suggestedQueries: [],
       validationError: null,
+      retryCount: 0,
     };
   } catch (error) {
     console.error("[parseQueryNode] Error:", error);
@@ -364,7 +406,30 @@ export async function validateFiltersNode(
     return validationError(`Invalid filter format: ${errorMessages}`);
   }
 
-  // 2. Validate neighborhoods exist in DB
+  // 2. Validate boroughs
+  if (filters.borough) {
+    const boroughList = Array.isArray(filters.borough)
+      ? filters.borough as string[]
+      : [filters.borough as string];
+    const boroughValidation = validateBoroughs(boroughList);
+
+    if (boroughValidation.invalid.length > 0) {
+      const invalid = boroughValidation.invalid;
+      const suggestions = findSimilarBoroughs(invalid);
+      const suggestionText =
+        suggestions.length > 0 ? ` Did you mean: ${suggestions.join(", ")}?` : "";
+      return validationError(`Unknown boroughs: ${invalid.join(", ")}.${suggestionText} Valid boroughs are: manhattan, brooklyn, queens, bronx, staten island.`);
+    }
+
+    // Normalize borough values (apply alias resolution)
+    if (boroughValidation.valid.length === 1 && !Array.isArray(filters.borough)) {
+      filters.borough = boroughValidation.valid[0];
+    } else {
+      filters.borough = boroughValidation.valid;
+    }
+  }
+
+  // 3. Validate neighborhoods exist in DB
   if (filters.neighborhood && filters.neighborhood.length > 0) {
     const neighborhoodValidation = await validateNeighborhoods(filters.neighborhood as string[]);
 
@@ -378,26 +443,31 @@ export async function validateFiltersNode(
     }
   }
 
-  // 3. Validate amenities
+  // 4. Validate amenities (with fuzzy matching)
   if (filters.amenities && filters.amenities.length > 0) {
     const amenityValidation = validateAmenities(filters.amenities as string[]);
-    const invalid = amenityValidation.invalid;
-    if (invalid.length > 0) {
-      return validationError(`Unknown amenities: ${invalid.join(", ")}. Check available amenities in the database schema.`);
+    if (amenityValidation.invalid.length > 0) {
+      return validationError(`Unknown amenities: ${amenityValidation.invalid.join(", ")}. Check available amenities in the database schema.`);
     }
+    // Apply normalized amenity names (fuzzy matching may have corrected them)
+    filters.amenities = amenityValidation.valid;
   }
 
-  // 4. Validate tags - strip invalid ones immediately (don't retry)
+  // 5. Validate tags - strip invalid ones immediately (don't retry)
+  let allTagsStripped = false;
   if (filters.tag_list && filters.tag_list.length > 0) {
     const tagValidation = validateTags(filters.tag_list as string[]);
     if (tagValidation.invalid.length > 0) {
       console.log(`[validateFiltersNode] Stripping invalid tags: ${tagValidation.invalid.join(", ")}`);
-      // Track the stripped tags but DON'T return early - let rest of validation run
       strippedTagList = tagValidation.valid;
+      if (tagValidation.valid.length === 0) {
+        allTagsStripped = true;
+        console.log(`[validateFiltersNode] All tags were invalid and stripped`);
+      }
     }
   }
 
-  // 5. Sanity checks on ranges
+  // 6. Sanity checks on ranges
   const price = filters.price as { min?: number | null; max?: number | null } | undefined;
   if (price?.min != null && price?.max != null && price.min > price.max) {
     return validationError(`Price min ($${price.min}) cannot exceed max ($${price.max})`);
@@ -414,12 +484,19 @@ export async function validateFiltersNode(
     ? { ...filters, tag_list: strippedTagList }
     : filters;
 
+  // Build validation warning if tags were stripped
+  let validationWarning: string | null = null;
+  if (allTagsStripped) {
+    validationWarning = "None of the requested tags matched our database, so the tag filter was removed. Results are shown without tag filtering.";
+  }
+
   console.log(`[validateFiltersNode] Returning finalSearchFilters:`, JSON.stringify(finalSearchFilters, null, 2));
 
   return {
     validationError: null,
     retryCount: 0,
     searchFilters: finalSearchFilters,
+    validationWarning,
   };
 }
 
@@ -434,8 +511,10 @@ export async function executeSearchNode(
   try {
     // Use existing parseClaudeResultsToPrismaSQL function
     const [query] = await parseClaudeResultsToPrismaSQL(filters, undefined, 20, 0);
+    // Also get total count (without LIMIT) for accurate reporting
+    const [countQuery] = await parseClaudeResultsToPrismaSQL(filters, undefined, undefined, undefined);
 
-    // Execute the query
+    // Execute both queries in parallel
     type RawProperty = {
       price?: { toNumber: () => number };
       bathrooms?: { toNumber: () => number };
@@ -451,7 +530,10 @@ export async function executeSearchNode(
       additional_fees?: unknown;
     };
 
-    const rawResults = await prisma.$queryRaw<RawProperty[]>(query);
+    const [rawResults, countResults] = await Promise.all([
+      prisma.$queryRaw<RawProperty[]>(query),
+      prisma.$queryRaw<RawProperty[]>(countQuery).then(r => r.length),
+    ]);
 
     // Format the results
     const results = rawResults.map((property) => ({
@@ -472,7 +554,7 @@ export async function executeSearchNode(
 
     return {
       results,
-      resultCount: results.length,
+      resultCount: countResults as number,
     };
   } catch (error) {
     console.error("[executeSearchNode] Error:", error);
@@ -490,7 +572,7 @@ export async function executeSearchNode(
 export async function formatResponseNode(
   state: SearchAgentStateType
 ): Promise<Partial<SearchAgentStateType>> {
-  const { resultCount, searchFilters } = state;
+  const { resultCount, searchFilters, validationWarning } = state;
 
   // Build a human-readable description of the filters
   const filterParts: string[] = [];
@@ -507,13 +589,19 @@ export async function formatResponseNode(
   }
 
   const bedrooms = searchFilters.bedrooms as { min?: number | null; max?: number | null } | undefined;
-  if (bedrooms?.min || bedrooms?.max) {
-    if (bedrooms.min === bedrooms.max && bedrooms.min) {
-      filterParts.push(`${bedrooms.min} bedroom${bedrooms.min !== 1 ? "s" : ""}`);
-    } else if (bedrooms.min && bedrooms.max) {
-      filterParts.push(`${bedrooms.min}-${bedrooms.max} bedrooms`);
-    } else if (bedrooms.min) {
-      filterParts.push(`${bedrooms.min}+ bedrooms`);
+  if (bedrooms?.min != null || bedrooms?.max != null) {
+    if (bedrooms!.min != null && bedrooms!.min === bedrooms!.max) {
+      if (bedrooms!.min === 0) {
+        filterParts.push("studios");
+      } else {
+        filterParts.push(`${bedrooms!.min} bedroom${bedrooms!.min !== 1 ? "s" : ""}`);
+      }
+    } else if (bedrooms!.min != null && bedrooms!.max != null) {
+      filterParts.push(`${bedrooms!.min}-${bedrooms!.max} bedrooms`);
+    } else if (bedrooms!.min != null) {
+      filterParts.push(`${bedrooms!.min}+ bedrooms`);
+    } else if (bedrooms!.max != null) {
+      filterParts.push(`up to ${bedrooms!.max} bedrooms`);
     }
   }
 
@@ -526,13 +614,38 @@ export async function formatResponseNode(
     }
   }
 
+  const borough = searchFilters.borough as string | string[] | undefined;
+  if (borough) {
+    const boroughList = Array.isArray(borough) ? borough : [borough];
+    if (boroughList.length <= 2) {
+      filterParts.push(`in ${boroughList.map(b => b.charAt(0).toUpperCase() + b.slice(1)).join(" or ")}`);
+    } else {
+      filterParts.push(`in ${boroughList.length} boroughs`);
+    }
+  }
+
   if (searchFilters.no_fee) {
     filterParts.push("no broker fee");
   }
 
+  const amenities = searchFilters.amenities as string[] | undefined;
+  if (amenities?.length) {
+    const displayAmenities = amenities.slice(0, 2).map(a => a.replace(/_/g, " "));
+    filterParts.push(`with ${displayAmenities.join(" and ")}`);
+  }
+
   const tags = searchFilters.tag_list as string[] | undefined;
   if (tags?.length) {
-    filterParts.push(tags.slice(0, 2).join(", "));
+    // Convert tag slugs to human-readable display names
+    const tagDisplayMap = new Map<string, string>();
+    for (const category of Object.values(tagCategories)) {
+      for (const tag of category) {
+        // Strip emoji from display name for response text
+        tagDisplayMap.set(tag.name, tag.display.replace(/\s*[\p{Emoji_Presentation}\p{Extended_Pictographic}]\s*/gu, "").trim());
+      }
+    }
+    const displayTags = tags.slice(0, 3).map(t => tagDisplayMap.get(t) || t);
+    filterParts.push(`tagged ${displayTags.join(", ")}`);
   }
 
   // Generate the response
@@ -547,6 +660,11 @@ export async function formatResponseNode(
     message = filterParts.length > 0
       ? `Found ${resultCount} apartments ${filterParts.join(", ")}.`
       : `Found ${resultCount} apartments matching your search.`;
+  }
+
+  // Append validation warning if present
+  if (validationWarning) {
+    message += ` Note: ${validationWarning}`;
   }
 
   return {

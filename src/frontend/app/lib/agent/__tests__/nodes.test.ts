@@ -59,6 +59,7 @@ function makeState(
     intent: "search",
     suggestedQueries: [],
     retryCount: 0,
+    validationWarning: null,
     ...overrides,
   };
 }
@@ -174,7 +175,7 @@ describe("parseQueryNode — intent classification", () => {
         searchFilters: {
           bedrooms: { min: 2, max: 2 },
           neighborhood: ["Chelsea"],
-          price: { max: 4000 },
+          price: { min: null, max: 4000 },
         },
       })
     );
