@@ -43,6 +43,7 @@ export default function ChatBox() {
 
   // Collapse state for chat
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Ref to prevent double-processing of pending message
   const processingPendingRef = useRef(false);
@@ -205,6 +206,7 @@ export default function ChatBox() {
     if (isCollapsed) return;
     const handleClick = (e: MouseEvent) => {
       if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        setIsExpanded(false);
         setIsCollapsed(true);
       }
     };
@@ -401,8 +403,11 @@ export default function ChatBox() {
                     className={`transition-all duration-300 ease-in-out ${
                       isCollapsed
                         ? 'opacity-0 max-h-0 overflow-hidden'
-                        : 'opacity-100 max-h-96 overflow-visible'
+                        : `opacity-100 max-h-[calc(100vh-12rem)] ${isExpanded ? 'overflow-visible' : 'overflow-hidden'}`
                     }`}
+                    onTransitionEnd={() => {
+                      if (!isCollapsed) setIsExpanded(true);
+                    }}
                   >
                     {/* Error display */}
                     {error && (
@@ -414,7 +419,7 @@ export default function ChatBox() {
                     {/* Chat messages */}
                     {chatMessages.length > 0 && (
                       <div
-                        className="flex flex-col gap-2 py-2 pt-4 max-h-48 overflow-y-auto"
+                        className="flex flex-col gap-2 py-2 pt-4 max-h-[calc(100vh-15rem)] overflow-y-auto"
                         style={{
                           maskImage: 'linear-gradient(to bottom, transparent 0%, black 16px)',
                           WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 16px)',
