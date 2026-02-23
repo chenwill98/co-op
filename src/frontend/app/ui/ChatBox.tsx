@@ -3,7 +3,7 @@
 import { getDisplayTag } from '@/app/lib/tagUtils';
 import { getRandomLoadingMessage } from '@/app/lib/loadingMessages';
 import { formatAmenityName } from './utilities';
-import { ArrowUpIcon, BarsArrowUpIcon, ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowUpIcon, BarsArrowUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useListingsContext } from '@/app/context/ListingsContext';
@@ -38,13 +38,16 @@ export default function ChatBox() {
   const [error, setError] = useState<string | null>(null);
 
   // Collapse state for chat
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   // Ref to prevent double-processing of pending message
   const processingPendingRef = useRef(false);
 
   // Ref for auto-scroll to bottom of chat
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Ref for click-outside collapse
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // ThreadId is now initialized in context - no need for useEffect here
 
@@ -98,6 +101,7 @@ export default function ChatBox() {
     if (!text.trim() || !threadId || !isThreadIdReady) return;
 
     setLoading(true);
+    setIsCollapsed(false);
     setError(null);
 
     // Add user message to chat
@@ -180,6 +184,18 @@ export default function ChatBox() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [sortDropdownOpen]);
+
+  // Click outside card to collapse chat
+  useEffect(() => {
+    if (isCollapsed) return;
+    const handleClick = (e: MouseEvent) => {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        setIsCollapsed(true);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isCollapsed]);
 
   // Auto-scroll to bottom when messages change or loading state changes
   useEffect(() => {
@@ -346,7 +362,7 @@ export default function ChatBox() {
       <div className="container mx-auto pointer-events-auto w-full px-4 md:w-5/6 lg:w-5/7">
         <div className="flex flex-row">
           <div className="flex-grow p-4">
-            <div className="card bg-base-100/80 backdrop-blur-lg rounded-4xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] mx-auto">
+            <div ref={cardRef} className="card bg-base-100/80 backdrop-blur-lg rounded-4xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] mx-auto">
               <div className="card-body p-3">
                 <div className="flex flex-col">
                   {/* Filter badges - ALWAYS visible */}
@@ -434,17 +450,9 @@ export default function ChatBox() {
                       value={filters.text}
                       onChange={e => handleInputChange('text', e.target.value)}
                       onKeyDown={handleInputKeyDown}
+                      onFocus={() => setIsCollapsed(false)}
                       disabled={loading}
                     />
-
-                    {/* Collapse toggle button */}
-                    <button
-                      className="btn btn-circle btn-ghost btn-sm mr-1"
-                      onClick={() => setIsCollapsed(!isCollapsed)}
-                      title={isCollapsed ? "Expand chat" : "Collapse chat"}
-                    >
-                      {isCollapsed ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
-                    </button>
 
                     {/* Sort Dropdown */}
                     <div className="dropdown dropdown-top dropdown-end">

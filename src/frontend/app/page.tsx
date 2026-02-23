@@ -87,7 +87,7 @@ export default function Page() {
       <main
         className="flex h-[calc(100vh-64px)] flex-col items-center justify-center relative z-10"
       >
-        <div className="text-6xl font-bold mb-20 text-primary p-6 overflow-hidden
+        <div className="text-6xl font-bold mb-10 text-primary p-6 text-center max-w-[75%]
           drop-shadow-sm [text-shadow:_0_2px_8px_rgb(255_255_255_/_40%)]">
           {tagline && (
             <AnimatedText
@@ -102,12 +102,12 @@ export default function Page() {
             bg-base-100/80 backdrop-blur-lg
             border border-base-300/50
             shadow-[0_8px_32px_rgba(0,0,0,0.08)]
-            rounded-[2rem]
+            rounded-full
             transition-all duration-300
             hover:shadow-[0_12px_48px_rgba(0,0,0,0.12)]
             hover:border-primary/20"
         >
-          <div className="card-body py-4 px-6">
+          <div className="card-body py-4 pl-6 pr-4">
             <div className="flex flex-row gap-3 items-center">
               <TypingInput onValueChange={(val) => setSearchText(val)} />
               <button

@@ -9,7 +9,7 @@ export default function CoAptLogo({ theme }: { theme: string }) {
     <div
       className={`${sen.className} flex items-center leading-none font-bold text-primary`}
     >
-      <p className="text-4xl">{emoji} Co-Apt</p>
+      <p className="text-2xl">{emoji} Co-Apt</p>
     </div>
   );
 }

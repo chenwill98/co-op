@@ -9,12 +9,15 @@ export function TagList({ category, tags }: { category?: keyof typeof tagCategor
   if (!tags || tags.length === 0) {
     return null;
   }
-  
+
+  // Deduplicate tags (defense in depth - view should already be deduplicated)
+  const uniqueTags = [...new Set(tags)];
+
   // If category is provided, filter tags that belong to that category
   // Otherwise, use all tags
-  const filteredTags = category 
-    ? tags.filter(tag => getTagsInCategory(category).includes(tag))
-    : tags;
+  const filteredTags = category
+    ? uniqueTags.filter(tag => getTagsInCategory(category).includes(tag))
+    : uniqueTags;
   
   if (filteredTags.length === 0) {
     return null;

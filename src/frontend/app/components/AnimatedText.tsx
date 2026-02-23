@@ -25,30 +25,46 @@ export default function AnimatedText({
     }
   }, [startDelay]);
 
+  // Split into words to prevent mid-word line breaks
+  const words = text.split(' ');
+  let charIndex = 0;
+
   return (
     <span className={className}>
-      {shouldAnimate 
-        ? text.split('').map((char, index) => (
-            <span
-              key={index}
-              className="inline-block animate-fade-up"
-              style={{
-                animationDelay: `${index * charDelay}ms`,
-                animationFillMode: 'both',
-              }}
-            >
-              {char === ' ' ? '\u00A0' : char}
+      {words.map((word, wordIndex) => {
+        const startIndex = charIndex;
+        charIndex += word.length + 1; // +1 for the space
+
+        return (
+          <React.Fragment key={wordIndex}>
+            <span className="inline-block whitespace-nowrap">
+              {word.split('').map((char, i) => (
+                <span
+                  key={i}
+                  className={shouldAnimate ? "inline-block animate-fade-up" : "inline-block opacity-0"}
+                  style={shouldAnimate ? {
+                    animationDelay: `${(startIndex + i) * charDelay}ms`,
+                    animationFillMode: 'both',
+                  } : undefined}
+                >
+                  {char}
+                </span>
+              ))}
             </span>
-          ))
-        : text.split('').map((char, index) => (
-            <span
-              key={index}
-              className="inline-block opacity-0"
-            >
-              {char === ' ' ? '\u00A0' : char}
-            </span>
-          ))
-      }
+            {wordIndex < words.length - 1 && (
+              <span
+                className={shouldAnimate ? "inline-block animate-fade-up" : "inline-block opacity-0"}
+                style={shouldAnimate ? {
+                  animationDelay: `${(startIndex + word.length) * charDelay}ms`,
+                  animationFillMode: 'both',
+                } : undefined}
+              >
+                {'\u00A0'}
+              </span>
+            )}
+          </React.Fragment>
+        );
+      })}
     </span>
   );
 }

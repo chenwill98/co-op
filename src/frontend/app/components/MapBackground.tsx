@@ -12,24 +12,24 @@ const getMapLightPresetFromTheme = (theme: string): string => {
   return theme === 'autumn' ? 'dawn' : 'night';
 };
 
+const getInitialLightPreset = (): string => {
+  try {
+    const savedTheme = localStorage.getItem('co-apt-theme') || 'autumn';
+    return getMapLightPresetFromTheme(savedTheme);
+  } catch {
+    return 'dawn';
+  }
+};
+
 const MapBackground = () => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const [mapLightPreset, setMapLightPreset] = useState('dawn'); // Default to dawn
+  const [mapLightPreset, setMapLightPreset] = useState(getInitialLightPreset);
+  const [mapReady, setMapReady] = useState(false);
   const animationInitiated = useRef(false);
 
-  // Initialize and sync with the UI theme
+  // Listen for theme changes
   useEffect(() => {
-    // Get initial theme from localStorage if available
-    try {
-      const savedTheme = localStorage.getItem('co-apt-theme') || 'autumn';
-      const initialLightPreset = getMapLightPresetFromTheme(savedTheme);
-      setMapLightPreset(initialLightPreset);
-    } catch {
-      // localStorage not available
-    }
-
-    // Listen for theme changes
     const handleThemeChange = (event: Event) => {
       const customEvent = event as CustomEvent<{theme: string}>;
       const newTheme = customEvent.detail.theme;
@@ -51,6 +51,7 @@ const MapBackground = () => {
       mapRef.current.remove();
       mapRef.current = null;
       animationInitiated.current = false;
+      setMapReady(false);
     }
 
     if (!mapContainerRef.current) return;
@@ -75,8 +76,20 @@ const MapBackground = () => {
 
       mapRef.current = map;
 
-      // Start slow panning animation once the map is fully loaded
+      // Apply light preset and start animation once the map is fully loaded
       map.on('load', () => {
+        // Apply the initial light preset now that the style is loaded
+        try {
+          map.setConfigProperty('basemap', 'lightPreset', mapLightPreset);
+        } catch {
+          // Light preset not supported
+        }
+
+        // Wait for the map to finish rendering with the new preset before revealing
+        map.once('idle', () => {
+          setMapReady(true);
+        });
+
         if (!animationInitiated.current) {
           // Wait a couple seconds before starting the animation
           setTimeout(() => {
@@ -117,7 +130,7 @@ const MapBackground = () => {
   return (
     <div
       ref={mapContainerRef}
-      className="fixed inset-0 z-0 w-full h-full"
+      className={`fixed inset-0 z-0 w-full h-full transition-opacity duration-700 ${mapReady ? 'opacity-100' : 'opacity-0'}`}
       style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
       id="map-background"
     />
