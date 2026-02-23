@@ -95,13 +95,13 @@ export async function parseClaudeResultsToPrismaQuery(claudeResults: ClaudeRespo
         const condition: { equals?: number; gte?: number; lte?: number } = {};
 
         // If min and max are the same and not null, use equals
-        if (minVal != null && minVal === maxVal && minVal > 0) {
+        if (minVal != null && minVal === maxVal && minVal >= 0) {
           condition.equals = Number(minVal);
         } else {
-          if (minVal != null && minVal > 0) {
+          if (minVal != null && minVal >= 0) {
             condition.gte = Number(minVal);
           }
-          if (maxVal != null && maxVal > 0) {
+          if (maxVal != null && maxVal >= 0) {
             condition.lte = Number(maxVal);
           }
         }
@@ -282,13 +282,13 @@ export async function parseClaudeResultsToPrismaSQL(
         const minVal = rangeValue.min;
         const maxVal = rangeValue.max;
         // If min and max are the same and not null, use equals
-        if (minVal != null && minVal === maxVal && minVal > 0) {
+        if (minVal != null && minVal === maxVal && minVal >= 0) {
           whereClauseParts.push(`${key} = ${Number(minVal)}`);
         } else {
-          if (minVal != null && minVal > 0) {
+          if (minVal != null && minVal >= 0) {
             whereClauseParts.push(`${key} >= ${Number(minVal)}`);
           }
-          if (maxVal != null && maxVal > 0) {
+          if (maxVal != null && maxVal >= 0) {
             whereClauseParts.push(`${key} <= ${Number(maxVal)}`);
           }
         }
