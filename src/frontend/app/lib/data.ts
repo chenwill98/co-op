@@ -1,7 +1,7 @@
 // Import your database client/ORM here, e.g. Prisma
 import { Prisma } from '@prisma/client';
 import prisma from './prisma'; // Import the serverless-friendly Prisma client
-import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois } from './definitions';
+import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois, NeighborhoodContext } from './definitions';
 import { tagCategories } from './tagUtils';
 import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { prompts } from './promptConfig';
@@ -187,7 +187,8 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-      // Convert any emoji tags to system tags
+      fct_price: property.fct_price && typeof property.fct_price === 'object' && 'toNumber' in property.fct_price ? property.fct_price.toNumber() : Number(property.fct_price ?? 0),
+      relevance_score: property.relevance_score && typeof property.relevance_score === 'object' && 'toNumber' in property.relevance_score ? property.relevance_score.toNumber() : (property.relevance_score != null ? Number(property.relevance_score) : null),
       tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
       additional_fees: property.additional_fees ? property.additional_fees : null,
     };
@@ -321,12 +322,63 @@ export async function fetchPropertyAnalyticsById(id: string): Promise<PropertyAn
       where: { fct_id: id },
     });
 
-    const formattedAnalytics = analytics ? {
-      ...analytics,
-      price: analytics.price?.toNumber(),
-      amenity_score: analytics.amenity_score?.toNumber()
-    } : null;
-    return formattedAnalytics as PropertyAnalyticsDetails | null;
+    if (!analytics) return null;
+
+    // Convert all Decimal fields to plain numbers so they can be passed to Client Components
+    const formatted: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(analytics)) {
+      formatted[key] = value !== null && typeof value === 'object' && 'toNumber' in value
+        ? (value as { toNumber(): number }).toNumber()
+        : value;
+    }
+    return formatted as PropertyAnalyticsDetails;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchNeighborhoodContext(neighborhood: string, bedrooms: number): Promise<NeighborhoodContext | null> {
+  try {
+    type ContextRow = {
+      median_price: { toNumber(): number } | number | null;
+      avg_days_on_market: { toNumber(): number } | number | null;
+      active_listing_count: bigint | number | null;
+      avg_days_to_rent: { toNumber(): number } | number | null;
+    };
+
+    const result = await prisma.$queryRaw<ContextRow[]>`
+      SELECT
+        percentile_cont(0.5) WITHIN GROUP (ORDER BY price) AS median_price,
+        AVG(days_on_market) AS avg_days_on_market,
+        COUNT(*) AS active_listing_count,
+        (SELECT AVG(days_on_market)
+         FROM real_estate.dim_property_details
+         WHERE neighborhood = ${neighborhood} AND bedrooms = ${bedrooms}
+         AND status = 'closed' AND closed_at > NOW() - INTERVAL '90 days'
+        ) AS avg_days_to_rent
+      FROM real_estate.latest_properties_materialized
+      WHERE neighborhood = ${neighborhood} AND bedrooms = ${bedrooms}
+    `;
+
+    if (!result || result.length === 0) return null;
+
+    const row = result[0];
+
+    const toNum = (val: unknown): number | null => {
+      if (val == null) return null;
+      if (typeof val === 'object' && val !== null && 'toNumber' in val) {
+        return (val as { toNumber(): number }).toNumber();
+      }
+      if (typeof val === 'bigint') return Number(val);
+      return typeof val === 'number' ? val : null;
+    };
+
+    return {
+      median_price: toNum(row.median_price),
+      avg_days_on_market: toNum(row.avg_days_on_market),
+      active_listing_count: toNum(row.active_listing_count),
+      avg_days_to_rent: toNum(row.avg_days_to_rent),
+    };
   } catch {
     return null;
   }
