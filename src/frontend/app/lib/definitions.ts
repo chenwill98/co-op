@@ -31,6 +31,7 @@ export type Property = {
     fct_id: string;
     fct_price: number;
     tag_list: string[];
+    relevance_score: number | null;
 }
 
 export interface Neighborhood {

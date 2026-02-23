@@ -86,8 +86,9 @@ model latest_properties_materialized {
   fct_id          String    @id @db.VarChar(100)
   fct_price       Int?
   tag_list String[]
+  relevance_score Decimal?  @db.Decimal(10, 4)
 
-  @@map("latest_properties_materialized") 
+  @@map("latest_properties_materialized")
   @@schema("real_estate")
 }
 
@@ -177,7 +178,8 @@ model dim_property_analytics_view {
   subway_neighborhood_access_percentile Float? @db.DoublePrecision
   poi_neighborhood_access_percentile  Float?   @db.DoublePrecision
   amenity_neighborhood_percentile     Float?   @db.DoublePrecision
-  
-  @@map("dim_property_analytics_view") 
+  absolute_price_modifier             Float?   @db.DoublePrecision
+
+  @@map("dim_property_analytics_view")
   @@schema("real_estate_analytics")
 }
