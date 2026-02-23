@@ -22,83 +22,87 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   // Fetch the combined property details (property, details, tags, etc.)
   const pageParams = await params;
   const listingDetails = await fetchPropertyPage(pageParams.id);
+  const mapboxToken = process.env.MAPBOX_TOKEN;
 
-  const mapImage = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f74e4e(${listingDetails.longitude || '-73.935242'},${listingDetails.latitude || '40.730610'})/${listingDetails.longitude || '-73.935242'},${listingDetails.latitude || '40.730610'},14/600x600@2x?access_token=pk.eyJ1IjoiY2hlbndpbGw5OCIsImEiOiJjbTc4M2JiOWkxZWZtMmtweGRyMHRxenZnIn0.RmSgCA0jq_ejQqDHEUj5Pg`;
+  const mapImage = mapboxToken
+    ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f74e4e(${listingDetails.longitude || '-73.935242'},${listingDetails.latitude || '40.730610'})/${listingDetails.longitude || '-73.935242'},${listingDetails.latitude || '40.730610'},14/600x600@2x?access_token=${mapboxToken}`
+    : null;
 
   // Combine images, videos, and floorplans into one array
   const mediaItems = [
     ...listingDetails.images.map((url) => ({ type: "image", url })),
     ...listingDetails.videos.map((url) => ({ type: "video", url })),
     ...listingDetails.floorplans.map((url) => ({ type: "floorplan", url })),
-    { type: "map", url: mapImage },
+    ...(mapImage ? [{ type: "map", url: mapImage }] : []),
   ] as { type: string; url: string }[];
 
   return (
     <main className="container mx-auto px-4 py-8 w-full lg:w-4/5">
-      {/* Breadcrumbs */}
-      <div className="flex justify-between">
-        <nav className="breadcrumbs" aria-label="breadcrumbs">
-          <ul className="flex items-center">
-            <li>
-              <Link
-                href={`/listings?borough=${FormatDisplayText(listingDetails.borough)}`}
-                className="bg-primary/10 text-primary rounded-full text-xs py-1 px-3 hover:bg-primary/20"
-              >
-                {FormatDisplayText(listingDetails.borough)}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href={`/listings?borough=${FormatDisplayText(listingDetails.borough)}&neighborhood=${FormatDisplayText(listingDetails.neighborhood)}`}
-                className="bg-primary/10 text-primary rounded-full text-xs py-1 px-3 hover:bg-primary/20"
-              >
-                {FormatDisplayText(listingDetails.neighborhood)}
-              </Link>
-            </li>
-            <li className="text-primary text-xs">
-                {listingDetails.address}
-            </li>
-          </ul>
-        </nav>
-        <div className="flex flex-row gap-5 items-center">
-          <BookmarkIcon property={listingDetails} />
-          <a href={listingDetails.url} className="btn rounded-full bg-primary/10 text-primary hover:bg-primary/20 border-0" target="_blank" rel="noopener noreferrer">StreetEasy <LinkIcon className="h-4 w-4 text-primary"/></a>
-        </div>
-      </div>
-
       {/* Two-Column Layout for Property Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6 mt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
         {/* Carousel Section */}
         <div className="flex flex-col gap-4 lg:col-span-3">
-          <ImageCarousel mediaItems={mediaItems} />
+          <div className="glass-panel p-4 md:p-5">
+            {/* Breadcrumbs + Actions */}
+            <div className="flex justify-between items-center mb-4">
+              <nav className="breadcrumbs" aria-label="breadcrumbs">
+                <ul className="flex items-center">
+                  <li>
+                    <Link
+                      href={`/listings?borough=${FormatDisplayText(listingDetails.borough)}`}
+                      className="bg-primary/10 text-primary rounded-full text-xs py-1 px-3 hover:bg-primary/20"
+                    >
+                      {FormatDisplayText(listingDetails.borough)}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href={`/listings?borough=${FormatDisplayText(listingDetails.borough)}&neighborhood=${FormatDisplayText(listingDetails.neighborhood)}`}
+                      className="bg-primary/10 text-primary rounded-full text-xs py-1 px-3 hover:bg-primary/20"
+                    >
+                      {FormatDisplayText(listingDetails.neighborhood)}
+                    </Link>
+                  </li>
+                  <li className="text-primary text-xs">
+                      {listingDetails.address}
+                  </li>
+                </ul>
+              </nav>
+              <div className="flex flex-row gap-5 items-center">
+                <BookmarkIcon property={listingDetails} />
+                <a href={listingDetails.url} className="btn rounded-full bg-primary/10 text-primary hover:bg-primary/20 border-0" target="_blank" rel="noopener noreferrer">StreetEasy <LinkIcon className="h-4 w-4 text-primary"/></a>
+              </div>
+            </div>
+            <ImageCarousel mediaItems={mediaItems} />
+          </div>
           {/* Description Section */}
-          <div className="bg-base-200/40 rounded-xl p-4">
+          <div className="glass-panel p-4 md:p-5">
             <ListingsDescriptionPanel listingDetails={listingDetails} />
           </div>
           {/* Amenities */}
-          <div className="bg-base-200/40 rounded-xl p-4">
+          <div className="glass-panel p-4 md:p-5">
             <ListingsAmenitiesPanel listingDetails={listingDetails} />
           </div>
         </div>
         {/* Right Column: Main Property Details */}
         <div className="flex flex-col gap-4 lg:col-span-2">
           {/* Property Title */}
-          <div className="bg-base-200/40 rounded-xl p-4">
+          <div className="glass-panel p-4 md:p-5">
             <ListingsDetailsPanel listingDetails={listingDetails} />
           </div>
 
           {/* Price and Basic Stats */}
-          <div className="bg-base-200/40 rounded-xl p-4">
+          <div className="glass-panel p-4 md:p-5">
             <ListingsPricingPanel listingDetails={listingDetails} />
           </div>
 
           {/* Transportation Info */}
-          <div className="bg-base-200/40 rounded-xl p-4">
+          <div className="glass-panel p-4 md:p-5">
             <ListingsTransportationPanel listingDetails={listingDetails} />
           </div>
 
           {/* Location Info */}
-          <div className="bg-base-200/40 rounded-xl p-4">
+          <div className="glass-panel p-4 md:p-5">
             <ListingsLocationPanel listingDetails={listingDetails} />
           </div>
         </div>

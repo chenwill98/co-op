@@ -394,7 +394,7 @@ export default function ChatBox() {
                             className={`chat ${msg.role === 'user' ? 'chat-end' : 'chat-start'}`}
                           >
                             <div
-                              className={`chat-bubble ${msg.role === 'user' ? 'chat-bubble-primary' : 'chat-bubble-secondary'}`}
+                              className={`chat-bubble ${msg.role === 'user' ? 'chat-bubble-primary' : 'bg-primary/15 text-base-content'}`}
                             >
                               {msg.content}
                             </div>
@@ -404,7 +404,7 @@ export default function ChatBox() {
                         {/* Loading indicator with NYC flavor */}
                         {loading && (
                           <div className="chat chat-start">
-                            <div className="chat-bubble chat-bubble-secondary flex items-center gap-2">
+                            <div className="chat-bubble bg-primary/15 text-base-content flex items-center gap-2">
                               <span className="loading loading-spinner loading-sm"></span>
                               <span className="text-sm italic">{loadingMessage}</span>
                             </div>

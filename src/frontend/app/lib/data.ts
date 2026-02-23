@@ -211,13 +211,24 @@ export async function fetchPropertyDetailsById(id: string): Promise<PropertyDeta
   try {
     const response = await ddbDocClient.send(new BatchGetCommand(params));
     const items = response.Responses?.PropertyMediaDetails ?? [];
-    
-    // Convert any item with tags to use system tags
-    if (items.length > 0 && items[0].tag_list) {
-      items[0].tag_list = items[0].tag_list.map((tag: string) => tag);
+
+    if (items.length > 0) {
+      const item = items[0];
+
+      // Convert any item with tags to use system tags
+      if (item.tag_list) {
+        item.tag_list = item.tag_list.map((tag: string) => tag);
+      }
+
+      // Map ai_summary from DynamoDB to description_summary for frontend
+      if (item.ai_summary) {
+        item.description_summary = item.ai_summary;
+      }
+
+      return item as PropertyDetails;
     }
-    
-    return items.length > 0 ? items[0] as PropertyDetails : null;
+
+    return null;
   } catch (error) {
     throw error;
   }

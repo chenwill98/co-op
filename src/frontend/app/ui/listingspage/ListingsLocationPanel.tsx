@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { CombinedPropertyDetails } from "@/app/lib/definitions";
 import { TagList } from "@/app/ui/utilities";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
@@ -27,6 +27,13 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
     
     // Get POIs from listing details
     const pois = listingDetails.nearest_pois || [];
+    const propertyLocation = useMemo(
+        () => ({
+            latitude: Number(listingDetails.latitude),
+            longitude: Number(listingDetails.longitude),
+        }),
+        [listingDetails.latitude, listingDetails.longitude]
+    );
     
     // Group POIs by category
     const poisByCategory = categories.reduce((acc, category) => {
@@ -142,7 +149,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
             <div className="flex flex-wrap gap-1">
                 <TagList category="Location" tags={listingDetails.tag_list || []} />
             </div>
-            <h3 className="text-lg font-semibold text-base-content/80 mb-2">
+            <h3 className="text-xs uppercase tracking-wide text-base-content/60 mb-2">
                 Closest Locations
             </h3>
             {/* Auto-generated grid for location categories - 2 rows of 2 columns */}
@@ -169,12 +176,12 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
                 }`}
             >
                 <div className="flex flex-row items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold text-base-content/80">Nearby Locations</h3>
+                    <h3 className="text-xs uppercase tracking-wide text-base-content/60">Nearby Locations</h3>
                     <TooltipIcon tooltipText="Displaying the 5 closest points of interest for each category" />
                 </div>
 
                 <div className="w-full mb-4">
-                    <ListingsPOIMap poiData={pois} propertyLocation={{latitude: Number(listingDetails.latitude), longitude: Number(listingDetails.longitude) }} />
+                    <ListingsPOIMap poiData={pois} propertyLocation={propertyLocation} />
                 </div>
 
                 {/* Auto-generated tabs based on categories */}

@@ -60,7 +60,7 @@ export default function ListingsDetailsPanel({ listingDetails }: { listingDetail
                 }`}
             >
                 <div className="flex flex-row items-center gap-2 mb-2">
-                  <h3 className="text-lg font-semibold text-base-content/80">Sq. Footage Analytics</h3>
+                  <h3 className="text-xs uppercase tracking-wide text-base-content/60">Sq. Footage Analytics</h3>
                   <TooltipIcon tooltipText="Sq. footage percentile is a measure of the size of a property relative to other properties with the same number of bedrooms and in the same price band." />
                 </div>
                 <PercentileCards 

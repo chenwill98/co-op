@@ -14,6 +14,10 @@ interface ListingsCardProps {
 
 export default function ListingsCard({ listing, animationIndex }: ListingsCardProps) {
   const [showMap, setShowMap] = useState(false);
+  const mapboxToken = process.env.MAPBOX_TOKEN;
+  const staticMapUrl = mapboxToken
+    ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f74e4e(${listing.longitude || '-73.935242'},${listing.latitude || '40.730610'})/${listing.longitude || '-73.935242'},${listing.latitude || '40.730610'},14/600x600@2x?access_token=${mapboxToken}`
+    : null;
 
   // Calculate animation delay (50ms increments, capped at 400ms)
   const animationDelay = animationIndex !== undefined
@@ -30,18 +34,23 @@ export default function ListingsCard({ listing, animationIndex }: ListingsCardPr
       <figure className="h-3/7 relative bg-primary/10 overflow-hidden">
         <div className="overflow-hidden rounded relative w-full h-full">
           {/* Map: always show for cards without a thumbnail, lazy-load for cards with a thumbnail */}
-          {(!listing.thumbnail_image || showMap) && (
+          {(!listing.thumbnail_image || showMap) && staticMapUrl && (
             <div
               className="pointer-events-none absolute top-0 left-0 w-full h-full transition-opacity duration-500 opacity-100"
               style={{ zIndex: 1 }}
             >
               <Image
-                src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f74e4e(${listing.longitude || '-73.935242'},${listing.latitude || '40.730610'})/${listing.longitude || '-73.935242'},${listing.latitude || '40.730610'},14/600x600@2x?access_token=pk.eyJ1IjoiY2hlbndpbGw5OCIsImEiOiJjbTc4M2JiOWkxZWZtMmtweGRyMHRxenZnIn0.RmSgCA0jq_ejQqDHEUj5Pg`}
+                src={staticMapUrl}
                 alt={`Map location for ${listing.address}`}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
                 className="thumbnail object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
               />
+            </div>
+          )}
+          {!listing.thumbnail_image && !staticMapUrl && (
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-base-content/60">
+              Map unavailable
             </div>
           )}
           {/* Only render the thumbnail if it exists, on top of the map */}
@@ -67,7 +76,7 @@ export default function ListingsCard({ listing, animationIndex }: ListingsCardPr
             e.stopPropagation();   // Stop event from bubbling up to the link
           }}/>
         </div>
-        {listing.thumbnail_image && (
+        {listing.thumbnail_image && staticMapUrl && (
           <div className="absolute right-2 bottom-2 z-10">
             <MapButton
               showingMap={showMap}

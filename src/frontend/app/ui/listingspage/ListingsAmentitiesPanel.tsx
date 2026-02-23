@@ -56,7 +56,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                 Amenities
             </h2>
             <div className="flex flex-row items-center gap-2">
-                <h3 className="text-lg font-semibold text-base-content/80">
+                <h3 className="text-xs uppercase tracking-wide text-base-content/60">
                     Key Amenities
                 </h3>
                 <TooltipIcon tooltipText="Key amenities are the most important features of a property that are typically highlighted in the description summary." />
@@ -115,7 +115,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                 <div className="flex flex-col gap-2">
                     {/* Notable Amenities */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-2 text-base-content/80">Notable Amenities</h3>
+                        <h3 className="text-xs uppercase tracking-wide mb-2 text-base-content/60">Notable Amenities</h3>
                         <div className="flex flex-wrap gap-2">
                             {getAvailableAmenities(notableAmenities).map((amenity, index) => (
                                 <span 
@@ -126,14 +126,14 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                                 </span>
                             ))}
                             {getAvailableAmenities(notableAmenities).length === 0 && (
-                                <span className="text-sm text-gray-500">No notable amenities available</span>
+                                <span className="text-sm text-base-content/60">No notable amenities available</span>
                             )}
                         </div>
                     </div>
                     
                     {/* Miscellaneous Amenities */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-2 text-base-content/80">Other Amenities</h3>
+                        <h3 className="text-xs uppercase tracking-wide mb-2 text-base-content/60">Other Amenities</h3>
                         <div className="flex flex-wrap gap-2">
                             {listingDetails.amenities
                                 ?.filter(amenity => 
@@ -160,7 +160,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                         </div>
                     </div>
                     <div className="flex flex-row items-center gap-2">
-                        <h3 className="text-lg font-semibold text-base-content/80">Amenity Analytics</h3>
+                        <h3 className="text-xs uppercase tracking-wide text-base-content/60">Amenity Analytics</h3>
                         <TooltipIcon tooltipText="Amenity percentile is a quantitative score of the amenities (which is of course highly subjective) of a property relative to other properties with the same number of bedrooms and in the same price band. Weights are ~1 for all key amenities, ~0.5 for notable amenities, and ~0.1 for other amenities." />
                     </div>
                     <PercentileCards 
