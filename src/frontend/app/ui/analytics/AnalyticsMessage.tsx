@@ -37,7 +37,7 @@ function AnalyticsMessage({
           className={`chat-bubble ${
             role === 'user'
               ? 'chat-bubble-primary shadow-subtle'
-              : 'chat-bubble-secondary shadow-subtle border border-base-300/30'
+              : 'bg-primary/15 text-base-content shadow-subtle border border-base-300/30'
           }`}
         >
           <p className="leading-relaxed">{text}</p>

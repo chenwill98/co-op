@@ -88,7 +88,7 @@ export default function TagsFilter({
         
         <div className="dropdown-content glass-dropdown outline outline-1 outline-primary p-4 w-[1000px] max-h-[500px] overflow-auto z-10">
           {Object.keys(filteredCategories).length === 0 ? (
-            <div className="p-2 text-gray-500">No tags found</div>
+            <div className="p-2 text-base-content/50">No tags found</div>
           ) : (
             <div className="columns-3 md:columns-4 gap-4 space-y-2">
               {flattenedItems.map((item, index) => (

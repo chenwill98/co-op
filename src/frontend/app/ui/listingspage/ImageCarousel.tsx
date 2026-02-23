@@ -95,7 +95,7 @@ export default function ImageCarousel({
                   rel="noopener noreferrer"
                   className="block w-full"
                 >
-                  <div className="flex items-center justify-center w-full h-full bg-gray-200">
+                  <div className="flex items-center justify-center w-full h-full bg-base-200/60">
                     <span className="text-xl font-bold">
                       View Floorplan PDF
                     </span>
@@ -117,7 +117,7 @@ export default function ImageCarousel({
               <div className="absolute left-3 right-3 top-1/2 flex -translate-y-1/2 transform justify-between">
                 <a
                   href={`#slide${prevSlide}`}
-                  className="btn btn-circle btn-ghost bg-white/40 hover:bg-white/60 backdrop-blur-sm shadow-md border-0"
+                  className="btn btn-circle btn-ghost bg-base-100/60 hover:bg-base-100/80 backdrop-blur-sm shadow-md border-0"
                   onClick={goToSlide}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
@@ -126,7 +126,7 @@ export default function ImageCarousel({
                 </a>
                 <a
                   href={`#slide${nextSlide}`}
-                  className="btn btn-circle btn-ghost bg-white/40 hover:bg-white/60 backdrop-blur-sm shadow-md border-0"
+                  className="btn btn-circle btn-ghost bg-base-100/60 hover:bg-base-100/80 backdrop-blur-sm shadow-md border-0"
                   onClick={goToSlide}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">

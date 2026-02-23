@@ -85,32 +85,33 @@ export function ListingsGridSkeleton() {
  */
 export function PropertyDetailSkeleton() {
   return (
-    <div className="container mx-auto px-4 py-8 w-4/5">
-      {/* Breadcrumbs */}
-      <div className="flex justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="skeleton h-6 w-20 rounded-full" />
-          <div className="skeleton h-6 w-24 rounded-full" />
-          <div className="skeleton h-4 w-32 rounded" />
-        </div>
-        <div className="flex gap-3">
-          <div className="skeleton h-10 w-10 rounded-full" />
-          <div className="skeleton h-10 w-28 rounded-full" />
-        </div>
-      </div>
-
+    <div className="container mx-auto px-4 py-8 w-full lg:w-4/5">
       {/* Two-column grid */}
-      <div className="grid grid-cols-5 gap-20 mt-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
         {/* Left: Carousel + Description + Amenities */}
-        <div className="flex flex-col col-span-3 gap-4">
-          <div className="skeleton h-[400px] rounded-xl" />
-          <div className="pt-4">
+        <div className="flex flex-col col-span-1 lg:col-span-3 gap-4">
+          <div className="glass-panel p-4 md:p-5">
+            {/* Breadcrumbs + Actions */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <div className="skeleton h-6 w-20 rounded-full" />
+                <div className="skeleton h-6 w-24 rounded-full" />
+                <div className="skeleton h-4 w-32 rounded" />
+              </div>
+              <div className="flex gap-3">
+                <div className="skeleton h-10 w-10 rounded-full" />
+                <div className="skeleton h-10 w-28 rounded-full" />
+              </div>
+            </div>
+            <div className="skeleton h-[400px] rounded-xl" />
+          </div>
+          <div className="glass-panel p-4 md:p-5">
             <div className="skeleton h-6 w-32 rounded mb-3" />
             <div className="skeleton h-4 w-full rounded mb-2" />
             <div className="skeleton h-4 w-5/6 rounded mb-2" />
             <div className="skeleton h-4 w-4/6 rounded" />
           </div>
-          <div className="pt-4">
+          <div className="glass-panel p-4 md:p-5">
             <div className="skeleton h-6 w-24 rounded mb-3" />
             <div className="flex flex-wrap gap-2">
               <div className="skeleton h-8 w-24 rounded-lg" />
@@ -121,25 +122,25 @@ export function PropertyDetailSkeleton() {
         </div>
 
         {/* Right: Details panels */}
-        <div className="flex flex-col col-span-2 gap-4">
+        <div className="flex flex-col col-span-1 lg:col-span-2 gap-4">
           {/* Title */}
-          <div>
+          <div className="glass-panel p-4 md:p-5">
             <div className="skeleton h-8 w-48 rounded mb-2" />
             <div className="skeleton h-5 w-32 rounded" />
           </div>
           {/* Price */}
-          <div className="pt-4">
+          <div className="glass-panel p-4 md:p-5">
             <div className="skeleton h-10 w-36 rounded mb-2" />
             <div className="skeleton h-4 w-48 rounded" />
           </div>
           {/* Transportation */}
-          <div className="pt-4">
+          <div className="glass-panel p-4 md:p-5">
             <div className="skeleton h-6 w-28 rounded mb-3" />
             <div className="skeleton h-4 w-full rounded mb-2" />
             <div className="skeleton h-4 w-3/4 rounded" />
           </div>
           {/* Location */}
-          <div className="pt-4">
+          <div className="glass-panel p-4 md:p-5">
             <div className="skeleton h-6 w-20 rounded mb-3" />
             <div className="skeleton h-4 w-full rounded mb-2" />
             <div className="skeleton h-4 w-2/3 rounded" />

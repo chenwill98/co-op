@@ -118,6 +118,17 @@ html {
   @apply bg-base-100/90 backdrop-blur-lg border border-base-300/50 shadow-[0_8px_32px_rgba(0,0,0,0.15)];
 }
 
+/* Subtle dual-radial page background gradient */
+.page-gradient {
+  background: radial-gradient(circle at top left, var(--color-base-300), transparent 45%),
+              radial-gradient(circle at bottom right, var(--color-base-200), transparent 45%);
+}
+
+/* Inner content panels - analytics-consistent styling */
+.glass-panel {
+  @apply rounded-2xl border border-base-300/45 bg-base-100/80 backdrop-blur-lg shadow-[0_8px_32px_rgba(0,0,0,0.08)];
+}
+
 /* Glass badge variants */
 .glass-badge-success {
   @apply bg-success/15 border border-success/20 text-success;

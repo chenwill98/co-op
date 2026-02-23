@@ -72,7 +72,7 @@ export default function ListingsTransportationPanel({
         <div className="flex-1">
           {/* Display subway lines */}
           <div className="mb-4">
-              <h3 className="text-lg font-semibold text-base-content/80 mb-2">
+              <h3 className="text-xs uppercase tracking-wide text-base-content/60 mb-2">
                 Nearby Subway Lines
               </h3>
               <div className="flex flex-wrap gap-1 mb-2">
@@ -129,7 +129,7 @@ export default function ListingsTransportationPanel({
         {/* Display detailed subway times when expanded */}
         <div>
             <div className="flex flex-row items-center gap-2 mb-2">
-              <h3 className="text-lg font-semibold text-base-content/80">Subway Access Analytics</h3>
+              <h3 className="text-xs uppercase tracking-wide text-base-content/60">Subway Access Analytics</h3>
               <TooltipIcon tooltipText="Subway access percentile is a measure of the accessibility of a property to subway stations relative to other properties with the same number of bedrooms and in the same price band. It is calculated based on the number of distinct subway lines accessible within walking distance." />
             </div>
             <PercentileCards 
@@ -138,7 +138,7 @@ export default function ListingsTransportationPanel({
               neighborhoodPercentile={listingDetails.subway_neighborhood_access_percentile ?? null}
             />
             <div className="flex flex-row items-center gap-2 mb-2">
-              <h3 className="text-lg font-semibold text-base-content/80">Detailed Subway Times (min) </h3>
+              <h3 className="text-xs uppercase tracking-wide text-base-content/60">Detailed Subway Times (min) </h3>
               <TooltipIcon tooltipText="Average wait times for subway lines are limited to a 15 minute walk from the property and derived from publicly available MTA subway schedules" />
             </div>
             <div className="text-xs text-base-content/70">Peak times are weekdays 7:00am to 9:30am and 4:00pm to 7:00pm </div>

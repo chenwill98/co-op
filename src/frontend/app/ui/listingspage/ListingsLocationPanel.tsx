@@ -149,7 +149,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
             <div className="flex flex-wrap gap-1">
                 <TagList category="Location" tags={listingDetails.tag_list || []} />
             </div>
-            <h3 className="text-lg font-semibold text-base-content/80 mb-2">
+            <h3 className="text-xs uppercase tracking-wide text-base-content/60 mb-2">
                 Closest Locations
             </h3>
             {/* Auto-generated grid for location categories - 2 rows of 2 columns */}
@@ -176,7 +176,7 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
                 }`}
             >
                 <div className="flex flex-row items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold text-base-content/80">Nearby Locations</h3>
+                    <h3 className="text-xs uppercase tracking-wide text-base-content/60">Nearby Locations</h3>
                     <TooltipIcon tooltipText="Displaying the 5 closest points of interest for each category" />
                 </div>
 

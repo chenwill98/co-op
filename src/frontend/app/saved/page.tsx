@@ -29,7 +29,7 @@ export default function SavedListingsPage() {
   }, []);
 
   return (
-    <main className="z-0 bg-base-300 min-h-screen">
+    <main className="z-0 min-h-screen">
       <div className="container mx-auto px-4 w-full md:w-4/5 flex flex-col min-h-[calc(100vh-4rem)]">
         {isLoading ? (
           <ListingsGridSkeleton />
