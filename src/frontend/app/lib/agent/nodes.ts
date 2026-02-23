@@ -156,10 +156,30 @@ CRITICAL RULES:
   }
 );
 
-// Bind the tool to the LLM
-const llmWithTools = llm.bindTools([searchFiltersTool], {
-  tool_choice: { type: "tool", name: "extract_search_filters" },
-});
+// Tool definition for conversational responses (non-search messages)
+const conversationalTool = tool(
+  async (input) => JSON.stringify(input),
+  {
+    name: "respond_conversationally",
+    description:
+      "Respond to the user conversationally when they are NOT searching for properties. " +
+      "Use this for greetings, general questions, recommendations without specific criteria, " +
+      "questions about the system, or anything unrelated to property searching.",
+    schema: z.object({
+      message: z.string().describe("Your response to the user"),
+      suggested_queries: z
+        .array(z.string())
+        .optional()
+        .describe("2-3 suggested search queries the user could try"),
+    }),
+  }
+);
+
+// Bind both tools to the LLM with auto tool choice for intent classification
+const llmWithTools = llm.bindTools(
+  [searchFiltersTool, conversationalTool],
+  { tool_choice: "auto" }
+);
 
 /**
  * Parse query node - extracts search filters from natural language
@@ -177,7 +197,28 @@ export async function parseQueryNode(
   const tagList = getTagList();
 
   // Build system prompt with dynamic context
-  const systemPrompt = `You are a system that extracts search filters from natural language NYC apartment search queries.
+  const systemPrompt = `You are an AI assistant for an NYC apartment search platform. You have two tools available and must pick the right one based on the user's intent.
+
+TOOL SELECTION RULES:
+- Use extract_search_filters when the user is:
+  * Searching for properties ("2br in Chelsea", "studios under $3000")
+  * Modifying an active search ("change max price to $5000", "add Brooklyn")
+  * Using property-related filters (price, bedrooms, neighborhoods, tags, amenities)
+
+- Use respond_conversationally when the user is:
+  * Making conversation ("thanks!", "hello", "goodbye")
+  * Asking general questions ("what's Chelsea like?", "what neighborhoods are good for families?")
+  * Asking for recommendations without specific criteria ("what would you recommend?")
+  * Asking about the system ("how does this work?", "what can you do?")
+  * Saying something unrelated to property searching
+
+When using respond_conversationally, if the user seems interested in finding properties but hasn't given specific criteria, include 2-3 suggested_queries they could try.
+
+EXAMPLES:
+- "2 beds in Chelsea under $4000" → extract_search_filters
+- "change max price to $5000" → extract_search_filters
+- "what would you recommend?" → respond_conversationally (include suggested_queries)
+- "thanks!" → respond_conversationally
 
 DATABASE SCHEMA:
 ${propertyString}
@@ -188,7 +229,7 @@ ${JSON.stringify(neighborhoods.map((n) => n.name), null, 2)}
 AVAILABLE TAGS:
 ${JSON.stringify(tagList, null, 2)}
 
-CRITICAL RULES:
+FILTER EXTRACTION RULES (when using extract_search_filters):
 1. Only use neighborhoods from the list above
 2. Only use tags from the list above
 3. For numeric ranges, use min/max objects (e.g., {"min": 2, "max": 2} for exactly 2)
@@ -235,25 +276,58 @@ They are asking to MODIFY this search. You MUST:
 
     // Extract the tool call from the response
     const toolCalls = response.tool_calls;
+
+    // Case 1: No tool calls — treat as conversational (fallback)
     if (!toolCalls || toolCalls.length === 0) {
+      const textContent =
+        typeof response.content === "string"
+          ? response.content
+          : "I'm here to help you find apartments in NYC. Try a search like '2br in Chelsea under $4000'.";
+      console.log(`[parseQueryNode] No tool call, falling back to conversational`);
       return {
-        validationError: "Failed to extract search filters from query",
-        responseMessage: "I couldn't understand that search query. Could you try rephrasing it?",
+        intent: "conversational" as const,
+        responseMessage: textContent,
+        suggestedQueries: [],
       };
     }
 
-    const filterArgs = toolCalls[0].args as ClaudeResponse;
+    const toolCall = toolCalls[0];
 
-    console.log(`[parseQueryNode] AI extracted filters:`, JSON.stringify(filterArgs, null, 2));
+    // Case 2: Conversational tool called
+    if (toolCall.name === "respond_conversationally") {
+      const args = toolCall.args as {
+        message: string;
+        suggested_queries?: string[];
+      };
+      console.log(`[parseQueryNode] Conversational response:`, args.message);
+      return {
+        intent: "conversational" as const,
+        responseMessage: args.message,
+        suggestedQueries: args.suggested_queries || [],
+      };
+    }
+
+    // Case 3: Search filter tool called (existing behavior)
+    const filterArgs = toolCall.args as ClaudeResponse;
+
+    console.log(
+      `[parseQueryNode] AI extracted filters:`,
+      JSON.stringify(filterArgs, null, 2)
+    );
 
     // Manually merge AI output with existing filters (from client's existingFilters)
     // This is done here instead of in the reducer so that filter removals work correctly
     const mergedFilters = deepMergeFilters(state.searchFilters, filterArgs);
 
-    console.log(`[parseQueryNode] Merged filters:`, JSON.stringify(mergedFilters, null, 2));
+    console.log(
+      `[parseQueryNode] Merged filters:`,
+      JSON.stringify(mergedFilters, null, 2)
+    );
 
     return {
+      intent: "search" as const,
       searchFilters: mergedFilters,
+      suggestedQueries: [],
       validationError: null,
     };
   } catch (error) {
@@ -482,10 +556,20 @@ export async function formatResponseNode(
 }
 
 /**
- * Routing function for conditional edges
+ * Routing function for conditional edges after validation
  */
 export function routeAfterValidation(
   state: SearchAgentStateType
 ): "retry" | "continue" {
   return state.validationError ? "retry" : "continue";
+}
+
+/**
+ * Routing function for conditional edges after parsing
+ * Routes conversational messages to __end__, search messages to validation
+ */
+export function routeAfterParsing(
+  state: SearchAgentStateType
+): "search" | "conversational" {
+  return state.intent === "conversational" ? "conversational" : "search";
 }

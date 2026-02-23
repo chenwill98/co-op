@@ -6,6 +6,7 @@ import {
   executeSearchNode,
   formatResponseNode,
   routeAfterValidation,
+  routeAfterParsing,
 } from "./nodes";
 
 // Maximum retries for validation loop
@@ -39,7 +40,11 @@ function buildSearchAgentGraph() {
     })
     // Add edges
     .addEdge("__start__", "parseQuery")
-    .addEdge("parseQuery", "validateFilters")
+    // Conditional edge: route by intent after parsing
+    .addConditionalEdges("parseQuery", (state) => routeAfterParsing(state), {
+      search: "validateFilters",
+      conversational: "__end__",
+    })
     // Conditional edge: retry if validation fails (with retry limit)
     .addConditionalEdges("validateFilters", (state) => {
       const route = routeAfterValidation(state);
@@ -101,6 +106,8 @@ export async function invokeSearchAgent(
     resultCount: result.resultCount,
     searchFilters: result.searchFilters,
     responseMessage: result.responseMessage,
+    intent: result.intent,
+    suggestedQueries: result.suggestedQueries,
     messages: result.messages,
   };
 }
