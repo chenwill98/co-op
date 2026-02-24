@@ -84,7 +84,8 @@ export const searchAgent = buildSearchAgentGraph().compile({
 export async function invokeSearchAgent(
   message: string,
   threadId: string,
-  existingFilters?: Record<string, unknown>
+  existingFilters?: Record<string, unknown>,
+  sort?: string
 ) {
   const { HumanMessage } = await import("@langchain/core/messages");
 
@@ -97,6 +98,7 @@ export async function invokeSearchAgent(
   const input = {
     messages: [new HumanMessage(message)],
     ...(existingFilters ? { searchFilters: existingFilters } : {}),
+    ...(sort ? { sort } : {}),
   };
 
   const result = await searchAgent.invoke(input, config);
@@ -118,7 +120,8 @@ export async function invokeSearchAgent(
 export async function* streamSearchAgent(
   message: string,
   threadId: string,
-  existingFilters?: Record<string, unknown>
+  existingFilters?: Record<string, unknown>,
+  sort?: string
 ) {
   const { HumanMessage } = await import("@langchain/core/messages");
 
@@ -131,6 +134,7 @@ export async function* streamSearchAgent(
   const input = {
     messages: [new HumanMessage(message)],
     ...(existingFilters ? { searchFilters: existingFilters } : {}),
+    ...(sort ? { sort } : {}),
   };
 
   // Stream updates as they happen

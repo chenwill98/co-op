@@ -1,7 +1,6 @@
 "use client";
 
 import { Property } from "@/app/lib/definitions";
-import { useSearchParams } from "next/navigation";
 import { useRef, useEffect, useState } from "react";
 import { useListingsContext } from "@/app/context/ListingsContext";
 
@@ -17,9 +16,7 @@ export default function SearchListingsSummaryCard({
 }: {
   listings: Property[];
 }) {
-  const { hasSearched } = useListingsContext();
-  const searchParams = useSearchParams();
-  const sort = searchParams.get("sort") || "";
+  const { hasSearched, sort } = useListingsContext();
   const previousCountRef = useRef<number>(listings.length);
   const [isPulsing, setIsPulsing] = useState(false);
   const [emptyMessage] = useState(

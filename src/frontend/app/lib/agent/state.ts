@@ -107,6 +107,12 @@ export const SearchAgentState = Annotation.Root({
     default: () => [],
   }),
 
+  // Sort preference from UI (e.g., "newest", "least_expensive", "most_expensive")
+  sort: Annotation<string>({
+    reducer: (_left, right) => right,
+    default: () => "original",
+  }),
+
   // Retry count for validation loop (per-invocation, not global)
   retryCount: Annotation<number>({
     reducer: (_left, right) => right,

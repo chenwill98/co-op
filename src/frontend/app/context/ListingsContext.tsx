@@ -35,11 +35,13 @@ type ListingsContextType = {
   isThreadIdReady: boolean;
   hasSearched: boolean;
   pendingMessage: string | null;
+  sort: string;
   setAll: (
     listings: Property[],
     queryRecord: ClaudeResponse,
     threadId: string
   ) => void;
+  setSort: (sort: string) => void;
   setThreadId: (threadId: string) => void;
   resetThreadId: () => string;
   setPendingMessage: (msg: string | null) => void;
@@ -58,6 +60,7 @@ export const ListingsProvider = ({ children }: { children: ReactNode }) => {
   const [isThreadIdReady, setIsThreadIdReady] = useState<boolean>(() => typeof window !== "undefined");
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [sort, setSortState] = useState<string>("original");
 
   // Ensure threadId is initialized on client mount
   React.useEffect(() => {
@@ -86,10 +89,15 @@ export const ListingsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const setSort = (newSort: string) => {
+    setSortState(newSort);
+  };
+
   const resetThreadId = (): string => {
     const newId = generateThreadId();
     setThreadIdState(newId);
     setHasSearched(false);
+    setSortState("original");
     if (typeof window !== "undefined") {
       localStorage.setItem("chatThreadId", newId);
     }
@@ -99,6 +107,7 @@ export const ListingsProvider = ({ children }: { children: ReactNode }) => {
   const clear = () => {
     setListings([]);
     setQueryRecord({});
+    setSortState("original");
     // Don't clear threadId - use resetThreadId explicitly when needed
   };
 
@@ -142,7 +151,7 @@ export const ListingsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <ListingsContext.Provider value={{ listings, queryRecord, threadId, isThreadIdReady, hasSearched, pendingMessage, setAll, setThreadId, resetThreadId, setPendingMessage, clear, removeFilter, removeFromArrayFilter }}>
+    <ListingsContext.Provider value={{ listings, queryRecord, threadId, isThreadIdReady, hasSearched, pendingMessage, sort, setAll, setSort, setThreadId, resetThreadId, setPendingMessage, clear, removeFilter, removeFromArrayFilter }}>
       {children}
     </ListingsContext.Provider>
   );
