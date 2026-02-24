@@ -59,22 +59,20 @@ export default function Page() {
     router.push("/listings");
   };
 
-  // Handle key press event to check for Enter key
-  const handleKeyPress = (event: KeyboardEvent) => {
-    if (event.key === 'Enter' && searchText.trim()) {
-      handleSearch();
-    }
-  };
-
   // Add event listener for Enter key
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyPress);
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' && searchText.trim()) {
+        setPendingMessage(searchText);
+        router.push("/listings");
+      }
+    };
 
-    // Clean up the event listener on component unmount
+    window.addEventListener('keydown', handleKeyPress);
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [searchText]); // Re-add the listener when searchText changes to ensure we have the latest value
+  }, [searchText, setPendingMessage, router]);
 
   // Pick a random tagline on mount
   useEffect(() => {

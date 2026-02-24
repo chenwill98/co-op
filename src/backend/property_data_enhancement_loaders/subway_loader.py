@@ -217,14 +217,27 @@ def load_nearest_subways(session):
         nearest_stations_df = get_nearest_station_per_route(aggregated_stations_df)
 
         logger.info(f"Inserting {len(nearest_stations_df)} nearest stations into dim_property_nearest_stations")
-        engine = session.get_bind()
-        nearest_stations_df.to_sql(
-            'dim_property_nearest_stations',
-            con=engine,
-            schema='real_estate_analytics',
-            if_exists='append',
-            index=False
-        )
+        if len(nearest_stations_df) == 0:
+            logger.info("No new stations to insert")
+            return
+
+        insert_sql = text("""
+            INSERT INTO real_estate_analytics.dim_property_nearest_stations
+            (listing_id, parent_station, route_id, manhattan_distance_km, walking_minutes,
+             route_short_name, route_long_name, route_color, stop_name, peak, off_peak,
+             late_night, stop_lat, stop_lon, location_type, agency_id, loaded_datetime)
+            VALUES (:listing_id, :parent_station, :route_id, :manhattan_distance_km, :walking_minutes,
+             :route_short_name, :route_long_name, :route_color, :stop_name, :peak, :off_peak,
+             :late_night, :stop_lat, :stop_lon, :location_type, :agency_id, NOW())
+            ON CONFLICT (listing_id, route_id) DO NOTHING
+        """)
+
+        # Convert DataFrame to list of dicts, replacing NaN with None for SQL compatibility
+        records = nearest_stations_df.drop(columns=['loaded_datetime'], errors='ignore') \
+            .replace({np.nan: None}).to_dict('records')
+
+        session.execute(insert_sql, records)
+        session.commit()
 
     except Exception as e:
         logger.error(f"Error fetching property coordinates: {e}")

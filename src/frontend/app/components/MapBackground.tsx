@@ -25,6 +25,7 @@ const MapBackground = () => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [mapLightPreset, setMapLightPreset] = useState(getInitialLightPreset);
+  const mapLightPresetRef = useRef(mapLightPreset);
   const [mapReady, setMapReady] = useState(false);
   const animationInitiated = useRef(false);
 
@@ -43,6 +44,11 @@ const MapBackground = () => {
       window.removeEventListener('themeChange', handleThemeChange);
     };
   }, []);
+
+  // Keep the ref in sync with state
+  useEffect(() => {
+    mapLightPresetRef.current = mapLightPreset;
+  }, [mapLightPreset]);
 
   // Map initialization - using a cleanup function to ensure proper re-rendering
   useEffect(() => {
@@ -80,7 +86,7 @@ const MapBackground = () => {
       map.on('load', () => {
         // Apply the initial light preset now that the style is loaded
         try {
-          map.setConfigProperty('basemap', 'lightPreset', mapLightPreset);
+          map.setConfigProperty('basemap', 'lightPreset', mapLightPresetRef.current);
         } catch {
           // Light preset not supported
         }

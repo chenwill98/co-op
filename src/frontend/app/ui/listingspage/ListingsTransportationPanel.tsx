@@ -30,6 +30,17 @@ export default function ListingsTransportationPanel({
     return (a.route_color || '').localeCompare(b.route_color || '');
   });
 
+  // Deduplicate stations by route for icon display (keeps closest station per line)
+  const getUniqueLines = (stations: typeof sortedStations) => {
+    const seen = new Set<string>();
+    return stations.filter(station => {
+      const line = station.route_short_name || station.route_id;
+      if (seen.has(line)) return false;
+      seen.add(line);
+      return true;
+    });
+  };
+
   // Filter stations with time data
   const stationsWithTimeData = sortedStations.filter(s => s.peak !== null || s.off_peak !== null);
   
@@ -84,24 +95,22 @@ export default function ListingsTransportationPanel({
                 <div className="p-3 glass-panel-nested rounded-lg">
                   <div className="text-sm font-medium mb-2">Short Walk (&lt; 5 min)</div>
                   <div className="flex flex-wrap gap-2">
-                    {sortedStations
-                      .filter(station => station.walking_minutes < 5)
-                      .map((station, idx) => (
-                        <SubwayIcon key={idx} line={station.route_short_name || station.route_id} />
+                    {getUniqueLines(sortedStations.filter(station => station.walking_minutes < 5))
+                      .map((station) => (
+                        <SubwayIcon key={station.route_short_name || station.route_id} line={station.route_short_name || station.route_id} />
                       ))}
                     {!sortedStations.some(station => station.walking_minutes < 5) && (
                       <span className="text-xs text-base-content/60">No stations</span>
                     )}
                   </div>
                 </div>
-                
+
                 <div className="p-3 glass-panel-nested rounded-lg">
                   <div className="text-sm font-medium mb-2">Medium Walk (5-10 min)</div>
                   <div className="flex flex-wrap gap-2">
-                    {sortedStations
-                      .filter(station => station.walking_minutes >= 5 && station.walking_minutes <= 10)
-                      .map((station, idx) => (
-                        <SubwayIcon key={idx} line={station.route_short_name || station.route_id} />
+                    {getUniqueLines(sortedStations.filter(station => station.walking_minutes >= 5 && station.walking_minutes <= 10))
+                      .map((station) => (
+                        <SubwayIcon key={station.route_short_name || station.route_id} line={station.route_short_name || station.route_id} />
                       ))}
                     {!sortedStations.some(station => station.walking_minutes >= 5 && station.walking_minutes <= 10) && (
                       <span className="text-xs text-base-content/60">No stations</span>

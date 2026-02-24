@@ -7,14 +7,15 @@ interface TypingInputProps {
   onValueChange?: (val: string) => void;
 }
 
+const phrases = [
+  "Pre-war 2 bedroom apartments in Bed-Stuy",
+  "Charming 1 bedroom apartment that allows pets in Queens",
+  "Modern studios near the 6 line",
+  "Cozy 3 bedroom apartments in the Bronx",
+];
+
 const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
   const [text, setText] = useState("");
-  const phrases = [
-    "Pre-war 2 bedroom apartments in Bed-Stuy",
-    "Charming 1 bedroom apartment that allows pets in Queens",
-    "Modern studios near the 6 line",
-    "Cozy 3 bedroom apartments in the Bronx",
-  ];
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
   const [typingSpeed, setTypingSpeed] = useState(10);
@@ -83,7 +84,7 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
 
     const timer = setTimeout(handleTyping, typingSpeed);
     return () => clearTimeout(timer);
-  }, [text, isDeleting, typingSpeed, loopNum, phrases, isEditable, startTyping]);
+  }, [text, isDeleting, typingSpeed, loopNum, isEditable, startTyping]);
 
   // -----------------------
   // Handle focus -> user starts typing

@@ -5,13 +5,32 @@ import { useSearchParams } from "next/navigation";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
 
-// Sort options 
+// Sort options
 type SortOption = "original" | "newest" | "price-low" | "price-high";
 
 interface SortConfig {
   label: string;
   sortFn: (a: Property, b: Property) => number;
 }
+
+const sortConfigs: Record<SortOption, SortConfig> = {
+  original: {
+    label: "Order Saved",
+    sortFn: () => 0 // No sorting
+  },
+  newest: {
+    label: "Newest",
+    sortFn: (a, b) => new Date(b.listed_at).getTime() - new Date(a.listed_at).getTime()
+  },
+  "price-low": {
+    label: "Least Expensive",
+    sortFn: (a, b) => a.price - b.price
+  },
+  "price-high": {
+    label: "Most Expensive",
+    sortFn: (a, b) => b.price - a.price
+  }
+};
 
 export default function SavedListingsSummaryCard({
   listings,
@@ -22,26 +41,6 @@ export default function SavedListingsSummaryCard({
   const sort = searchParams.get("sort") || "";
   const [sortOption, setSortOption] = useState<SortOption>("original");
   const [sortedListings, setSortedListings] = useState<Property[]>(listings);
-  
-  // Sort configurations
-  const sortConfigs: Record<SortOption, SortConfig> = {
-    original: {
-      label: "Order Saved",
-      sortFn: () => 0 // No sorting
-    },
-    newest: {
-      label: "Newest",
-      sortFn: (a, b) => new Date(b.listed_at).getTime() - new Date(a.listed_at).getTime()
-    },
-    "price-low": {
-      label: "Least Expensive",
-      sortFn: (a, b) => a.price - b.price
-    },
-    "price-high": {
-      label: "Most Expensive",
-      sortFn: (a, b) => b.price - a.price
-    }
-  };
   
   // Apply sorting whenever the sort option or listings change
   useEffect(() => {
