@@ -10,9 +10,10 @@ import { useState } from "react";
 interface ListingsCardProps {
   listing: Property;
   animationIndex?: number;
+  hideBookmark?: boolean;
 }
 
-export default function ListingsCard({ listing, animationIndex }: ListingsCardProps) {
+export default function ListingsCard({ listing, animationIndex, hideBookmark }: ListingsCardProps) {
   const [showMap, setShowMap] = useState(false);
   const mapboxToken = process.env.MAPBOX_TOKEN;
   const staticMapUrl = mapboxToken
@@ -69,13 +70,15 @@ export default function ListingsCard({ listing, animationIndex }: ListingsCardPr
             </div>
           )}
         </div>
-        {/* Overlay the MapButton in the bottom left corner */}
-        <div className="absolute left-2 bottom-2 z-10">
-          <BookmarkIcon property={listing} onClick={(e) => {
-            e.preventDefault();    // Stop the <a> navigation
-            e.stopPropagation();   // Stop event from bubbling up to the link
-          }}/>
-        </div>
+        {/* Overlay the BookmarkIcon in the bottom left corner */}
+        {!hideBookmark && (
+          <div className="absolute left-2 bottom-2 z-10">
+            <BookmarkIcon property={listing} onClick={(e) => {
+              e.preventDefault();    // Stop the <a> navigation
+              e.stopPropagation();   // Stop event from bubbling up to the link
+            }}/>
+          </div>
+        )}
         {listing.thumbnail_image && staticMapUrl && (
           <div className="absolute right-2 bottom-2 z-10">
             <MapButton
