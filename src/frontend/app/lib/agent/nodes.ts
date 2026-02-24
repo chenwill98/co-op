@@ -16,8 +16,8 @@ import {
 import { parseClaudeResultsToPrismaSQL, type ClaudeResponse } from "../claudeQueryParser";
 import { tagCategories } from "../tagUtils";
 import prisma from "../prisma";
-import type { Property } from "../definitions";
 import { propertyString } from "../definitions";
+import { type RawProperty, formatRawProperties, sortToOrderBy } from "../searchUtils";
 
 // Use Haiku 4.5 for faster, cheaper filter extraction
 const MODEL_ID = "claude-haiku-4-5-20251001";
@@ -507,50 +507,21 @@ export async function executeSearchNode(
   state: SearchAgentStateType
 ): Promise<Partial<SearchAgentStateType>> {
   const filters = state.searchFilters;
+  const orderBy = sortToOrderBy(state.sort);
 
   try {
-    // Use existing parseClaudeResultsToPrismaSQL function
-    const [query] = await parseClaudeResultsToPrismaSQL(filters, undefined, 20, 0);
+    // Build queries with sort applied
+    const [query] = await parseClaudeResultsToPrismaSQL(filters, orderBy, 20, 0);
     // Also get total count (without LIMIT) for accurate reporting
     const [countQuery] = await parseClaudeResultsToPrismaSQL(filters, undefined, undefined, undefined);
 
     // Execute both queries in parallel
-    type RawProperty = {
-      price?: { toNumber: () => number };
-      bathrooms?: { toNumber: () => number };
-      latitude?: unknown;
-      longitude?: unknown;
-      listed_at?: { toDateString: () => string };
-      closed_at?: { toDateString: () => string };
-      available_from?: { toDateString: () => string };
-      loaded_datetime?: { toDateString: () => string };
-      date?: { toDateString: () => string };
-      brokers_fee?: { toNumber: () => number };
-      tag_list?: string[];
-      additional_fees?: unknown;
-    };
-
     const [rawResults, countResults] = await Promise.all([
       prisma.$queryRaw<RawProperty[]>(query),
       prisma.$queryRaw<RawProperty[]>(countQuery).then(r => r.length),
     ]);
 
-    // Format the results
-    const results = rawResults.map((property) => ({
-      ...property,
-      price: property.price ? property.price.toNumber() : 0,
-      bathrooms: property.bathrooms ? property.bathrooms.toNumber() : null,
-      latitude: property.latitude ? String(property.latitude) : "0",
-      longitude: property.longitude ? String(property.longitude) : "0",
-      listed_at: property.listed_at ? property.listed_at.toDateString() : "",
-      closed_at: property.closed_at ? property.closed_at.toDateString() : "",
-      available_from: property.available_from ? property.available_from.toDateString() : "",
-      loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : "",
-      date: property.date ? property.date.toDateString() : "",
-      brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-      tag_list: property.tag_list ?? [],
-      additional_fees: property.additional_fees ?? null,
-    })) as Property[];
+    const results = formatRawProperties(rawResults);
 
     return {
       results,

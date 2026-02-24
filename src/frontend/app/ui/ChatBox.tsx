@@ -3,10 +3,10 @@
 import { getDisplayTag } from '@/app/lib/tagUtils';
 import { getRandomLoadingMessage } from '@/app/lib/loadingMessages';
 import { formatAmenityName } from './utilities';
-import { ArrowUpIcon, BarsArrowUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ArrowUpIcon, ArrowPathIcon, BarsArrowUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useListingsContext } from '@/app/context/ListingsContext';
+import type { ClaudeResponse } from '@/app/lib/claudeQueryParser';
 import Markdown from 'react-markdown';
 
 interface ChatMessage {
@@ -15,21 +15,15 @@ interface ChatMessage {
 }
 
 export default function ChatBox() {
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const { replace } = useRouter();
-
   // Use context for shared state
-  const { queryRecord, threadId, isThreadIdReady, pendingMessage, setAll, resetThreadId, setPendingMessage, removeFilter, removeFromArrayFilter } = useListingsContext();
+  const { queryRecord, threadId, isThreadIdReady, pendingMessage, sort, setAll, setSort, resetThreadId, setPendingMessage, clear, removeFilter, removeFromArrayFilter } = useListingsContext();
 
   // Local chat messages for display
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
-  // Filters state
-  const [filters, setFilters] = useState({
-    text: searchParams.get('text') || '',
-    sort: searchParams.get('sort') || 'original',
-  });
+  // Text input state (sort now lives in context)
+  const [textInput, setTextInput] = useState('');
+  const [pendingRefresh, setPendingRefresh] = useState(false);
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -68,13 +62,6 @@ export default function ChatBox() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  useEffect(() => {
-    setFilters({
-      text: searchParams.get('text') || '',
-      sort: searchParams.get('sort') || 'original',
-    });
-  }, [searchParams]);
-
   // Sort configs
   const sortConfigs = {
     original: { label: 'Order Saved' },
@@ -83,25 +70,126 @@ export default function ChatBox() {
     most_expensive: { label: 'Most Expensive' },
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
-  };
+  /**
+   * Re-execute the current search with updated filters/sort via the lightweight
+   * /api/search endpoint (no AI call). Used for badge removal and sort changes.
+   */
+  const reExecuteSearch = useCallback(async (
+    updatedFilters: ClaudeResponse,
+    updatedSort: string
+  ) => {
+    // If all filters have been removed, reset to the no-search state
+    if (Object.keys(updatedFilters).length === 0) {
+      clear();
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filters: updatedFilters, sort: updatedSort }),
+      });
+
+      if (!res.ok) {
+        let errorDetail = 'Failed to refresh listings';
+        try {
+          const errorData = await res.json();
+          errorDetail = errorData.details || errorData.error || errorDetail;
+        } catch {
+          errorDetail = `Request failed: ${res.status} ${res.statusText}`;
+        }
+        throw new Error(errorDetail);
+      }
+
+      const data = await res.json();
+      setAll(
+        Array.isArray(data.results) ? data.results : [],
+        updatedFilters,
+        threadId
+      );
+      // Only clear pendingRefresh after a successful refresh
+      setPendingRefresh(false);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [threadId, setAll, clear]);
+
+  /**
+   * Wrapper for removing an entire filter or a subkey (min/max) from a range filter.
+   * Stages the change visually (badge disappears) and sets pendingRefresh — does NOT auto-query.
+   * If this removes the last filter, clears everything immediately instead.
+   */
+  const handleRemoveFilter = useCallback((filterKey: string, subKey?: string) => {
+    // Compute what the new filter state would be to check if it's empty
+    const newRecord = { ...queryRecord };
+
+    if (!subKey) {
+      delete newRecord[filterKey];
+    } else {
+      const range = newRecord[filterKey] as { min?: number | null; max?: number | null };
+      if (range) {
+        newRecord[filterKey] = { ...range, [subKey]: null };
+        const updated = newRecord[filterKey] as { min?: number | null; max?: number | null };
+        if (updated.min == null && updated.max == null) {
+          delete newRecord[filterKey];
+        }
+      }
+    }
+
+    if (Object.keys(newRecord).length === 0) {
+      // Last filter removed — reset to no-search state immediately
+      clear();
+      setPendingRefresh(false);
+    } else {
+      // Stage the removal: update badges via context, flag for deferred refresh
+      removeFilter(filterKey, subKey);
+      setPendingRefresh(true);
+    }
+  }, [queryRecord, clear, removeFilter]);
+
+  /**
+   * Wrapper for removing a single item from an array filter (e.g., one neighborhood).
+   * Stages the change visually and sets pendingRefresh — does NOT auto-query.
+   * If this removes the last filter, clears everything immediately instead.
+   */
+  const handleRemoveFromArrayFilter = useCallback((filterKey: string, itemToRemove: string) => {
+    // Compute what the new filter state would be to check if it's empty
+    const newRecord = { ...queryRecord };
+    const arr = newRecord[filterKey] as string[];
+    if (Array.isArray(arr)) {
+      const filtered = arr.filter(item => item !== itemToRemove);
+      if (filtered.length === 0) {
+        delete newRecord[filterKey];
+      } else {
+        newRecord[filterKey] = filtered;
+      }
+    }
+
+    if (Object.keys(newRecord).length === 0) {
+      clear();
+      setPendingRefresh(false);
+    } else {
+      removeFromArrayFilter(filterKey, itemToRemove);
+      setPendingRefresh(true);
+    }
+  }, [queryRecord, clear, removeFromArrayFilter]);
 
   const handleSortChange = (option: string) => {
-    setFilters(prev => ({ ...prev, sort: option }));
+    setSort(option);
     setSortDropdownOpen(false);
-    applyFilters({ ...filters, sort: option });
+    // Stage sort change — only flag for deferred refresh if there are active filters
+    if (Object.keys(queryRecord).length > 0) {
+      setPendingRefresh(true);
+    }
   };
 
-  const applyFilters = (customFilters?: typeof filters) => {
-    const f = customFilters || filters;
-    const params = new URLSearchParams();
-    if (f.text) params.set('text', f.text);
-    if (f.sort && f.sort !== 'original') params.set('sort', f.sort);
-    replace(`${pathname}?${params.toString()}`);
-  };
-
-  // Fetch listings using the new LangGraph chat API
+  // Fetch listings using the LangGraph chat API (AI-powered search)
   // freshSearch=true skips sending existing filters (used for suggested query chips)
   const fetchListings = useCallback(async (text: string, freshSearch: boolean = false) => {
     if (!text.trim() || !threadId || !isThreadIdReady) return;
@@ -123,17 +211,16 @@ export default function ChatBox() {
           threadId,
           stream: false,
           existingFilters: freshSearch ? {} : queryRecord,
+          sort,
         }),
       });
 
       if (!res.ok) {
-        // Try to extract detailed error from response
         let errorDetail = 'Failed to fetch listings';
         try {
           const errorData = await res.json();
           errorDetail = errorData.details || errorData.error || errorDetail;
         } catch {
-          // If response isn't JSON, use status text
           errorDetail = `Request failed: ${res.status} ${res.statusText}`;
         }
         throw new Error(errorDetail);
@@ -162,8 +249,9 @@ export default function ChatBox() {
         setSuggestedQueries([]);
       }
 
-      // Clear the input
-      setFilters(prev => ({ ...prev, text: '' }));
+      // Clear the input and any pending refresh (AI search incorporates latest state)
+      setTextInput('');
+      setPendingRefresh(false);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
@@ -171,7 +259,7 @@ export default function ChatBox() {
     } finally {
       setLoading(false);
     }
-  }, [threadId, isThreadIdReady, queryRecord, setAll]);
+  }, [threadId, isThreadIdReady, queryRecord, sort, setAll]);
 
   // Process pending message from landing page redirect
   useEffect(() => {
@@ -185,7 +273,11 @@ export default function ChatBox() {
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      fetchListings(filters.text);
+      if (textInput.trim()) {
+        fetchListings(textInput);
+      } else if (pendingRefresh) {
+        reExecuteSearch(queryRecord, sort);
+      }
     }
   };
 
@@ -223,6 +315,7 @@ export default function ChatBox() {
   const handleClearChat = () => {
     setChatMessages([]);
     setSuggestedQueries([]);
+    setPendingRefresh(false);
     processingPendingRef.current = false;
     const newThreadId = resetThreadId();
     setAll([], {}, newThreadId);
@@ -248,7 +341,7 @@ export default function ChatBox() {
         <span className={BADGE_CLASS}>
           {label} • {displayText}
           <XMarkIcon
-            onClick={() => removeFilter(filterKey)}
+            onClick={() => handleRemoveFilter(filterKey)}
             className="h-3 w-3 cursor-pointer hover:text-error"
           />
         </span>
@@ -263,7 +356,7 @@ export default function ChatBox() {
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
-              removeFilter(filterKey);
+              handleRemoveFilter(filterKey);
             }}
             className="ml-1"
             type="button"
@@ -276,7 +369,7 @@ export default function ChatBox() {
             <li key={idx} className="px-2 py-1 hover:bg-base-200 rounded flex items-center justify-between gap-2">
               <span>{item}</span>
               <XMarkIcon
-                onClick={() => removeFromArrayFilter(filterKey, items[idx])}
+                onClick={() => handleRemoveFromArrayFilter(filterKey, items[idx])}
                 className="h-3 w-3 cursor-pointer hover:text-error flex-shrink-0"
               />
             </li>
@@ -316,7 +409,7 @@ export default function ChatBox() {
         <span key={`${key}-${idx}`} className={BADGE_CLASS}>
           {label} • {item}
           <XMarkIcon
-            onClick={() => removeFromArrayFilter(key, originalArr[idx])}
+            onClick={() => handleRemoveFromArrayFilter(key, originalArr[idx])}
             className="h-3 w-3 cursor-pointer hover:text-error"
           />
         </span>
@@ -333,7 +426,7 @@ export default function ChatBox() {
             <span key={key} className={BADGE_CLASS}>
               {label} • {min}
               <XMarkIcon
-                onClick={() => removeFilter(key)}
+                onClick={() => handleRemoveFilter(key)}
                 className="h-3 w-3 cursor-pointer hover:text-error"
               />
             </span>
@@ -344,7 +437,7 @@ export default function ChatBox() {
             <span key={key + '-min'} className={BADGE_CLASS}>
               {`Min ${label} • ${min}`}
               <XMarkIcon
-                onClick={() => removeFilter(key, 'min')}
+                onClick={() => handleRemoveFilter(key, 'min')}
                 className="h-3 w-3 cursor-pointer hover:text-error"
               />
             </span>
@@ -353,7 +446,7 @@ export default function ChatBox() {
             <span key={key + '-max'} className={BADGE_CLASS}>
               {`Max ${label} • ${max}`}
               <XMarkIcon
-                onClick={() => removeFilter(key, 'max')}
+                onClick={() => handleRemoveFilter(key, 'max')}
                 className="h-3 w-3 cursor-pointer hover:text-error"
               />
             </span>
@@ -368,7 +461,7 @@ export default function ChatBox() {
       <span key={key} className={BADGE_CLASS}>
         {label} • {String(val)}
         <XMarkIcon
-          onClick={() => removeFilter(key)}
+          onClick={() => handleRemoveFilter(key)}
           className="h-3 w-3 cursor-pointer hover:text-error"
         />
       </span>
@@ -492,8 +585,8 @@ export default function ChatBox() {
                       type="text"
                       placeholder="Search for apartments... (e.g., '2br in Chelsea under $4000')"
                       className="input input-ghost chat-input w-full bg-transparent border border-transparent focus:bg-transparent focus:border-transparent focus:outline-none focus:shadow-none focus-visible:outline-none focus-visible:shadow-none text-sm placeholder:text-base-content/50 placeholder:transition-opacity placeholder:duration-200 focus:placeholder:opacity-40"
-                      value={filters.text}
-                      onChange={e => handleInputChange('text', e.target.value)}
+                      value={textInput}
+                      onChange={e => setTextInput(e.target.value)}
                       onKeyDown={handleInputKeyDown}
                       onFocus={() => setIsCollapsed(false)}
                       disabled={loading}
@@ -506,21 +599,31 @@ export default function ChatBox() {
                       </label>
                       <ul tabIndex={0} className="dropdown-content menu glass-dropdown rounded-box z-[100] w-52 p-2">
                         {Object.entries(sortConfigs).map(([key, config]) => (
-                          <li key={key} className={filters.sort === key ? 'bg-primary/20 rounded-lg border-l-2 border-primary font-medium' : ''}>
+                          <li key={key} className={sort === key ? 'bg-primary/20 rounded-lg border-l-2 border-primary font-medium' : ''}>
                             <a onClick={() => handleSortChange(key)}>{config.label}</a>
                           </li>
                         ))}
                       </ul>
                     </div>
 
-                    {/* Submit button */}
+                    {/* Submit / Refresh button */}
                     <button
-                      className="btn btn-primary btn-circle p-2"
-                      onClick={() => fetchListings(filters.text)}
+                      className={`btn btn-circle p-2 ${pendingRefresh && !textInput.trim() ? 'btn-accent' : 'btn-primary'}`}
+                      onClick={() => {
+                        if (textInput.trim()) {
+                          fetchListings(textInput);
+                        } else if (pendingRefresh) {
+                          reExecuteSearch(queryRecord, sort);
+                        }
+                      }}
                       type="button"
-                      disabled={loading || !filters.text.trim() || !isThreadIdReady}
+                      disabled={loading || !isThreadIdReady || (!textInput.trim() && !pendingRefresh)}
                     >
-                      <ArrowUpIcon className="h-5 w-5" />
+                      {pendingRefresh && !textInput.trim() ? (
+                        <ArrowPathIcon className="h-5 w-5" />
+                      ) : (
+                        <ArrowUpIcon className="h-5 w-5" />
+                      )}
                     </button>
                   </div>
                 </div>

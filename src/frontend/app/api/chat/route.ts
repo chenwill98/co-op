@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { message, threadId, stream = false, existingFilters } = body;
+    const { message, threadId, stream = false, existingFilters, sort } = body;
 
     if (!message || typeof message !== "string") {
       return NextResponse.json(
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     // Non-streaming mode - return full result at once
     if (!stream) {
-      const result = await invokeSearchAgent(message, threadId, existingFilters);
+      const result = await invokeSearchAgent(message, threadId, existingFilters, sort);
 
       return NextResponse.json({
         results: result.results,
@@ -52,7 +52,8 @@ export async function POST(request: Request) {
           for await (const chunk of streamSearchAgent(
             message,
             threadId,
-            existingFilters
+            existingFilters,
+            sort
           )) {
             // Each chunk is an update from a node
             const data = JSON.stringify(chunk);
