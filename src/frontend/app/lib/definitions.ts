@@ -30,6 +30,8 @@ export type Property = {
     date: string;
     fct_id: string;
     fct_price: number;
+    ai_tags: string[];
+    analytics_tags: string[];
     tag_list: string[];
     relevance_score: number | null;
 }

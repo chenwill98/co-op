@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatRawProperty } from './data';
+import { formatRawProperty } from './searchUtils';
 
 // Helper to create a mock Decimal-like object
 const decimal = (n: number) => ({ toNumber: () => n });

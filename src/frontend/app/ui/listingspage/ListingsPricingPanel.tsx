@@ -2,7 +2,7 @@
 
 import { CombinedPropertyDetails, AdditionalFee, NeighborhoodContext } from "@/app/lib/definitions";
 import { TagList, FormatDisplayText } from "@/app/ui/utilities";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 import PercentileCards from "@/app/ui/analytics/PercentileCards";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon";
@@ -62,8 +62,16 @@ export default function ListingsPricingPanel({
   listingDetails: CombinedPropertyDetails;
   neighborhoodContext?: NeighborhoodContext | null;
 }) {
-  const [isAnalyticsExpanded, setIsAnalyticsExpanded] = useState(false);
-  const [isPriceHistoryExpanded, setIsPriceHistoryExpanded] = useState(false);
+  const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
+  const hasExpanded = useRef(false);
+
+  // Track first expansion so PriceHistoryChart stays mounted after initial load
+  const handleToggleExpand = () => {
+    setIsDetailsExpanded(prev => {
+      if (!prev) hasExpanded.current = true;
+      return !prev;
+    });
+  };
 
   const fees = useMemo(() => parseAdditionalFees(listingDetails.additional_fees), [listingDetails.additional_fees]);
   const { recurring, oneTime, concessions } = useMemo(() => categorizeFees(fees), [fees]);
@@ -290,64 +298,72 @@ export default function ListingsPricingPanel({
 
       {/* Simple view when no fee breakdown */}
       {!hasBreakdown && !listingDetails.no_fee && listingDetails.brokers_fee != null && listingDetails.brokers_fee > 0 && (
-        <div className="mt-1">
-          <div className="text-lg font-semibold mb-1">
-            ${(listingDetails.price + listingDetails.price * listingDetails.brokers_fee).toLocaleString()}
-            <span className="text-base-content/60 text-sm"> net effective rent</span>
-          </div>
-          <div className="text-lg font-semibold mb-1">
-            ${(listingDetails.price * listingDetails.brokers_fee * 12).toLocaleString()}
-            <span className="text-base-content/60 text-sm"> total fees</span>
+        <div className="mt-2">
+          <div className="glass-panel-nested rounded-lg p-3 space-y-1">
+            <div className="flex justify-between text-sm">
+              <span className="text-base-content/70">Net effective rent</span>
+              <span className="text-base-content font-medium">
+                ${(listingDetails.price + listingDetails.price * listingDetails.brokers_fee).toLocaleString()}/mo
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-base-content/70">Total fees</span>
+              <span className="text-base-content font-medium">
+                ${(listingDetails.price * listingDetails.brokers_fee * 12).toLocaleString()}
+              </span>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Price History expand */}
-      <div className="mt-2">
+      {/* Pricing Details expand (tabbed: Price History + Price Analytics) */}
+      <div className="mt-3">
         <ExpandButton
-          isExpanded={isPriceHistoryExpanded}
-          onToggle={() => setIsPriceHistoryExpanded(prev => !prev)}
-          collapsedText="Show Price History"
-          expandedText="Hide Price History"
+          isExpanded={isDetailsExpanded}
+          onToggle={handleToggleExpand}
+          collapsedText="Show Pricing Details"
+          expandedText="Hide Pricing Details"
         />
       </div>
       <div
         className={`transition-all duration-300 ease-in-out ${
-          isPriceHistoryExpanded
-            ? 'opacity-100 max-h-[600px] mt-2 overflow-visible'
+          isDetailsExpanded
+            ? 'opacity-100 max-h-[1200px] mt-2 overflow-visible'
             : 'opacity-0 max-h-0 mt-0 overflow-hidden'
         }`}
       >
-        {isPriceHistoryExpanded && (
-          <PriceHistoryChart propertyId={listingDetails.id} />
-        )}
-      </div>
+        <div className="tabs tabs-box justify-center">
+          <input
+            type="radio"
+            name="pricing_tabs"
+            className="tab tabs-sm transition-all duration-500 ease-in-out"
+            aria-label="Price History"
+            defaultChecked
+          />
+          <div className="tab-content glass-panel-nested m-1 p-3">
+            {hasExpanded.current && (
+              <PriceHistoryChart propertyId={listingDetails.id} />
+            )}
+          </div>
 
-      {/* Pricing Analytics expand */}
-      <div className="mt-2">
-        <ExpandButton
-          isExpanded={isAnalyticsExpanded}
-          onToggle={() => setIsAnalyticsExpanded(prev => !prev)}
-          collapsedText="Show Pricing Analytics"
-          expandedText="Hide Pricing Analytics"
-        />
-      </div>
-      <div
-        className={`transition-all duration-300 ease-in-out ${
-          isAnalyticsExpanded
-            ? 'opacity-100 max-h-[1000px] mt-2 overflow-visible'
-            : 'opacity-0 max-h-0 mt-0 overflow-hidden'
-        }`}
-      >
-        <div className="flex flex-row items-center gap-2 mb-2">
-          <h3 className="text-xs uppercase tracking-wide text-base-content/60">Price Analytics</h3>
-          <TooltipIcon tooltipText="Price percentile is a measure of the price of a property relative to other properties with the same number of bedrooms and in the same price band." />
+          <input
+            type="radio"
+            name="pricing_tabs"
+            className="tab tabs-sm transition-all duration-500 ease-in-out"
+            aria-label="Price Analytics"
+          />
+          <div className="tab-content glass-panel-nested m-1 p-3">
+            <div className="flex flex-row items-center gap-2 mb-2">
+              <h3 className="text-xs uppercase tracking-wide text-base-content/60">Price Analytics</h3>
+              <TooltipIcon tooltipText="Price percentile is a measure of the price of a property relative to other properties with the same number of bedrooms and in the same price band." />
+            </div>
+            <PercentileCards
+              allPercentile={listingDetails.price_percentile ?? null}
+              boroughPercentile={listingDetails.price_borough_percentile ?? null}
+              neighborhoodPercentile={listingDetails.price_neighborhood_percentile ?? null}
+            />
+          </div>
         </div>
-        <PercentileCards
-          allPercentile={listingDetails.price_percentile ?? null}
-          boroughPercentile={listingDetails.price_borough_percentile ?? null}
-          neighborhoodPercentile={listingDetails.price_neighborhood_percentile ?? null}
-        />
       </div>
     </div>
   );

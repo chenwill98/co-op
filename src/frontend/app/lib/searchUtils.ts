@@ -1,4 +1,5 @@
 import type { Property } from "./definitions";
+import { resolveTagConflicts } from "./tagUtils";
 
 /**
  * Raw property type from Prisma $queryRaw results.
@@ -15,6 +16,10 @@ export type RawProperty = {
   loaded_datetime?: { toDateString: () => string };
   date?: { toDateString: () => string };
   brokers_fee?: { toNumber: () => number };
+  fct_price?: unknown;
+  relevance_score?: { toNumber: () => number };
+  ai_tags?: string[];
+  analytics_tags?: string[];
   tag_list?: string[];
   additional_fees?: unknown;
 };
@@ -22,9 +27,17 @@ export type RawProperty = {
 /**
  * Converts raw Prisma query results into Property objects.
  * Handles Decimal→number, Date→string, and null-safe coercion.
+ * Resolves AI vs analytics tag conflicts (analytics size/price tags take precedence).
  */
 export function formatRawProperties(rawResults: RawProperty[]): Property[] {
-  return rawResults.map((property) => ({
+  return rawResults.map(formatRawProperty);
+}
+
+/**
+ * Converts a single raw Prisma result into a Property object.
+ */
+export function formatRawProperty(property: RawProperty): Property {
+  return {
     ...property,
     price: property.price ? property.price.toNumber() : 0,
     bathrooms: property.bathrooms ? property.bathrooms.toNumber() : null,
@@ -36,9 +49,13 @@ export function formatRawProperties(rawResults: RawProperty[]): Property[] {
     loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : "",
     date: property.date ? property.date.toDateString() : "",
     brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-    tag_list: property.tag_list ?? [],
+    fct_price: property.fct_price ?? 0,
+    relevance_score: property.relevance_score ? property.relevance_score.toNumber() : null,
+    ai_tags: property.ai_tags ?? [],
+    analytics_tags: property.analytics_tags ?? [],
+    tag_list: resolveTagConflicts(property.ai_tags ?? [], property.analytics_tags ?? []),
     additional_fees: property.additional_fees ?? null,
-  })) as Property[];
+  } as Property;
 }
 
 /**

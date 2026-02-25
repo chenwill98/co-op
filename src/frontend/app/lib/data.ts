@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import prisma from './prisma'; // Import the serverless-friendly Prisma client
 import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois, NeighborhoodContext } from './definitions';
 import { tagCategories } from './tagUtils';
+import { type RawProperty, formatRawProperty } from './searchUtils';
 import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { prompts } from './promptConfig';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -20,47 +21,6 @@ const ddbClient = new DynamoDBClient({
   },
 });
 const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
-
-// Raw property type from database queries (Decimal/Date objects)
-type RawProperty = {
-  price?: { toNumber: () => number };
-  bathrooms?: { toNumber: () => number };
-  latitude?: unknown;
-  longitude?: unknown;
-  listed_at?: { toDateString: () => string };
-  closed_at?: { toDateString: () => string };
-  available_from?: { toDateString: () => string };
-  loaded_datetime?: { toDateString: () => string };
-  date?: { toDateString: () => string };
-  brokers_fee?: { toNumber: () => number };
-  fct_price?: unknown;
-  relevance_score?: { toNumber: () => number };
-  tag_list?: string[];
-  additional_fees?: unknown;
-};
-
-/**
- * Convert raw database property (with Decimal/Date objects) to a plain Property.
- */
-export function formatRawProperty(property: RawProperty): Property {
-  return {
-    ...property,
-    price: property.price ? property.price.toNumber() : 0,
-    bathrooms: property.bathrooms ? property.bathrooms.toNumber() : null,
-    latitude: property.latitude ? String(property.latitude) : '0',
-    longitude: property.longitude ? String(property.longitude) : '0',
-    listed_at: property.listed_at ? property.listed_at.toDateString() : '',
-    closed_at: property.closed_at ? property.closed_at.toDateString() : '',
-    available_from: property.available_from ? property.available_from.toDateString() : '',
-    loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
-    date: property.date ? property.date.toDateString() : '',
-    brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-    fct_price: property.fct_price ?? 0,
-    relevance_score: property.relevance_score ? property.relevance_score.toNumber() : null,
-    tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
-    additional_fees: property.additional_fees ? property.additional_fees : null,
-  } as Property;
-}
 
 export async function fetchPropertiesRDS(params: {
   text: string;
