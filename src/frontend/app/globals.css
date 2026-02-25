@@ -142,6 +142,10 @@ html {
   @apply bg-error/15 border border-error/20 text-error;
 }
 
+.glass-badge-info {
+  @apply bg-info/15 border border-info/20 text-info;
+}
+
 /* Fast fade-up animation for card entrances */
 @keyframes fadeUpFast {
   from {

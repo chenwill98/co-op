@@ -85,6 +85,8 @@ model latest_properties_materialized {
   date            DateTime  @default(now()) @db.Date
   fct_id          String    @id @db.VarChar(100)
   fct_price       Int?
+  ai_tags  String[]
+  analytics_tags String[]
   tag_list String[]
   relevance_score Decimal?  @db.Decimal(10, 4)
 

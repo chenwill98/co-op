@@ -14,7 +14,7 @@ import {
   findSimilarNeighborhoods,
 } from "./schemas";
 import { parseClaudeResultsToPrismaSQL, type ClaudeResponse } from "../claudeQueryParser";
-import { tagCategories } from "../tagUtils";
+import { tagCategories, resolveTagConflicts } from "../tagUtils";
 import prisma from "../prisma";
 import type { Property } from "../definitions";
 import { propertyString } from "../definitions";
@@ -526,6 +526,8 @@ export async function executeSearchNode(
       loaded_datetime?: { toDateString: () => string };
       date?: { toDateString: () => string };
       brokers_fee?: { toNumber: () => number };
+      ai_tags?: string[];
+      analytics_tags?: string[];
       tag_list?: string[];
       additional_fees?: unknown;
     };
@@ -548,7 +550,9 @@ export async function executeSearchNode(
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : "",
       date: property.date ? property.date.toDateString() : "",
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-      tag_list: property.tag_list ?? [],
+      ai_tags: property.ai_tags ?? [],
+      analytics_tags: property.analytics_tags ?? [],
+      tag_list: resolveTagConflicts(property.ai_tags ?? [], property.analytics_tags ?? []),
       additional_fees: property.additional_fees ?? null,
     })) as Property[];
 

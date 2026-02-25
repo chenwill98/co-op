@@ -18,11 +18,11 @@ function getLevel(percentile: number | undefined | null): ScoreLevel | null {
   return 'below';
 }
 
-const levelConfig: Record<ScoreLevel, { color: string; text: string }> = {
-  great: { color: 'bg-success', text: 'Great' },
-  good: { color: 'bg-info', text: 'Above avg' },
-  average: { color: 'bg-warning', text: 'Average' },
-  below: { color: 'bg-error', text: 'Below avg' },
+const levelConfig: Record<ScoreLevel, { badgeClass: string; text: string }> = {
+  great: { badgeClass: 'glass-badge-success', text: 'Great' },
+  good: { badgeClass: 'glass-badge-info', text: 'Above avg' },
+  average: { badgeClass: 'glass-badge-warning', text: 'Average' },
+  below: { badgeClass: 'glass-badge-error', text: 'Below avg' },
 };
 
 export default function DealScoreSummary({
@@ -99,20 +99,20 @@ export default function DealScoreSummary({
   if (dimensions.length === 0) return null;
 
   return (
-    <div className="flex flex-col">
-      <h2 className="text-xl font-semibold text-base-content mb-2">Deal Summary</h2>
-      <div className="space-y-1.5">
-        {dimensions.map((dim) => {
-          const config = levelConfig[dim.level];
-          return (
-            <div key={dim.label} className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${config.color} shrink-0`} />
-              <span className="text-sm font-medium text-base-content w-16 shrink-0">{dim.label}</span>
-              <span className="text-sm text-base-content/70">{dim.description}</span>
-            </div>
-          );
-        })}
-      </div>
+    <div className="flex flex-wrap gap-2">
+      {dimensions.map((dim) => {
+        const config = levelConfig[dim.level];
+        return (
+          <div
+            key={dim.label}
+            className={`badge badge-sm ${config.badgeClass} py-2.5 px-3 gap-1.5`}
+            title={dim.description}
+          >
+            <span className="font-medium">{config.text}</span>
+            <span className="opacity-70">{dim.label.toLowerCase()}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

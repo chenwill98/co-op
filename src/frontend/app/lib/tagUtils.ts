@@ -143,6 +143,31 @@ for (const category in tagCategories) {
   }
 }
 
+// Size-related tags that analytics generates from absolute sqft thresholds
+const SIZE_TAGS = new Set(['cramped', 'average-size', 'spacious']);
+
+/**
+ * Resolves conflicts between AI and analytics tags.
+ * When analytics provides a size classification (cramped/average-size/spacious),
+ * it supersedes the AI-generated 'spacious' tag since analytics uses objective
+ * sqft thresholds while AI reads marketing copy.
+ * Also deduplicates tags that appear in both sources.
+ */
+export function resolveTagConflicts(aiTags: string[], analyticsTags: string[]): string[] {
+  const analyticsSet = new Set(analyticsTags);
+  const analyticsHasSizeTag = analyticsTags.some(tag => SIZE_TAGS.has(tag));
+
+  const resolved = aiTags.filter(tag => {
+    // If analytics has a size classification, drop AI 'spacious'
+    if (tag === 'spacious' && analyticsHasSizeTag) return false;
+    // Deduplicate: skip AI tags that already exist in analytics
+    if (analyticsSet.has(tag)) return false;
+    return true;
+  });
+
+  return [...resolved, ...analyticsTags];
+}
+
 /**
  * Returns the display version of a tag (with emoji)
  * @param tagName System tag name (without emoji)

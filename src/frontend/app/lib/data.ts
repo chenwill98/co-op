@@ -2,7 +2,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from './prisma'; // Import the serverless-friendly Prisma client
 import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois, NeighborhoodContext } from './definitions';
-import { tagCategories } from './tagUtils';
+import { tagCategories, resolveTagConflicts } from './tagUtils';
 import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { prompts } from './promptConfig';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -124,6 +124,8 @@ export async function fetchPropertiesRDS(params: {
       loaded_datetime?: { toDateString: () => string };
       date?: { toDateString: () => string };
       brokers_fee?: { toNumber: () => number };
+      ai_tags?: string[];
+      analytics_tags?: string[];
       tag_list?: string[];
       additional_fees?: unknown;
     };
@@ -153,7 +155,9 @@ export async function fetchPropertiesRDS(params: {
       loaded_datetime: property.loaded_datetime ? property.loaded_datetime.toDateString() : '',
       date: property.date ? property.date.toDateString() : '',
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
-      tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
+      ai_tags: property.ai_tags ?? [],
+      analytics_tags: property.analytics_tags ?? [],
+      tag_list: resolveTagConflicts(property.ai_tags ?? [], property.analytics_tags ?? []),
       additional_fees: property.additional_fees ? property.additional_fees : null,
     }));
 
@@ -189,7 +193,9 @@ export async function fetchPropertiesRDSById(id: string): Promise<Property> {
       brokers_fee: property.brokers_fee ? property.brokers_fee.toNumber() : null,
       fct_price: property.fct_price ?? 0,
       relevance_score: property.relevance_score ? property.relevance_score.toNumber() : null,
-      tag_list: property.tag_list ? property.tag_list.map((tag: string) => tag) : [],
+      ai_tags: property.ai_tags ?? [],
+      analytics_tags: property.analytics_tags ?? [],
+      tag_list: resolveTagConflicts(property.ai_tags ?? [], property.analytics_tags ?? []),
       additional_fees: property.additional_fees ? property.additional_fees : null,
     };
     return formattedProperty as Property;

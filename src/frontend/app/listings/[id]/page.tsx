@@ -12,7 +12,6 @@ import ListingsAmenitiesPanel from "@/app/ui/listingspage/ListingsAmentitiesPane
 import ListingsLocationPanel from "@/app/ui/listingspage/ListingsLocationPanel";
 import ListingsTransportationPanel from "@/app/ui/listingspage/ListingsTransportationPanel";
 import ListingsDescriptionPanel from "@/app/ui/listingspage/ListingsDescriptionPanel";
-import DealScoreSummary from "@/app/ui/analytics/DealScoreSummary";
 import BuildingUnitsPanel from "@/app/ui/listingspage/BuildingUnitsPanel";
 import { FormatDisplayText } from "@/app/ui/utilities";
 
@@ -104,7 +103,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             </div>
           )}
         </div>
-        {/* Right Column: Details, Deal Summary, Pricing, Transportation, Location */}
+        {/* Right Column: Details, Pricing, Transportation, Location */}
         <div className="flex flex-col gap-4 lg:col-span-2">
           {/* Property Title + Timeline */}
           <div className="glass-panel p-4 md:p-5">
@@ -112,11 +111,6 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               listingDetails={listingDetails}
               neighborhoodContext={neighborhoodContext}
             />
-          </div>
-
-          {/* Deal Score Summary */}
-          <div className="glass-panel p-4 md:p-5">
-            <DealScoreSummary listingDetails={listingDetails} />
           </div>
 
           {/* Price, Fee Breakdown, Price History */}

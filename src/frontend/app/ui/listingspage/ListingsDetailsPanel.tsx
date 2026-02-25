@@ -6,6 +6,42 @@ import { useState } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 import PercentileCards from "@/app/ui/analytics/PercentileCards";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon";
+import DealScoreSummary from "@/app/ui/analytics/DealScoreSummary";
+import {
+  ClockIcon,
+  CalendarDaysIcon,
+  BuildingOffice2Icon,
+  ArrowTrendingUpIcon,
+} from "@heroicons/react/24/outline";
+
+function SpecItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="glass-panel-nested rounded-lg p-2 text-center">
+      <div className="text-lg font-semibold text-base-content">{value}</div>
+      <div className="text-xs text-base-content/60">{label}</div>
+    </div>
+  );
+}
+
+function TimelineRow({
+  icon: Icon,
+  label,
+  color = 'text-base-content/70',
+  context,
+}: {
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  label: string;
+  color?: string;
+  context?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <Icon className={`w-4 h-4 shrink-0 ${color}`} />
+      <span className={color}>{label}</span>
+      {context && <span className="text-base-content/50 text-xs">{context}</span>}
+    </div>
+  );
+}
 
 function ListingTimeline({
   listingDetails,
@@ -26,13 +62,12 @@ function ListingTimeline({
       domText = `Listed ${dom} days ago`;
     }
 
-    // Color-code if we have neighborhood avg
     let domColor = 'text-base-content/70';
     let contextHint = '';
     if (neighborhoodContext?.avg_days_on_market != null && neighborhoodContext.avg_days_on_market > 0) {
       const avg = Math.round(neighborhoodContext.avg_days_on_market);
       const bedroomLabel = listingDetails.bedrooms === 0 ? 'studio' : `${listingDetails.bedrooms}BR`;
-      contextHint = ` (avg for ${bedroomLabel}: ${avg}d)`;
+      contextHint = `avg for ${bedroomLabel}: ${avg}d`;
       if (dom < avg * 0.75) {
         domColor = 'text-success';
       } else if (dom > avg * 1.5) {
@@ -43,9 +78,13 @@ function ListingTimeline({
     }
 
     items.push(
-      <span key="dom" className={domColor}>
-        {domText}{contextHint}
-      </span>
+      <TimelineRow
+        key="dom"
+        icon={ClockIcon}
+        label={domText}
+        color={domColor}
+        context={contextHint}
+      />
     );
   }
 
@@ -53,25 +92,21 @@ function ListingTimeline({
   if (listingDetails.available_from) {
     const availDate = new Date(listingDetails.available_from);
     const now = new Date();
-    if (availDate <= now) {
-      items.push(<span key="avail" className="text-base-content/70">Available now</span>);
-    } else {
-      items.push(
-        <span key="avail" className="text-base-content/70">
-          Available {availDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-        </span>
-      );
-    }
+    const label = availDate <= now
+      ? 'Available now'
+      : `Available ${availDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+    items.push(
+      <TimelineRow key="avail" icon={CalendarDaysIcon} label={label} />
+    );
   }
 
   // Built in / building age
   if (listingDetails.built_in != null && listingDetails.built_in > 0) {
     const age = new Date().getFullYear() - listingDetails.built_in;
     const isPreWar = listingDetails.built_in < 1940;
+    const label = `Built ${listingDetails.built_in}${isPreWar ? ' (Pre-war)' : ` (${age}y old)`}`;
     items.push(
-      <span key="built" className="text-base-content/70">
-        Built {listingDetails.built_in}{isPreWar ? ' (Pre-war)' : ` (${age}y old)`}
-      </span>
+      <TimelineRow key="built" icon={BuildingOffice2Icon} label={label} />
     );
   }
 
@@ -80,22 +115,19 @@ function ListingTimeline({
     const avgDaysToRent = Math.round(neighborhoodContext.avg_days_to_rent);
     const bedroomLabel = listingDetails.bedrooms === 0 ? 'studios' : `${listingDetails.bedrooms}BRs`;
     items.push(
-      <span key="velocity" className="text-base-content/70">
-        Similar {bedroomLabel} rent within ~{avgDaysToRent}d
-      </span>
+      <TimelineRow
+        key="velocity"
+        icon={ArrowTrendingUpIcon}
+        label={`Similar ${bedroomLabel} rent within ~${avgDaysToRent}d`}
+      />
     );
   }
 
   if (items.length === 0) return null;
 
   return (
-    <div className="text-sm flex flex-wrap gap-x-1 gap-y-0.5">
-      {items.map((item, i) => (
-        <span key={i} className="flex items-center">
-          {i > 0 && <span className="text-base-content/40 mx-1">&middot;</span>}
-          {item}
-        </span>
-      ))}
+    <div className="glass-panel-nested rounded-lg p-3 space-y-2">
+      {items}
     </div>
   );
 }
@@ -107,71 +139,82 @@ export default function ListingsDetailsPanel({
   listingDetails: CombinedPropertyDetails;
   neighborhoodContext?: NeighborhoodContext | null;
 }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const toggleExpanded = () => {
-        setIsExpanded((prev) => !prev);
-    };
-    return (
-        <div className="flex flex-col items-start gap-1">
-            <h1 className="text-3xl font-semibold text-base-content mb-1">
-              {listingDetails.address}
-            </h1>
-            <div className="flex flex-wrap gap-1">
-                <TagList category="Popularity" tags={listingDetails.tag_list || []} />
-            </div>
-            <p className="mt-1 text-sm text-base-content">
-              {FormatDisplayText(listingDetails.property_type || '')} in {FormatDisplayText(listingDetails.neighborhood)},{" "}
-              {FormatDisplayText(listingDetails.borough)} &mdash; {listingDetails.zipcode}
-            </p>
-            <div className="text-base-content/80 text-sm space-x-1">
-              <span>
-                {listingDetails.bedrooms}{" "}
-                {listingDetails.bedrooms && listingDetails.bedrooms % 1 === 0 ? (listingDetails.bedrooms === 1 ? "bed" : "beds") : "beds"}
-              </span>
-              <span>•</span>
-              <span>
-                {listingDetails.bathrooms}{" "}
-                {listingDetails.bathrooms && listingDetails.bathrooms % 1 === 0 ? (listingDetails.bathrooms === 1 ? "bath" : "baths") : "baths"}
-              </span>
-              <span>•</span>
-              <span>
-                {listingDetails.sqft === null || listingDetails.sqft === 0 ? "-" : listingDetails.sqft} ft
-                <sup>2</sup>
-              </span>
-              <span>•</span>
-              <span>
-                $
-                {listingDetails.sqft === null || listingDetails.sqft === 0
-                  ? "-"
-                  : (listingDetails.price / listingDetails.sqft).toFixed(2)}{" "}
-                per ft<sup>2</sup>
-              </span>
-            </div>
+  const [isExpanded, setIsExpanded] = useState(false);
+  const toggleExpanded = () => setIsExpanded((prev) => !prev);
 
-            {/* Listing Timeline */}
-            <ListingTimeline listingDetails={listingDetails} neighborhoodContext={neighborhoodContext} />
+  const hasSqft = listingDetails.sqft != null && listingDetails.sqft > 0;
+  const pricePerSqft = hasSqft
+    ? `$${(listingDetails.price / listingDetails.sqft!).toFixed(0)}`
+    : '-';
 
-            <div className="">
-                <ExpandButton isExpanded={isExpanded} onToggle={toggleExpanded} expandedText="Hide Property Insights" collapsedText="Show Property Insights" />
-            </div>
-            {/* Panel that expands/collapses */}
-            <div
-                className={`transition-all duration-300 ease-in-out ${
-                  isExpanded
-                    ? 'opacity-100 max-h-[1000px] mt-2 overflow-visible'
-                    : 'opacity-0 max-h-0 mt-0 overflow-hidden'
-                }`}
-            >
-                <div className="flex flex-row items-center gap-2 mb-2">
-                  <h3 className="text-xs uppercase tracking-wide text-base-content/60">Sq. Footage Analytics</h3>
-                  <TooltipIcon tooltipText="Sq. footage percentile is a measure of the size of a property relative to other properties with the same number of bedrooms and in the same price band." />
-                </div>
-                <PercentileCards
-                  allPercentile={listingDetails.sqft_percentile ?? null}
-                  boroughPercentile={listingDetails.sqft_borough_percentile ?? null}
-                  neighborhoodPercentile={listingDetails.sqft_neighborhood_percentile ?? null}
-                />
-            </div>
-          </div>
-    );
+  return (
+    <div className="flex flex-col items-start gap-1">
+      {/* Address */}
+      <h1 className="text-3xl font-semibold text-base-content mb-1">
+        {listingDetails.address}
+      </h1>
+
+      {/* Subtitle */}
+      <p className="text-sm text-base-content">
+        {FormatDisplayText(listingDetails.property_type || '')} in {FormatDisplayText(listingDetails.neighborhood)},{" "}
+        {FormatDisplayText(listingDetails.borough)} &mdash; {listingDetails.zipcode}
+      </p>
+
+      {/* Tags */}
+      <div className="flex flex-wrap gap-1 mt-1">
+        <TagList category="Popularity" tags={listingDetails.tag_list || []} />
+      </div>
+
+      {/* Specs Grid */}
+      <div className="grid grid-cols-4 gap-2 w-full mt-4">
+        <SpecItem
+          label={listingDetails.bedrooms === 1 ? 'Bed' : 'Beds'}
+          value={String(listingDetails.bedrooms ?? '-')}
+        />
+        <SpecItem
+          label={listingDetails.bathrooms === 1 ? 'Bath' : 'Baths'}
+          value={String(listingDetails.bathrooms ?? '-')}
+        />
+        <SpecItem
+          label="Sq Ft"
+          value={hasSqft ? listingDetails.sqft!.toLocaleString() : '-'}
+        />
+        <SpecItem
+          label="$/Sq Ft"
+          value={pricePerSqft}
+        />
+      </div>
+
+      {/* Listing Timeline */}
+      <div className="w-full mt-4">
+        <h3 className="text-xs uppercase tracking-wide text-base-content/60 mb-2">Listing Timeline</h3>
+        <ListingTimeline listingDetails={listingDetails} neighborhoodContext={neighborhoodContext} />
+      </div>
+
+      {/* Deal Summary */}
+      <DealScoreSummary listingDetails={listingDetails} />
+
+      {/* Expand for Sq Footage Analytics */}
+      <div className="mt-1">
+        <ExpandButton isExpanded={isExpanded} onToggle={toggleExpanded} expandedText="Hide Property Insights" collapsedText="Show Property Insights" />
+      </div>
+      <div
+        className={`transition-all duration-300 ease-in-out w-full ${
+          isExpanded
+            ? 'opacity-100 max-h-[1000px] mt-2 overflow-visible'
+            : 'opacity-0 max-h-0 mt-0 overflow-hidden'
+        }`}
+      >
+        <div className="flex flex-row items-center gap-2 mb-2">
+          <h3 className="text-xs uppercase tracking-wide text-base-content/60">Sq. Footage Analytics</h3>
+          <TooltipIcon tooltipText="Sq. footage percentile is a measure of the size of a property relative to other properties with the same number of bedrooms and in the same price band." />
+        </div>
+        <PercentileCards
+          allPercentile={listingDetails.sqft_percentile ?? null}
+          boroughPercentile={listingDetails.sqft_borough_percentile ?? null}
+          neighborhoodPercentile={listingDetails.sqft_neighborhood_percentile ?? null}
+        />
+      </div>
+    </div>
+  );
 }
