@@ -88,7 +88,7 @@ Resources:
       Role: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSUserDefinedRoleForLambda
       Layers:
         - !Ref AWSUtilsLayer
-      ReservedConcurrentExecutions: 5  # Limit concurrent instances for DynamoDB throughput
+      ReservedConcurrentExecutions: 5  # Limit concurrent instances for RDS connection pool
       Events:
         MyQueueEvent:
           Type: SQS
@@ -191,22 +191,26 @@ Resources:
         - Key: Environment
           Value: Production
 
-  PropertyMediaDetailsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: PropertyMediaDetails
-      AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S # 'S' for String (unique identifier for each property)
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH # Partition key
-      BillingMode: PROVISIONED # Use provisioned capacity to utilize the Free Tier
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5 # Keep this low to stay within the Free Tier
-        WriteCapacityUnits: 5 # Keep this low to stay within the Free Tier
-      SSESpecification:
-        SSEEnabled: true # Enable server-side encryption for data security
-      Tags:
-        - Key: Environment
-          Value: Production
+  # PropertyMediaDetailsTable: DEPRECATED — migrated to PostgreSQL dim_property_details
+  # Data now lives in description, description_summary, images, videos, floorplans columns.
+  # Kept commented for reference; safe to delete after migration is verified.
+  #
+  # PropertyMediaDetailsTable:
+  #   Type: AWS::DynamoDB::Table
+  #   Properties:
+  #     TableName: PropertyMediaDetails
+  #     AttributeDefinitions:
+  #       - AttributeName: id
+  #         AttributeType: S
+  #     KeySchema:
+  #       - AttributeName: id
+  #         KeyType: HASH
+  #     BillingMode: PROVISIONED
+  #     ProvisionedThroughput:
+  #       ReadCapacityUnits: 5
+  #       WriteCapacityUnits: 5
+  #     SSESpecification:
+  #       SSEEnabled: true
+  #     Tags:
+  #       - Key: Environment
+  #         Value: Production

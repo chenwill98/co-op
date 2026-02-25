@@ -36,6 +36,13 @@ model dim_property_details {
   thumbnail_image String?
   tag_list        String[]
   loaded_datetime DateTime? @default(now()) @db.Timestamp(6)
+  brokers_fee     Decimal?  @db.Decimal(10, 2)
+  additional_fees Json?     @db.JsonB
+  description         String?
+  description_summary String?
+  images              String[]
+  videos              String[]
+  floorplans          String[]
 
   @@schema("real_estate")
 }

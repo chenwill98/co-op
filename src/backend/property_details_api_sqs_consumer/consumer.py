@@ -1,11 +1,7 @@
 import json
-import time
 import requests
-import boto3
-from botocore.exceptions import ClientError
-from datetime import datetime, timezone
 from sqlalchemy import text
-from aws_utils import logger, get_db_session, execute_query
+from aws_utils import logger, get_db_session
 
 def upsert_property_details_to_rds(session, listings):
     """
@@ -16,13 +12,15 @@ def upsert_property_details_to_rds(session, listings):
             id, status, listed_at, closed_at, days_on_market, available_from,
             address, price, borough, neighborhood, zipcode, property_type,
             sqft, bedrooms, bathrooms, type, latitude, longitude, amenities,
-            built_in, building_id, agents, no_fee, thumbnail_image
+            built_in, building_id, agents, no_fee, thumbnail_image,
+            description, images, videos, floorplans
         )
         VALUES (
             :id, :status, :listed_at, :closed_at, :days_on_market, :available_from,
             :address, :price, :borough, :neighborhood, :zipcode, :property_type,
             :sqft, :bedrooms, :bathrooms, :type, :latitude, :longitude,
-            :amenities, :built_in, :building_id, :agents, :no_fee, :thumbnail_image
+            :amenities, :built_in, :building_id, :agents, :no_fee, :thumbnail_image,
+            :description, :images, :videos, :floorplans
         )
         ON CONFLICT (id) DO UPDATE SET
             status = EXCLUDED.status,
@@ -48,6 +46,10 @@ def upsert_property_details_to_rds(session, listings):
             agents = EXCLUDED.agents,
             no_fee = EXCLUDED.no_fee,
             thumbnail_image = EXCLUDED.thumbnail_image,
+            description = EXCLUDED.description,
+            images = EXCLUDED.images,
+            videos = EXCLUDED.videos,
+            floorplans = EXCLUDED.floorplans,
             loaded_datetime = EXCLUDED.loaded_datetime;
     """
 
@@ -67,8 +69,15 @@ def upsert_property_details_to_rds(session, listings):
             building_id = building.get("id") if building else None
 
             # Safely extract thumbnail_image
-            images = listing.get("images")
+            images = listing.get("images") or []
             thumbnail_image = images[0] if images and len(images) > 0 else None
+
+            # Format media arrays for PostgreSQL
+            videos = listing.get("videos") or []
+            floorplans = listing.get("floorplans") or []
+            images_array = "{" + ",".join(f'"{item}"' for item in images) + "}" if images else "{}"
+            videos_array = "{" + ",".join(f'"{item}"' for item in videos) + "}" if videos else "{}"
+            floorplans_array = "{" + ",".join(f'"{item}"' for item in floorplans) + "}" if floorplans else "{}"
 
             params_list.append({
                 'id': listing.get("id"),
@@ -95,6 +104,10 @@ def upsert_property_details_to_rds(session, listings):
                 'agents': agents_array,
                 'no_fee': listing.get("noFee"),
                 'thumbnail_image': thumbnail_image,
+                'description': listing.get("description") or None,
+                'images': images_array,
+                'videos': videos_array,
+                'floorplans': floorplans_array,
             })
         
         # Execute a batch insert with executemany
@@ -108,55 +121,6 @@ def upsert_property_details_to_rds(session, listings):
         logger.error(f"Error upserting to dim_property_details: {e}")
         raise
 
-
-def upsert_property_media_details_to_dynamodb(listings):
-    """
-    Write property media details to DynamoDB one at a time.
-    Uses exponential backoff on throughput exceeded errors.
-    """
-    if not listings:
-        return
-
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table('PropertyMediaDetails')
-    loaded_datetime = datetime.now(timezone.utc).isoformat()
-
-    successful_writes = 0
-    failed_writes = 0
-
-    for listing in listings:
-        item = {
-            'id': listing.get('id'),
-            'description': listing.get('description', ''),
-            'images': listing.get('images', []),
-            'videos': listing.get('videos', []),
-            'floorplans': listing.get('floorplans', []),
-            'loaded_datetime': loaded_datetime
-        }
-
-        # Retry with exponential backoff on throughput exceeded
-        max_retries = 8
-        for attempt in range(max_retries):
-            try:
-                table.put_item(Item=item)
-                successful_writes += 1
-                break
-            except ClientError as e:
-                if e.response['Error']['Code'] == 'ProvisionedThroughputExceededException':
-                    if attempt < max_retries - 1:
-                        # Exponential backoff: 1s, 2s, 4s, 8s, 16s, 32s, 64s
-                        backoff = (2 ** attempt)
-                        logger.warning(f"Throughput exceeded, backing off {backoff}s (attempt {attempt + 1})")
-                        time.sleep(backoff)
-                    else:
-                        logger.error(f"Failed to write item {listing.get('id')} after {max_retries} retries")
-                        failed_writes += 1
-                else:
-                    logger.error(f"DynamoDB error for item {listing.get('id')}: {e}")
-                    failed_writes += 1
-                    break
-
-    logger.info(f"DynamoDB writes complete: {successful_writes} successful, {failed_writes} failed")
 
 def fetch_and_store_data(message_list):
     """
@@ -217,9 +181,6 @@ def fetch_and_store_data(message_list):
 
         logger.info(f"Inserting {len(property_details_list)} messages into dim_property_details")
         upsert_property_details_to_rds(session, property_details_list)
-
-        logger.info(f"Inserting {len(property_details_list)} messages into DynamoDB table PropertyMediaDetails")
-        upsert_property_media_details_to_dynamodb(property_details_list)
 
     except Exception as e:
         logger.error(f"Error upserting property details: {e}")

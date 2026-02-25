@@ -1,10 +1,9 @@
 import json
 import re
-import boto3
 import anthropic
 import pandas as pd
 from datetime import datetime, timezone
-from sqlalchemy import text, ARRAY, String, bindparam
+from sqlalchemy import text
 from aws_utils import get_secret, logger, get_db_session, execute_query
 
 TAG_LIST = {
@@ -67,71 +66,33 @@ TAG_LIST = {
 
 def fetch_properties_without_summary(limit=1000):
     """
-    Fetches property items from DynamoDB that don't have a description_summary field.
-    Returns a list of dictionaries containing id and description for each property.
-    
+    Fetches active properties from PostgreSQL that don't have a description_summary yet.
+    Uses the partial index on dim_property_details for efficient lookup.
+
     Args:
         limit (int): Maximum number of items to return (defaults to 1000)
-    
-    Returns:
-        list: List of dictionaries containing property data
-    """
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table('PropertyMediaDetails')
 
+    Returns:
+        list: List of dictionaries containing 'id' and 'description'
+    """
     query = """
-    SELECT fct_id
-    FROM real_estate.latest_property_details_view;"""
+        SELECT d.id, d.description
+        FROM real_estate.dim_property_details d
+        WHERE d.description_summary IS NULL
+          AND d.description IS NOT NULL AND d.description != ''
+          AND d.id IN (SELECT fct_id FROM real_estate.latest_property_details_view)
+        ORDER BY d.loaded_datetime DESC
+        LIMIT :limit
+    """
 
     session = get_db_session()
-    listings = execute_query(session, query)
-    listings_df = pd.DataFrame(listings)
-
-    # Convert listings_df to just set of ids
-    listings_ids = set(listings_df['fct_id'])
-    
-    # Use a scan operation with a filter expression to find items without description_summary
-    logger.info("Scanning DynamoDB for properties without description_summary")
-    response = table.scan(
-        FilterExpression="attribute_not_exists(description_summary)",
-        ProjectionExpression="id, description, loaded_datetime"
-    )
-    
-    # Filter items to only include those in listings_ids and with non-empty description
-    filtered_items = [item for item in response['Items'] if item['id'] in listings_ids and item.get('description', '').strip()]
-    items = filtered_items
-    
-    logger.info(f"Found {len(items)} items that exist in RDS out of {len(response['Items'])} total items without summaries")
-    
-    # Handle pagination if there are more items and we haven't reached the limit
-    while 'LastEvaluatedKey' in response and len(items) < limit:
-        logger.info(f"Fetching more items, found {len(items)} so far")
-        response = table.scan(
-            FilterExpression="attribute_not_exists(description_summary)",
-            ProjectionExpression="id, description, loaded_datetime",
-            ExclusiveStartKey=response['LastEvaluatedKey']
-        )
-        
-        # Filter new items to only include those in listings_ids and with non-empty description
-        new_items = [item for item in response['Items'] if item['id'] in listings_ids and item.get('description', '').strip()]
-        items.extend(new_items)
-        
-        # Exit the loop if we've reached or exceeded the limit
-        if len(items) >= limit:
-            logger.info(f"Reached item limit of {limit}")
-            # Trim excess items if we've gone over the limit
-            items = items[:limit]
-            break
-    
-    # Sort items by loaded_datetime if it exists in the items
     try:
-        items = sorted(items, key=lambda x: x.get('loaded_datetime', ''), reverse=True)
-        logger.info("Sorted items by loaded_datetime (newest first)")
-    except Exception as e:
-        logger.warning(f"Could not sort by loaded_datetime: {str(e)}")
-    
-    logger.info(f"Found {len(items)} properties without description_summary (limited to {limit})")
-    return items
+        result = execute_query(session, query, {"limit": limit})
+        items = [dict(row._mapping) for row in result]
+        logger.info(f"Found {len(items)} active properties without description_summary (limit {limit})")
+        return items
+    finally:
+        session.close()
 
 def create_batch():
     """
@@ -334,64 +295,6 @@ def create_batch():
         logger.error(f"Error creating Anthropic batch: {str(e)}")
         raise
 
-def update_dynamodb(property_dynamodb_data):
-    """
-    Update the PropertyMediaDetails DynamoDB table with generated summaries for multiple properties.
-    Uses batch operations for better performance.
-    
-    Args:
-        property_summaries (list): List of dictionaries containing property_id and summary
-            [
-                {"property_id": "123", "summary": "summary text 1"},
-                {"property_id": "456", "summary": "summary text 2"}
-            ]
-    """
-    if not property_dynamodb_data:
-        logger.info("No property summaries to update")
-        return
-    
-    try:
-        dynamodb = boto3.resource('dynamodb')
-        table = dynamodb.Table('PropertyMediaDetails')
-        current_time = datetime.now(timezone.utc).isoformat()
-        
-        # DynamoDB batch_write_item can process up to 25 items at once
-        batch_size = 25
-        success_count = 0
-        
-        # Process in batches of 25 items
-        for i in range(0, len(property_dynamodb_data), batch_size):
-            batch_items = property_dynamodb_data[i:i+batch_size]
-            batch_requests = []
-            
-            for item in batch_items:
-                property_id = item.get('property_id')
-                summary = item.get('summary')
-                
-                if not property_id or not summary:
-                    continue
-                
-                # Create update request for each item
-                response = table.update_item(
-                    Key={'id': property_id},
-                    UpdateExpression="SET description_summary = :summary, updated_datetime = :updated_dt",
-                    ExpressionAttributeValues={
-                        ':summary': summary,
-                        ':updated_dt': current_time
-                    },
-                    ReturnValues="UPDATED_NEW"
-                )
-                success_count += 1
-            
-            logger.info(f"Processed batch of {len(batch_items)} DynamoDB updates")
-        
-        logger.info(f"Successfully updated {success_count} properties in DynamoDB")
-        return success_count
-    except Exception as e:
-        logger.error(f"Error updating DynamoDB with batch property summaries: {str(e)}")
-        raise
-
-
 def sanitize_fee_amount(amount):
     """
     Extract numeric value from fee amount, handling cases like '$700', '1.5 months', etc.
@@ -455,38 +358,39 @@ def extract_brokers_fee(property_id, additional_fees, listings_df):
 
 def update_rds(property_RDS_data):
     """
-    Update the real_estate.dim_property_details table with the generated tags for multiple properties in a single transaction.
-    
+    Update the real_estate.dim_property_details table with generated tags, fees,
+    and description summaries for multiple properties in a single transaction.
+
     Args:
-        property_tags_data (list): List of dictionaries containing property_id and tag_list for each property
+        property_RDS_data (list): List of dicts with keys:
+            - property_id (str)
+            - tag_list (list[str])
+            - additional_fees (list[dict])
+            - summary (str, optional) — AI-generated description summary
     """
     if not property_RDS_data:
-        logger.info("No property tags data to update")
+        logger.info("No property data to update")
         return
-    
+
     try:
-        # Get a database session
         session = get_db_session()
 
-        query = """
+        query_text = """
         SELECT fct_id, price
         FROM real_estate.latest_property_details_view;"""
 
-        listings = execute_query(session, query)
+        listings = execute_query(session, query_text)
         listings_df = pd.DataFrame(listings)
-        
-        # Process each property in the same transaction
+
         for property_data in property_RDS_data:
             property_id = property_data.get('property_id')
             tag_list = property_data.get('tag_list', [])
             tag_list = [str(tag) for tag in tag_list]
             additional_fees = property_data.get('additional_fees', [])
+            summary = property_data.get('summary')
             brokers_fee = extract_brokers_fee(property_id, additional_fees, listings_df)
-            
+
             if property_id and tag_list:
-                # logger.info(f"Updating RDS for property {property_id} with tags {tag_list}")
-                
-                # Update query with array for tag_list and jsonb for additional_fees
                 query = """
                 UPDATE real_estate.dim_property_details
                 SET tag_list = array(
@@ -494,26 +398,26 @@ def update_rds(property_RDS_data):
                     FROM unnest(tag_list || :tag_list) AS t
                 ),
                 additional_fees = :additional_fees,
-                brokers_fee = :brokers_fee
+                brokers_fee = :brokers_fee,
+                description_summary = COALESCE(:summary, description_summary)
                 WHERE id = :property_id;
                 """
-                
-                # Convert additional_fees to JSON string for JSONB field
+
                 execute_query(session, query, {
-                    "tag_list": tag_list, 
-                    "additional_fees": json.dumps(additional_fees), 
+                    "tag_list": tag_list,
+                    "additional_fees": json.dumps(additional_fees),
                     "brokers_fee": brokers_fee,
+                    "summary": summary,
                     "property_id": property_id
                 })
-        
-        # Commit the transaction once for all updates
+
         session.commit()
-        logger.info(f"Updated RDS for {len(property_RDS_data)} properties with tags in a single transaction")
-        
+        logger.info(f"Updated RDS for {len(property_RDS_data)} properties in a single transaction")
+
     except Exception as e:
         if 'session' in locals():
             session.rollback()
-        logger.error(f"Error updating RDS with batch property tags: {str(e)}")
+        logger.error(f"Error updating RDS with batch property data: {str(e)}")
         raise
     finally:
         if 'session' in locals():
@@ -522,8 +426,8 @@ def update_rds(property_RDS_data):
 def process_completed_batch_results(message_batch):
     """
     Process the results of a completed Anthropic batch.
-    Updates DynamoDB with summaries and RDS with tags.
-    
+    Updates PostgreSQL with summaries, tags, and fees.
+
     Args:
         message_batch: The Anthropic message batch object to process
     """
@@ -547,43 +451,35 @@ def process_completed_batch_results(message_batch):
         
         # Collect all property data for batch processing
         property_RDS_data = []
-        property_dynamodb_data = []
-        
+
         # Convert batch_results iterator to a list for processing
         processed_count = 0
-        
+
         # Process each result
         for message in batch_results:
             processed_count += 1
             try:
                 # Get property ID from custom_id
                 property_id = message.custom_id
-                
+
                 # Check if the message was successful
                 if message.result.type == "succeeded":
                     # Extract tool use from the message
                     tool_uses = [content for content in message.result.message.content if content.type == "tool_use"]
-                    
+
                     if tool_uses:
-                        # Get the first tool use (should be process_description)
                         tool_use = tool_uses[0]
-                        
-                        # Extract summary and tag_list from tool input
+
                         summary = tool_use.input.get("summary", "")
                         tag_list = tool_use.input.get("tag_list", [])
                         additional_fees = sanitize_additional_fees(tool_use.input.get("additional_fees", []))
-                        
-                        # Collect property summary data for batch update
-                        property_dynamodb_data.append({
-                            "property_id": property_id,
-                            "summary": summary
-                        })
-                        
-                        # Collect property tag data for batch update
+
+                        # All data (tags, fees, summary) goes to PostgreSQL
                         property_RDS_data.append({
                             "property_id": property_id,
                             "tag_list": tag_list,
-                            "additional_fees": additional_fees
+                            "additional_fees": additional_fees,
+                            "summary": summary,
                         })
                     else:
                         logger.warning(f"No tool use found in message for property {property_id}")
@@ -592,13 +488,9 @@ def process_completed_batch_results(message_batch):
             except Exception as e:
                 logger.error(f"Error processing message for property {property_id}: {str(e)}")
 
-        # Update all property tags in RDS at once
+        # Single update path: tags + fees + summary all go to PostgreSQL
         if property_RDS_data:
             update_rds(property_RDS_data)
-        
-        # Update all property summaries in DynamoDB at once
-        if property_dynamodb_data:
-            update_dynamodb(property_dynamodb_data)
         
         
         logger.info(f"Batch processing complete for batch ID: {message_batch.id} with {len(property_RDS_data)}/{processed_count} success rate")

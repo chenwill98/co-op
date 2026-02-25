@@ -4,23 +4,11 @@ import prisma from './prisma'; // Import the serverless-friendly Prisma client
 import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois, NeighborhoodContext } from './definitions';
 import { tagCategories } from './tagUtils';
 import { type RawProperty, formatRawProperty } from './searchUtils';
-import { BatchGetCommand, DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import { prompts } from './promptConfig';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import Anthropic from "@anthropic-ai/sdk";
 // Import the parser properly using ES module syntax
 import { parseClaudeResultsToPrismaSQL } from './claudeQueryParser';
 import { ChatHistory } from './definitions';
-
-// Global AWS SDK V3 clients for DynamoDB
-const ddbClient = new DynamoDBClient({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
-const ddbDocClient = DynamoDBDocumentClient.from(ddbClient);
 
 export async function fetchPropertiesRDS(params: {
   text: string;
@@ -167,37 +155,33 @@ export async function fetchPropertiesByIds(ids: string[]): Promise<Property[]> {
 }
 
 export async function fetchPropertyDetailsById(id: string): Promise<PropertyDetails | null> {
-  // Uses global ddbDocClient
-
-  const params = {
-    RequestItems: {
-      'PropertyMediaDetails': {
-        Keys: [{ id }]
-      }
-    }
-  };
-
   try {
-    const response = await ddbDocClient.send(new BatchGetCommand(params));
-    const items = response.Responses?.PropertyMediaDetails ?? [];
+    const result = await prisma.dim_property_details.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        description: true,
+        description_summary: true,
+        images: true,
+        videos: true,
+        floorplans: true,
+        tag_list: true,
+        loaded_datetime: true,
+      },
+    });
 
-    if (items.length > 0) {
-      const item = items[0];
+    if (!result) return null;
 
-      // Convert any item with tags to use system tags
-      if (item.tag_list) {
-        item.tag_list = item.tag_list.map((tag: string) => tag);
-      }
-
-      // Map ai_summary from DynamoDB to description_summary for frontend
-      if (item.ai_summary) {
-        item.description_summary = item.ai_summary;
-      }
-
-      return item as PropertyDetails;
-    }
-
-    return null;
+    return {
+      id: result.id,
+      description: result.description ?? '',
+      description_summary: result.description_summary ?? '',
+      images: result.images ?? [],
+      videos: result.videos ?? [],
+      floorplans: result.floorplans ?? [],
+      tag_list: result.tag_list,
+      entered_at: result.loaded_datetime?.toISOString() ?? '',
+    } as PropertyDetails;
   } catch (error) {
     throw error;
   }
