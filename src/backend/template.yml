@@ -163,7 +163,34 @@ Resources:
   #   Properties:
   #     StageName: Prod
 
-  # DynamoDB Table
+  # DynamoDB Tables
+  SharedListingsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: SharedListings
+      AttributeDefinitions:
+        - AttributeName: shareId
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: shareId
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Environment
+          Value: Production
+
   PropertyMediaDetailsTable:
     Type: AWS::DynamoDB::Table
     Properties:

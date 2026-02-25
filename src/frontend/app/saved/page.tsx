@@ -30,7 +30,7 @@ export default function SavedListingsPage() {
 
   return (
     <main className="z-0 min-h-screen">
-      <div className="container mx-auto px-4 w-full md:w-4/5 flex flex-col min-h-[calc(100vh-4rem)]">
+      <div className="container mx-auto w-full px-4 md:w-5/6 lg:w-5/7 flex flex-col min-h-[calc(100vh-4rem)]">
         {isLoading ? (
           <ListingsGridSkeleton />
         ) : savedListings.length > 0 ? (
