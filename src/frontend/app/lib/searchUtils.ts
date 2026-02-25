@@ -59,6 +59,14 @@ export function formatRawProperty(property: RawProperty): Property {
 }
 
 /**
+ * Computes the net effective monthly price (base rent + amortized broker fee).
+ * Use this instead of inlining the formula to keep the calculation DRY.
+ */
+export function netEffectivePrice(listing: { price: number; no_fee: boolean; brokers_fee: number | null }): number {
+  return listing.no_fee ? listing.price : listing.price + listing.price * (listing.brokers_fee || 0);
+}
+
+/**
  * Maps a sort string (from the UI dropdown) to a Prisma orderBy object.
  * Returns undefined for the default "original" sort (which uses relevance_score).
  */

@@ -10,15 +10,13 @@ export default function Page() {
   return (
     <>
       <main className="z-0 relative">
-        <div className="container mx-auto w-full px-4 md:w-5/6 lg:w-5/7">
+        <div className="container mx-auto w-full px-4 md:w-11/12 lg:w-11/12">
           <div className="flex flex-row w-full">
             <div className="grow pb-24">
               <ListingsGrid listings={listings} />
             </div>
           </div>
         </div>
-        {/* White gradient overlay at the bottom to prevent cards under the ChatBox */}
-        <div className="pointer-events-none fixed left-0 bottom-0 w-full h-16 z-20 bg-base-300 [mask-image:linear-gradient(to_top,white_80%,transparent_100%)]" />
       </main>
       <ChatBox />
     </>

@@ -105,7 +105,7 @@ export default function DealScoreSummary({
         return (
           <div
             key={dim.label}
-            className={`badge badge-sm ${config.badgeClass} py-2.5 px-3 gap-1.5`}
+            className={`badge badge-sm ${config.badgeClass} rounded-full py-2.5 px-3 gap-1.5`}
             title={dim.description}
           >
             <span className="font-medium">{config.text}</span>

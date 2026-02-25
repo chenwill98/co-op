@@ -1,15 +1,15 @@
 /**
  * Skeleton for individual listing cards
- * Matches ListingsCard structure: h-[60vh], image area 3/7, body 4/7, rounded-2xl
+ * Matches ListingsCard structure: aspect-[3/2] image, auto-height content, rounded-2xl
  */
 export function ListingsCardSkeleton() {
   return (
-    <div className="rounded-2xl border border-base-300/50 bg-base-100/90 h-[60vh] shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
-      {/* Image area - 3/7 height */}
-      <div className="skeleton h-3/7 rounded-none rounded-t-2xl" />
+    <div className="rounded-2xl border border-base-300/50 bg-base-100/90 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+      {/* Image area - 3:2 aspect ratio */}
+      <div className="skeleton aspect-[3/2] rounded-none rounded-t-2xl" />
 
-      {/* Card body - 4/7 height */}
-      <div className="h-4/7 p-4 flex flex-col gap-3">
+      {/* Card body */}
+      <div className="p-3 flex flex-col gap-2">
         {/* Neighborhood + Address */}
         <div className="flex flex-col gap-1">
           <div className="skeleton h-3 w-32 rounded" />
@@ -18,43 +18,16 @@ export function ListingsCardSkeleton() {
         </div>
 
         {/* Price section */}
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <div className="skeleton h-7 w-28 rounded" />
-            <div className="skeleton h-5 w-16 rounded-full" />
-          </div>
-          <div className="skeleton h-4 w-40 rounded" />
+        <div className="flex items-center gap-2">
+          <div className="skeleton h-6 w-28 rounded" />
+          <div className="skeleton h-5 w-16 rounded-full" />
         </div>
 
         {/* Tags section - pushed to bottom */}
-        <div className="flex flex-col mt-auto gap-2">
-          <div className="flex gap-1">
-            <div className="skeleton h-5 w-16 rounded-full" />
-            <div className="skeleton h-5 w-20 rounded-full" />
-            <div className="skeleton h-5 w-14 rounded-full" />
-          </div>
-          <div className="skeleton h-3 w-28 rounded" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Skeleton for the summary card header
- * Matches SearchListingsSummaryCard: col-span-3, glass-card, rounded-2xl
- */
-export function SummaryCardSkeleton() {
-  return (
-    <div className="glass-card col-span-3 p-6 rounded-2xl">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-2">
-          <div className="skeleton h-7 w-48 rounded" />
-          <div className="skeleton h-4 w-32 rounded" />
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <div className="skeleton h-4 w-20 rounded" />
-          <div className="skeleton h-5 w-36 rounded" />
+        <div className="flex mt-auto gap-1">
+          <div className="skeleton h-5 w-16 rounded-full" />
+          <div className="skeleton h-5 w-20 rounded-full" />
+          <div className="skeleton h-5 w-14 rounded-full" />
         </div>
       </div>
     </div>
@@ -63,12 +36,11 @@ export function SummaryCardSkeleton() {
 
 /**
  * Full grid skeleton matching actual listings layout
- * Uses gap-3 (not gap-6), includes summary card, 6 card skeletons
+ * Uses gap-3, 6 card skeletons in a 3-column grid
  */
 export function ListingsGridSkeleton() {
   return (
     <div className="grid grid-cols-3 gap-3 p-4 w-full">
-      <SummaryCardSkeleton />
       <ListingsCardSkeleton />
       <ListingsCardSkeleton />
       <ListingsCardSkeleton />

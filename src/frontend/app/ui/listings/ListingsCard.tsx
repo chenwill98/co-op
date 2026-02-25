@@ -1,6 +1,7 @@
 import { Property } from "@/app/lib/definitions";
 import Link from "next/link";
 import Image from 'next/image';
+import { netEffectivePrice } from "@/app/lib/searchUtils";
 import { FormatDisplayText, TagList } from "@/app/ui/utilities";
 import BookmarkIcon from "@/app/ui/icons/BookmarkIcon";
 import MapButton from "@/app/ui/icons/MapButton";
@@ -29,10 +30,10 @@ export default function ListingsCard({ listing, animationIndex, hideBookmark }: 
     <Link
         href={`/listings/${listing.id}`}
         key={listing.id}
-        className={`group card rounded-2xl border border-base-300/50 bg-base-100/90 h-[60vh] hover:bg-base-100 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.12)] transform transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 ${animationIndex !== undefined ? 'animate-fade-up-fast' : ''}`}
+        className={`group card rounded-2xl border border-base-300/50 bg-base-100/80 backdrop-blur-lg shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_12px_40px_rgba(0,0,0,0.12)] transform transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 ${animationIndex !== undefined ? 'animate-fade-up-fast' : ''}`}
         style={animationIndex !== undefined ? { animationDelay: `${animationDelay}ms` } : undefined}
     >
-      <figure className="h-3/7 relative bg-primary/10 overflow-hidden">
+      <figure className="aspect-[3/2] relative bg-primary/10 overflow-hidden">
         <div className="overflow-hidden rounded relative w-full h-full">
           {/* Map: always show for cards without a thumbnail, lazy-load for cards with a thumbnail */}
           {(!listing.thumbnail_image || showMap) && staticMapUrl && (
@@ -44,7 +45,7 @@ export default function ListingsCard({ listing, animationIndex, hideBookmark }: 
                 src={staticMapUrl}
                 alt={`Map location for ${listing.address}`}
                 fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 45vw, 30vw"
                 className="thumbnail object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
               />
             </div>
@@ -64,7 +65,7 @@ export default function ListingsCard({ listing, animationIndex, hideBookmark }: 
                 src={listing.thumbnail_image}
                 alt={listing.address}
                 fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 45vw, 30vw"
                 className="thumbnail object-cover w-full h-full transform transition-transform duration-300 group-hover:scale-105"
               />
             </div>
@@ -92,68 +93,48 @@ export default function ListingsCard({ listing, animationIndex, hideBookmark }: 
           </div>
         )}
       </figure>
-      <div className="card-body h-4/7 flex flex-col">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-0">
-            <p className="text-base-content/60 text-xs">
-              Rental unit in {FormatDisplayText(listing.neighborhood)}
-            </p>
-            <h2 className="hover:text-primary transition-colors truncate" title={listing.address}>{listing.address}</h2>
-            <div className="text-base-content/60 text-xs space-x-1">
-                <span>
-                {listing.bedrooms}{" "}
-                {listing.bedrooms === 1 ? "bed" : "beds"}
-                </span>
-                <span>•</span>
-                <span>
-                {listing.bathrooms}{" "}
-                {listing.bathrooms && listing.bathrooms % 1 === 0 ? (listing.bathrooms === 1 ? "bath" : "baths") : "baths"}
-                </span>
-                <span>•</span>
-                <span>
-                {listing.sqft === null ? "N/A" : listing.sqft === 0 ? "-" : listing.sqft} ft
-                <sup>2</sup>
-                </span>
+      <div className="card-body flex flex-col p-3 gap-1">
+        {/* Tags — single line, compact */}
+        <TagList tags={listing.tag_list || []} compact />
+
+        {/* Price — net effective (base + monthly broker fee) */}
+        <div className="flex flex-row items-baseline gap-2">
+          <div className="text-2xl font-bold">
+            ${netEffectivePrice(listing).toLocaleString()}
+          </div>
+          {!listing.no_fee ? (
+            <span className="text-xs text-base-content/50">net effective</span>
+          ) : (
+            <div className="badge glass-badge-primary text-primary rounded-full text-[0.7rem] py-0.5 h-auto min-h-0 px-2 relative top-[-2px]">
+              No Fee
             </div>
-            </div>
-            {/* <div className="flex items-center space-x-1">
-            <MapButton listing={listing} onClick={(e) => {
-                e.preventDefault();    // Stop the <a> navigation
-                e.stopPropagation();   // Stop event from bubbling up to the link
-            }}/>
-            <BookmarkIcon property={listing} onClick={(e) => {
-                e.preventDefault();    // Stop the <a> navigation
-                e.stopPropagation();   // Stop event from bubbling up to the link
-                // Toggle bookmark logic here
-            }}/>
-            </div> */}
+          )}
         </div>
-        <div className="flex flex-col gap-0">
-            <div className="flex flex-row items-center gap-2">
-            <div className="text-2xl font-bold">
-                ${listing.price.toLocaleString()}
-            </div>
-            <div className="badge glass-badge-primary text-primary rounded-full text-xs">
-                {listing.no_fee
-                ? "No Fee"
-                : `Fees: ~$${Math.floor(listing.price * (listing.brokers_fee || 0)).toLocaleString()}`}
-            </div>
-            </div>
-            {!listing.no_fee && (
-            <div>
-                <span className="text-base-content text-lg font-semibold">${(listing.price + listing.price * (listing.brokers_fee || 0)).toLocaleString()}</span>
-                <span className="text-base-content/60 text-xs">
-                {" "}
-                net effective rent
-                </span>
-            </div>
-            )}
+
+        {/* Dimensions + Address — anchored to bottom */}
+        <div className="flex flex-col mt-auto gap-0.5">
+          <div className="text-base-content/60 text-[0.85rem] space-x-1">
+            <span>
+              <span className="font-semibold text-base-content">{listing.bedrooms}</span>{" "}
+              {listing.bedrooms === 1 ? "bed" : "beds"}
+            </span>
+            <span>•</span>
+            <span>
+              <span className="font-semibold text-base-content">{listing.bathrooms}</span>{" "}
+              {listing.bathrooms && listing.bathrooms % 1 === 0 ? (listing.bathrooms === 1 ? "bath" : "baths") : "baths"}
+            </span>
+            <span>•</span>
+            <span>
+              <span className="font-semibold text-base-content">{listing.sqft === null ? "N/A" : listing.sqft === 0 ? "-" : listing.sqft}</span> ft
+              <sup>2</sup>
+            </span>
+          </div>
+          <h2 className="hover:text-primary transition-colors truncate" title={listing.address}>{listing.address}</h2>
+          <p className="text-base-content/60 text-xs">
+            Rental unit in {FormatDisplayText(listing.neighborhood)}
+          </p>
         </div>
-        <div className="flex flex-col mt-auto gap-2">
-            <TagList tags={listing.tag_list || []} />
-            <div className="text-base-content/60 text-xs">Listing on StreetEasy</div>
-        </div>
-        </div>
+      </div>
     </Link>
   );
 }

@@ -142,10 +142,10 @@ export default function Page() {
           className="card w-3/5 animate-fade-up-delayed mb-20
             bg-base-100/80 backdrop-blur-lg
             border border-base-300/50
-            shadow-[0_8px_32px_rgba(0,0,0,0.08)]
+            shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.08)]
             rounded-full
             transition-all duration-300
-            hover:shadow-[0_12px_48px_rgba(0,0,0,0.12)]
+            hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_12px_48px_rgba(0,0,0,0.12)]
             hover:border-primary/20"
         >
           <div className="card-body py-4 pl-6 pr-4">

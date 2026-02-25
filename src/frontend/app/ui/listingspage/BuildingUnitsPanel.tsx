@@ -137,7 +137,7 @@ export default function BuildingUnitsPanel({
                         ${unit.price.toLocaleString()}
                       </div>
                       {unit.no_fee && (
-                        <span className="badge badge-success badge-xs">No Fee</span>
+                        <span className="badge badge-xs glass-badge-success rounded-full">No Fee</span>
                       )}
                     </div>
                   </div>

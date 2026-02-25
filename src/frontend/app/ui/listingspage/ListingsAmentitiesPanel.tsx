@@ -143,7 +143,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                                 .map((amenity, index) => (
                                     <span 
                                         key={`misc-${index}`} 
-                                        className="px-3 py-1 glass-panel-nested text-base-content rounded-full text-sm"
+                                        className="px-3 py-1 bg-base-300/40 border border-base-300/50 text-base-content/80 backdrop-blur-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_1px_3px_rgba(0,0,0,0.04)] rounded-full text-sm"
                                     >
                                         {formatAmenityName(amenity)}
                                     </span>

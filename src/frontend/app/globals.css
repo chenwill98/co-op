@@ -95,17 +95,20 @@ html {
 
 /* Primary glass container - cards, main panels */
 .glass-card {
-  @apply bg-base-100/80 backdrop-blur-lg border border-base-300/50 shadow-[0_8px_32px_rgba(0,0,0,0.08)];
+  @apply bg-base-100/80 backdrop-blur-lg border border-base-300/50
+         shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.08)];
 }
 
 /* Dropdown menus and overlays - slightly more opaque */
 .glass-dropdown {
-  @apply bg-base-100/85 backdrop-blur-md border border-base-300/50 shadow-[0_8px_32px_rgba(0,0,0,0.12)];
+  @apply bg-base-100/85 backdrop-blur-md border border-base-300/50
+         shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.12)];
 }
 
 /* Primary-tinted badges */
 .glass-badge-primary {
-  @apply bg-primary/25 border border-primary/30 text-primary font-medium;
+  @apply bg-primary/25 border border-white/10 text-primary font-medium
+         backdrop-blur-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_2px_6px_rgba(0,0,0,0.08)];
 }
 
 /* Nested panels inside glass containers - no blur to avoid stacking */
@@ -115,7 +118,8 @@ html {
 
 /* Floating alerts/banners - more opaque */
 .glass-alert {
-  @apply bg-base-100/90 backdrop-blur-lg border border-base-300/50 shadow-[0_8px_32px_rgba(0,0,0,0.15)];
+  @apply bg-base-100/90 backdrop-blur-lg border border-base-300/50
+         shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.15)];
 }
 
 /* Subtle dual-radial page background gradient */
@@ -126,24 +130,40 @@ html {
 
 /* Inner content panels - analytics-consistent styling */
 .glass-panel {
-  @apply rounded-2xl border border-base-300/45 bg-base-100/80 backdrop-blur-lg shadow-[0_8px_32px_rgba(0,0,0,0.08)];
+  @apply rounded-2xl border border-base-300/45 bg-base-100/80 backdrop-blur-lg
+         shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.08)];
 }
 
 /* Glass badge variants */
 .glass-badge-success {
-  @apply bg-success/15 border border-success/20 text-success;
+  @apply bg-success/15 border border-white/10 text-success
+         backdrop-blur-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_2px_6px_rgba(0,0,0,0.08)];
 }
 
 .glass-badge-warning {
-  @apply bg-warning/15 border border-warning/20 text-warning;
+  @apply bg-warning/15 border border-white/10 text-warning
+         backdrop-blur-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_2px_6px_rgba(0,0,0,0.08)];
 }
 
 .glass-badge-error {
-  @apply bg-error/15 border border-error/20 text-error;
+  @apply bg-error/15 border border-white/10 text-error
+         backdrop-blur-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_2px_6px_rgba(0,0,0,0.08)];
 }
 
 .glass-badge-info {
-  @apply bg-info/15 border border-info/20 text-info;
+  @apply bg-info/15 border border-white/10 text-info
+         backdrop-blur-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_2px_6px_rgba(0,0,0,0.08)];
+}
+
+/* Glass chat bubbles — translucent bg so backdrop-blur shows through, tail inherits via `background-color: inherit` */
+.glass-chat-user {
+  @apply !bg-primary/80 text-primary-content backdrop-blur-sm
+         shadow-[inset_0_1px_2px_rgba(255,255,255,0.15),0_2px_8px_rgba(0,0,0,0.1)];
+}
+
+.glass-chat-assistant {
+  @apply !bg-primary/15 text-base-content backdrop-blur-sm
+         shadow-[inset_0_1px_2px_rgba(255,255,255,0.2),0_2px_8px_rgba(0,0,0,0.06)];
 }
 
 /* Fast fade-up animation for card entrances */
@@ -166,21 +186,74 @@ html {
   opacity: 0;
 }
 
-/* Count pulse animation for result count changes */
+/* Count pulse animation for result count changes — dim-and-pop effect */
 @keyframes countPulse {
   0% {
     transform: scale(1);
+    opacity: 1;
   }
-  50% {
-    transform: scale(1.05);
+  30% {
+    transform: scale(1.04);
+    opacity: 0.6;
   }
   100% {
     transform: scale(1);
+    opacity: 1;
   }
 }
 
 .animate-count-pulse {
   animation: countPulse 300ms ease-out;
+}
+
+/* Badge entry animation — backwards fill so transitions work after animation ends */
+@keyframes badgeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-badge-in {
+  animation: badgeIn 250ms ease-out backwards;
+}
+
+/* Badge transition base — enables smooth exit + layout collapse */
+.badge-animated {
+  transition: max-width 250ms ease-out, opacity 200ms ease-out, transform 200ms ease-out,
+              padding 250ms ease-out, border-width 250ms ease-out;
+  max-width: 300px;
+}
+
+/* Badge removing state — collapses width so siblings slide into place */
+.badge-removing {
+  max-width: 0 !important;
+  opacity: 0 !important;
+  transform: scale(0.85) !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Listings exit animation — shift down and fade out */
+@keyframes fadeDownOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.animate-fade-down-out {
+  animation: fadeDownOut 250ms ease-in forwards;
 }
 
 /* Global button press feedback */
@@ -266,21 +339,6 @@ a:focus-visible,
   animation: countUp 500ms ease-out forwards;
 }
 
-/* Badge scale animation for filter removal */
-@keyframes badgeRemove {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-}
-
-.animate-badge-remove {
-  animation: badgeRemove 200ms ease-out forwards;
-}
 
 /* Card slot wrapper — wraps a card + vote footer into a cohesive unit */
 .card-slot {

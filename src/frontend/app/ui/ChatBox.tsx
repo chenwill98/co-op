@@ -1,6 +1,7 @@
 'use client';
 
 import { getDisplayTag } from '@/app/lib/tagUtils';
+import { netEffectivePrice } from '@/app/lib/searchUtils';
 import { getRandomLoadingMessage } from '@/app/lib/loadingMessages';
 import { formatAmenityName } from './utilities';
 import { ArrowUpIcon, ArrowPathIcon, BarsArrowUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
@@ -16,7 +17,7 @@ interface ChatMessage {
 
 export default function ChatBox() {
   // Use context for shared state
-  const { queryRecord, threadId, isThreadIdReady, pendingMessage, sort, setAll, setSort, resetThreadId, setPendingMessage, clear, removeFilter, removeFromArrayFilter } = useListingsContext();
+  const { listings, hasSearched, queryRecord, threadId, isThreadIdReady, pendingMessage, sort, setAll, setSort, resetThreadId, setPendingMessage, clear, removeFilter, removeFromArrayFilter } = useListingsContext();
 
   // Local chat messages for display
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -38,6 +39,31 @@ export default function ChatBox() {
   // Collapse state for chat
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Summary line state: pulse animation on count change + random empty-state message
+  const previousCountRef = useRef<number>(listings.length);
+  const [isPulsing, setIsPulsing] = useState(false);
+  const [emptyMessage] = useState(
+    () => {
+      const messages = [
+        "No listings match your search criteria",
+        "No results found for this search",
+        "Nothing found - try adjusting your filters",
+        "No matching properties available",
+      ];
+      return messages[Math.floor(Math.random() * messages.length)];
+    }
+  );
+
+  // Trigger pulse animation when count changes
+  useEffect(() => {
+    if (previousCountRef.current !== listings.length && hasSearched) {
+      setIsPulsing(true);
+      previousCountRef.current = listings.length;
+      const timer = setTimeout(() => setIsPulsing(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [listings.length, hasSearched]);
 
   // Ref to prevent double-processing of pending message
   const processingPendingRef = useRef(false);
@@ -321,16 +347,35 @@ export default function ChatBox() {
     setAll([], {}, newThreadId);
   };
 
-  // Badge styling
-  const BADGE_CLASS = "badge glass-badge-primary text-primary rounded-full text-xs inline-flex items-center";
+  // Animated filter removal — delays state update so exit animation plays first
+  const [removingKeys, setRemovingKeys] = useState<Set<string>>(new Set());
 
-  // Condensed badge with hover dropdown for arrays with many items
-  const CondensedBadge = ({ filterKey, label, items, formatted }: {
-    filterKey: string;
-    label: string;
-    items: string[];
-    formatted: string[];
-  }) => {
+  const animateRemoveFilter = useCallback((filterKey: string, subKey?: string) => {
+    const badgeKey = subKey ? `${filterKey}-${subKey}` : filterKey;
+    setRemovingKeys(prev => new Set(prev).add(badgeKey));
+    setTimeout(() => {
+      handleRemoveFilter(filterKey, subKey);
+      setRemovingKeys(prev => { const next = new Set(prev); next.delete(badgeKey); return next; });
+    }, 250);
+  }, [handleRemoveFilter]);
+
+  const animateRemoveFromArrayFilter = useCallback((filterKey: string, itemToRemove: string) => {
+    const badgeKey = `${filterKey}-${itemToRemove}`;
+    setRemovingKeys(prev => new Set(prev).add(badgeKey));
+    setTimeout(() => {
+      handleRemoveFromArrayFilter(filterKey, itemToRemove);
+      setRemovingKeys(prev => { const next = new Set(prev); next.delete(badgeKey); return next; });
+    }, 250);
+  }, [handleRemoveFromArrayFilter]);
+
+  // Badge styling
+  const BADGE_CLASS = "badge glass-badge-primary text-primary rounded-full text-xs inline-flex items-center animate-badge-in";
+  const badgeClasses = (key: string) =>
+    `${BADGE_CLASS} badge-animated${removingKeys.has(key) ? ' badge-removing' : ''}`;
+
+  // Condensed badge renderer — plain function (not a component) to avoid
+  // remounting on every parent re-render, which would replay the entry animation.
+  const renderCondensedBadge = (filterKey: string, label: string, items: string[], formatted: string[]) => {
     const displayText = formatted.length <= 2
       ? formatted.join(', ')
       : `${formatted.slice(0, 2).join(', ')}, +${formatted.length - 2}`;
@@ -338,10 +383,10 @@ export default function ChatBox() {
     // Only use dropdown wrapper when there are items to expand (>2)
     if (formatted.length <= 2) {
       return (
-        <span className={BADGE_CLASS}>
+        <span key={filterKey} className={badgeClasses(filterKey)}>
           {label} • {displayText}
           <XMarkIcon
-            onClick={() => handleRemoveFilter(filterKey)}
+            onClick={() => animateRemoveFilter(filterKey)}
             className="h-3 w-3 cursor-pointer hover:text-error"
           />
         </span>
@@ -349,14 +394,14 @@ export default function ChatBox() {
     }
 
     return (
-      <div className="dropdown dropdown-top dropdown-hover">
+      <div key={filterKey} className={`dropdown dropdown-top dropdown-hover badge-animated${removingKeys.has(filterKey) ? ' badge-removing' : ''}`}>
         <span tabIndex={0} className={BADGE_CLASS}>
           {label} • {displayText}
           <button
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
-              handleRemoveFilter(filterKey);
+              animateRemoveFilter(filterKey);
             }}
             className="ml-1"
             type="button"
@@ -389,14 +434,14 @@ export default function ChatBox() {
       const formatted = arr.map(n =>
         n.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
       );
-      return [<CondensedBadge key={key} filterKey={key} label={label} items={arr} formatted={formatted} />];
+      return [renderCondensedBadge(key, label, arr, formatted)];
     }
 
     // Special handling for tag_list - condense into single badge with hover dropdown
     if (key === 'tag_list' && Array.isArray(val) && val.length > 0) {
       const arr = val as string[];
       const formatted = arr.map(getDisplayTag);
-      return [<CondensedBadge key={key} filterKey={key} label="Tags" items={arr} formatted={formatted} />];
+      return [renderCondensedBadge(key, "Tags", arr, formatted)];
     }
 
     // Arrays (amenities, others) - render each item as individual badge with X
@@ -405,15 +450,18 @@ export default function ChatBox() {
       const originalArr = val as string[]; // Keep original for removal
       if (key === 'amenities') arr = arr.map(formatAmenityName);
 
-      return arr.map((item, idx) => (
-        <span key={`${key}-${idx}`} className={BADGE_CLASS}>
-          {label} • {item}
-          <XMarkIcon
-            onClick={() => handleRemoveFromArrayFilter(key, originalArr[idx])}
-            className="h-3 w-3 cursor-pointer hover:text-error"
-          />
-        </span>
-      ));
+      return arr.map((item, idx) => {
+        const badgeKey = `${key}-${originalArr[idx]}`;
+        return (
+          <span key={badgeKey} className={badgeClasses(badgeKey)}>
+            {label} • {item}
+            <XMarkIcon
+              onClick={() => animateRemoveFromArrayFilter(key, originalArr[idx])}
+              className="h-3 w-3 cursor-pointer hover:text-error"
+            />
+          </span>
+        );
+      });
     }
 
     // Objects with min/max (range)
@@ -423,10 +471,10 @@ export default function ChatBox() {
         const min = rangeVal.min, max = rangeVal.max;
         if (min != null && max != null && min === max) {
           return [
-            <span key={key} className={BADGE_CLASS}>
+            <span key={key} className={badgeClasses(key)}>
               {label} • {min}
               <XMarkIcon
-                onClick={() => handleRemoveFilter(key)}
+                onClick={() => animateRemoveFilter(key)}
                 className="h-3 w-3 cursor-pointer hover:text-error"
               />
             </span>
@@ -434,19 +482,19 @@ export default function ChatBox() {
         }
         return [
           ...(min != null ? [
-            <span key={key + '-min'} className={BADGE_CLASS}>
+            <span key={key + '-min'} className={badgeClasses(`${key}-min`)}>
               {`Min ${label} • ${min}`}
               <XMarkIcon
-                onClick={() => handleRemoveFilter(key, 'min')}
+                onClick={() => animateRemoveFilter(key, 'min')}
                 className="h-3 w-3 cursor-pointer hover:text-error"
               />
             </span>
           ] : []),
           ...(max != null ? [
-            <span key={key + '-max'} className={BADGE_CLASS}>
+            <span key={key + '-max'} className={badgeClasses(`${key}-max`)}>
               {`Max ${label} • ${max}`}
               <XMarkIcon
-                onClick={() => handleRemoveFilter(key, 'max')}
+                onClick={() => animateRemoveFilter(key, 'max')}
                 className="h-3 w-3 cursor-pointer hover:text-error"
               />
             </span>
@@ -458,10 +506,10 @@ export default function ChatBox() {
 
     // Primitive values
     return [
-      <span key={key} className={BADGE_CLASS}>
+      <span key={key} className={badgeClasses(key)}>
         {label} • {String(val)}
         <XMarkIcon
-          onClick={() => handleRemoveFilter(key)}
+          onClick={() => animateRemoveFilter(key)}
           className="h-3 w-3 cursor-pointer hover:text-error"
         />
       </span>
@@ -470,12 +518,32 @@ export default function ChatBox() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 bg-transparent pointer-events-none">
-      <div className="container mx-auto pointer-events-auto w-full px-4 md:w-5/6 lg:w-5/7">
+      <div className="container mx-auto pointer-events-auto w-full px-4 md:w-2/3 lg:w-3/5">
         <div className="flex flex-row">
           <div className="flex-grow p-4">
-            <div ref={cardRef} className="card bg-base-100/80 backdrop-blur-lg rounded-4xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] mx-auto">
+            <div ref={cardRef} className="card bg-base-100/80 backdrop-blur-lg rounded-4xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.08)] mx-auto">
               <div className="card-body p-3">
                 <div className="flex flex-col">
+                  {/* Summary line - visible after search */}
+                  {hasSearched && (
+                    <div className="px-1 pt-1">
+                      {listings.length > 0 ? (
+                        <span className={`text-sm font-medium text-primary ${isPulsing ? 'animate-count-pulse' : ''}`}>
+                          {listings.length} {listings.length === 1 ? 'Property' : 'Properties'} &bull; ${Math.min(...listings.map(l => netEffectivePrice(l))).toLocaleString()} &ndash; ${Math.max(...listings.map(l => netEffectivePrice(l))).toLocaleString()}
+                        </span>
+                      ) : (
+                        <span className="text-sm font-medium text-primary/60">
+                          {emptyMessage}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Divider between summary and filters */}
+                  {hasSearched && Object.entries(queryRecord).length > 0 && (
+                    <div className="border-t border-base-300/50 mx-1 my-1" />
+                  )}
+
                   {/* Filter badges - ALWAYS visible */}
                   {Object.entries(queryRecord).length > 0 && (
                     <div className="flex flex-row flex-wrap gap-1 p-1">
@@ -483,7 +551,7 @@ export default function ChatBox() {
                       {/* Clear button */}
                       <button
                         onClick={handleClearChat}
-                        className="badge badge-ghost text-xs cursor-pointer hover:bg-base-200"
+                        className="badge text-xs cursor-pointer bg-base-300/40 border border-base-300/50 backdrop-blur-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_1px_3px_rgba(0,0,0,0.04)] hover:bg-base-300/60 rounded-full"
                         title="Clear chat and filters"
                       >
                         Clear
@@ -524,7 +592,7 @@ export default function ChatBox() {
                             className={`chat ${msg.role === 'user' ? 'chat-end' : 'chat-start'}`}
                           >
                             <div
-                              className={`chat-bubble ${msg.role === 'user' ? 'chat-bubble-primary' : 'bg-primary/15 text-base-content'}`}
+                              className={`chat-bubble ${msg.role === 'user' ? 'glass-chat-user' : 'glass-chat-assistant'}`}
                             >
                               {msg.role === 'assistant' ? (
                                 <div className="chat-markdown prose prose-sm max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_strong]:font-semibold">
@@ -543,7 +611,7 @@ export default function ChatBox() {
                             {suggestedQueries.map((query, idx) => (
                               <button
                                 key={idx}
-                                className="badge badge-outline badge-primary cursor-pointer hover:badge-primary hover:text-primary-content text-xs"
+                                className="badge glass-badge-primary cursor-pointer hover:bg-primary/40 text-xs rounded-full"
                                 onClick={() => {
                                   setSuggestedQueries([]);
                                   fetchListings(query, true);
@@ -558,7 +626,7 @@ export default function ChatBox() {
                         {/* Loading indicator with NYC flavor */}
                         {loading && (
                           <div className="chat chat-start">
-                            <div className="chat-bubble bg-primary/15 text-base-content flex items-center gap-2">
+                            <div className="chat-bubble glass-chat-assistant flex items-center gap-2">
                               <span className="loading loading-spinner loading-sm"></span>
                               <span className="text-sm italic">{loadingMessage}</span>
                             </div>

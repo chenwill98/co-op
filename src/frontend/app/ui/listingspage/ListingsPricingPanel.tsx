@@ -218,7 +218,7 @@ export default function ListingsPricingPanel({
         ${listingDetails.price.toLocaleString()}
         <span className="text-base-content/60 text-sm font-normal"> /month</span>
         {listingDetails.no_fee && (
-          <span className="badge badge-success badge-sm ml-2 align-middle">No Fee</span>
+          <span className="badge badge-sm glass-badge-success rounded-full ml-2 align-middle">No Fee</span>
         )}
       </div>
 
