@@ -109,13 +109,13 @@ export default function Navbar() {
         </div>
       </div>
       <div className="flex-none flex items-center gap-4">
-        <Link href="/analytics" className="text-primary font-semibold text-sm">
+        <Link href="/analytics" className="text-primary font-semibold text-sm transition-colors duration-200 hover:text-primary/70">
           Analytics for Nerds
         </Link>
         <Link
           href="/saved"
           onClick={handleSavedClick}
-          className="flex items-center text-primary font-semibold text-sm"
+          className="flex items-center text-primary font-semibold text-sm transition-colors duration-200 hover:text-primary/70"
         >
           Saved
           <div

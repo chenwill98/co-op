@@ -38,9 +38,9 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
 
   // Combine images, videos, and floorplans into one array
   const mediaItems = [
-    ...listingDetails.images.map((url) => ({ type: "image", url })),
-    ...listingDetails.videos.map((url) => ({ type: "video", url })),
-    ...listingDetails.floorplans.map((url) => ({ type: "floorplan", url })),
+    ...(listingDetails.images ?? []).map((url) => ({ type: "image", url })),
+    ...(listingDetails.videos ?? []).map((url) => ({ type: "video", url })),
+    ...(listingDetails.floorplans ?? []).map((url) => ({ type: "floorplan", url })),
     ...(mapImage ? [{ type: "map", url: mapImage }] : []),
   ] as { type: string; url: string }[];
 

@@ -133,7 +133,7 @@ export default function Page() {
               <AnimatedText
                 text={tagline}
                 charDelay={15}
-                startDelay={3000}
+                startDelay={1000}
               />
             )}
           </div>

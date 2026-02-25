@@ -31,10 +31,10 @@ const TypingInput: FC<TypingInputProps> = ({ onValueChange }) => {
   useEffect(() => {
     if (isEditable) return; // Don't start if user has already clicked
     
-    // Set a 3-second delay before starting the typing animation
+    // Delay before starting the typing animation (after search bar fades in)
     const initialDelay = setTimeout(() => {
       setStartTyping(true);
-    }, 3000);
+    }, 2500);
     
     return () => clearTimeout(initialDelay);
   }, [isEditable]);

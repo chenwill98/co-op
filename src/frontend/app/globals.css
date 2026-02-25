@@ -85,7 +85,7 @@ html {
   animation-name: fadeUp;
   animation-duration: 1000ms;
   animation-timing-function: ease-out;
-  animation-delay: 3000ms;
+  animation-delay: 1500ms;
   opacity: 0;
   transform: translateY(20px);
   animation-fill-mode: forwards;
