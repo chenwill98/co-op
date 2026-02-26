@@ -32,7 +32,7 @@ export default function MetricCard({ label, value, subtitle, delta }: MetricCard
   const hasDelta = delta != null && !Number.isNaN(delta);
 
   return (
-    <div className="rounded-xl border border-base-300/45 bg-base-100/70 p-4 md:p-5">
+    <div className="glass-panel-nested rounded-xl p-4 md:p-5">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="text-xs uppercase tracking-wide text-base-content/60">{label}</div>
@@ -40,10 +40,10 @@ export default function MetricCard({ label, value, subtitle, delta }: MetricCard
           {subtitle && <div className="text-sm text-base-content/70 mt-1">{subtitle}</div>}
         </div>
         <span
-          className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${
+          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
             hasDelta
-              ? 'border-primary/40 bg-primary/15 text-primary'
-              : 'border-base-300/60 bg-base-100/85 text-base-content/65'
+              ? 'glass-badge-primary'
+              : 'glass-panel-nested text-base-content/65'
           }`}
         >
           {formatDelta(delta)}

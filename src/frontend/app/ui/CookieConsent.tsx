@@ -42,7 +42,7 @@ export default function CookieConsent() {
 
   return (
     <div className={`fixed bottom-4 left-0 right-0 flex justify-center z-50 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <div className={`card glass-alert mx-4 w-full max-w-2xl rounded-2xl ${isVisible ? 'animate-fade-up-delayed' : ''}`}>
+      <div className={`card bg-base-100/80 backdrop-blur-lg rounded-4xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.08)] mx-4 w-full max-w-2xl ${isVisible ? 'animate-fade-up-delayed' : ''}`}>
         <div className="card-body p-6">
           <div className="flex justify-between items-start mb-3">
             <h3 className="card-title text-lg">Cookie Notice</h3>
@@ -59,9 +59,9 @@ export default function CookieConsent() {
               We use cookies to store your preferences, inform analytics, and save your bookmarked listings. 
               By continuing to use this site, you consent to our use of cookies.
             </p>
-            <button 
-              onClick={acceptCookies} 
-              className="btn btn-primary"
+            <button
+              onClick={acceptCookies}
+              className="btn rounded-full glass-badge-primary hover:brightness-[0.82] active:scale-95 transition-all duration-150"
             >
               Accept
             </button>

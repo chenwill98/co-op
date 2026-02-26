@@ -387,7 +387,7 @@ export default function ChatBox() {
           {label} • {displayText}
           <XMarkIcon
             onClick={() => animateRemoveFilter(filterKey)}
-            className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
+            className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 -mx-0.5 hover:bg-base-content/15 transition-colors"
           />
         </span>
       );
@@ -406,7 +406,7 @@ export default function ChatBox() {
             className="ml-1"
             type="button"
           >
-            <XMarkIcon className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors" />
+            <XMarkIcon className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 -mx-0.5 hover:bg-base-content/15 transition-colors" />
           </button>
         </span>
         <ul tabIndex={0} className="dropdown-content glass-dropdown rounded-box z-[100] p-2 text-xs max-h-48 overflow-y-auto min-w-max">
@@ -415,7 +415,7 @@ export default function ChatBox() {
               <span>{item}</span>
               <XMarkIcon
                 onClick={() => handleRemoveFromArrayFilter(filterKey, items[idx])}
-                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors flex-shrink-0"
+                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 -mx-0.5 hover:bg-base-content/15 transition-colors flex-shrink-0"
               />
             </li>
           ))}
@@ -457,7 +457,7 @@ export default function ChatBox() {
             {label} • {item}
             <XMarkIcon
               onClick={() => animateRemoveFromArrayFilter(key, originalArr[idx])}
-              className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
+              className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 -mx-0.5 hover:bg-base-content/15 transition-colors"
             />
           </span>
         );
@@ -475,7 +475,7 @@ export default function ChatBox() {
               {label} • {min}
               <XMarkIcon
                 onClick={() => animateRemoveFilter(key)}
-                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
+                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 -mx-0.5 hover:bg-base-content/15 transition-colors"
               />
             </span>
           ];
@@ -486,7 +486,7 @@ export default function ChatBox() {
               {`Min ${label} • ${min}`}
               <XMarkIcon
                 onClick={() => animateRemoveFilter(key, 'min')}
-                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
+                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 -mx-0.5 hover:bg-base-content/15 transition-colors"
               />
             </span>
           ] : []),
@@ -495,7 +495,7 @@ export default function ChatBox() {
               {`Max ${label} • ${max}`}
               <XMarkIcon
                 onClick={() => animateRemoveFilter(key, 'max')}
-                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
+                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 -mx-0.5 hover:bg-base-content/15 transition-colors"
               />
             </span>
           ] : [])
@@ -510,7 +510,7 @@ export default function ChatBox() {
         {label} • {String(val)}
         <XMarkIcon
           onClick={() => animateRemoveFilter(key)}
-          className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
+          className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 -mx-0.5 hover:bg-base-content/15 transition-colors"
         />
       </span>
     ];
@@ -526,13 +526,19 @@ export default function ChatBox() {
                 <div className="flex flex-col">
                   {/* Summary line - visible after search */}
                   {hasSearched && (
-                    <div className="px-1 pt-1">
+                    <div className="flex items-center justify-center gap-2 text-sm px-1 pt-1">
                       {listings.length > 0 ? (
-                        <span className={`text-sm font-medium text-primary ${isPulsing ? 'animate-count-pulse' : ''}`}>
-                          {listings.length} {listings.length === 1 ? 'Property' : 'Properties'} &bull; ${Math.min(...listings.map(l => netEffectivePrice(l))).toLocaleString()} &ndash; ${Math.max(...listings.map(l => netEffectivePrice(l))).toLocaleString()}
-                        </span>
+                        <>
+                          <span className={`font-semibold text-primary ${isPulsing ? 'animate-count-pulse' : ''}`}>
+                            {listings.length} {listings.length === 1 ? 'Property' : 'Properties'}
+                          </span>
+                          <span className="text-base-content/40">&middot;</span>
+                          <span className="text-base-content/60">
+                            ${Math.min(...listings.map(l => netEffectivePrice(l))).toLocaleString()} &ndash; ${Math.max(...listings.map(l => netEffectivePrice(l))).toLocaleString()}
+                          </span>
+                        </>
                       ) : (
-                        <span className="text-sm font-medium text-primary/60">
+                        <span className="font-semibold text-primary/60">
                           {emptyMessage}
                         </span>
                       )}
@@ -546,7 +552,7 @@ export default function ChatBox() {
 
                   {/* Filter badges - ALWAYS visible */}
                   {Object.entries(queryRecord).length > 0 && (
-                    <div className="flex flex-row flex-wrap gap-1 p-1">
+                    <div className="flex flex-row flex-wrap gap-1 p-1 pb-2">
                       {Object.entries(queryRecord).flatMap(formatEntry)}
                       {/* Clear button */}
                       <button
@@ -648,11 +654,11 @@ export default function ChatBox() {
                   </div>
 
                   {/* Input area */}
-                  <div className="flex flex-row items-center relative">
+                  <div className="flex flex-row items-center relative gap-2">
                     <input
                       type="text"
                       placeholder="Search for apartments... (e.g., '2br in Chelsea under $4000')"
-                      className="input input-ghost chat-input w-full bg-transparent border border-transparent focus:bg-transparent focus:border-transparent focus:outline-none focus:shadow-none focus-visible:outline-none focus-visible:shadow-none text-sm placeholder:text-base-content/50 placeholder:transition-opacity placeholder:duration-200 focus:placeholder:opacity-40"
+                      className="input chat-input glass-input w-full text-sm placeholder:text-base-content/50 placeholder:transition-opacity placeholder:duration-200 focus:placeholder:opacity-40"
                       value={textInput}
                       onChange={e => setTextInput(e.target.value)}
                       onKeyDown={handleInputKeyDown}
@@ -662,7 +668,7 @@ export default function ChatBox() {
 
                     {/* Sort Dropdown */}
                     <div className="dropdown dropdown-top dropdown-end">
-                      <label tabIndex={0} className="btn btn-circle p-2 mr-2">
+                      <label tabIndex={0} className="btn btn-circle p-2">
                         <BarsArrowUpIcon className="h-5 w-5" />
                       </label>
                       <ul tabIndex={0} className="dropdown-content menu glass-dropdown rounded-box z-[100] w-52 p-2">

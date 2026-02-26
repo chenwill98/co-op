@@ -176,7 +176,7 @@ export default function SharedListingsPage() {
   if (state.status === "loading") {
     return (
       <div className="flex justify-center w-full page-gradient min-h-screen">
-        <div className="container mx-auto w-full px-4 md:w-5/6 lg:w-5/7">
+        <div className="container mx-auto w-full px-4 md:w-11/12 lg:w-11/12">
           <ListingsGridSkeleton />
         </div>
       </div>
@@ -212,7 +212,7 @@ export default function SharedListingsPage() {
 
   return (
     <div className="flex justify-center w-full page-gradient min-h-screen">
-      <div className="container mx-auto w-full px-4 md:w-5/6 lg:w-5/7">
+      <div className="container mx-auto w-full px-4 md:w-11/12 lg:w-11/12">
         {state.missingCount > 0 && (
           <div className="mx-4 mt-4 glass-alert rounded-xl p-3 text-sm text-base-content/70">
             {state.missingCount}{" "}

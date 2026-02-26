@@ -23,11 +23,6 @@ interface PointHeatmapMapProps {
 
 const SOURCE_ID = 'analytics-points';
 const LAYER_ID = 'analytics-layer';
-const CONTROL_BASE_CLASS =
-  'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors';
-const CONTROL_IDLE_CLASS =
-  'border-base-300/60 bg-base-100/90 text-base-content/75 hover:border-primary/35 hover:text-primary';
-const CONTROL_ACTIVE_CLASS = 'border-primary/40 bg-primary/15 text-primary';
 
 function addLayerForMode(map: mapboxgl.Map, mode: MapMode): void {
   if (map.getLayer(LAYER_ID)) {
@@ -195,44 +190,40 @@ export default function PointHeatmapMap({ points, mode, dataVersion }: PointHeat
 
   if (!token) {
     return (
-      <div className="rounded-xl border border-warning/50 bg-warning/10 p-4 text-sm">
+      <div className="glass-badge-warning rounded-xl px-4 py-4 text-sm">
         Map rendering requires MAPBOX_TOKEN.
       </div>
     );
   }
 
   return (
-    <div className="relative rounded-xl border border-base-300/45 bg-base-100/65 p-2">
-      <div className="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-1.5 rounded-xl border border-base-300/45 bg-base-100/80 px-2 py-1.5 backdrop-blur-sm">
+    <div className="glass-panel-nested rounded-xl relative p-2">
+      <div className="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-1.5 glass-panel-nested rounded-xl px-2 py-1.5 backdrop-blur-sm">
         <button
           type="button"
           onClick={() => setCurrentMode('heatmap')}
-          className={`${CONTROL_BASE_CLASS} ${
-            currentMode === 'heatmap' ? CONTROL_ACTIVE_CLASS : CONTROL_IDLE_CLASS
-          }`}
+          className={`glass-chip ${currentMode === 'heatmap' ? 'glass-chip-active' : ''}`}
         >
           Heatmap
         </button>
         <button
           type="button"
           onClick={() => setCurrentMode('bubble')}
-          className={`${CONTROL_BASE_CLASS} ${
-            currentMode === 'bubble' ? CONTROL_ACTIVE_CLASS : CONTROL_IDLE_CLASS
-          }`}
+          className={`glass-chip ${currentMode === 'bubble' ? 'glass-chip-active' : ''}`}
         >
           Bubble
         </button>
         <button
           type="button"
           onClick={handleResetView}
-          className={`${CONTROL_BASE_CLASS} ${CONTROL_IDLE_CLASS}`}
+          className="glass-chip"
         >
           Reset view
         </button>
       </div>
 
       {currentMode === 'bubble' && (
-        <div className="absolute bottom-3 left-3 z-20 rounded-full border border-base-300/60 bg-base-100/90 px-2.5 py-1 text-[11px] text-base-content/70">
+        <div className="absolute bottom-3 left-3 z-20 glass-panel-nested rounded-full px-2.5 py-1 text-[11px] text-base-content/70">
           Bubble size indicates relative weight
         </div>
       )}

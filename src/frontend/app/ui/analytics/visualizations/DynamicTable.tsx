@@ -89,7 +89,7 @@ export default function DynamicTable({ columns, rows, pageSize = 10 }: DynamicTa
 
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto rounded-xl border border-base-300/50 bg-base-100/70 max-h-[24rem]">
+      <div className="glass-panel-nested overflow-x-auto rounded-xl max-h-[24rem]">
         <table className="table table-sm table-pin-rows">
           <thead>
             <tr>
@@ -137,7 +137,7 @@ export default function DynamicTable({ columns, rows, pageSize = 10 }: DynamicTa
           <div className="flex items-center gap-1">
             <button
               type="button"
-              className="inline-flex items-center rounded-full border border-base-300/60 bg-base-100/85 px-2.5 py-1 text-xs font-medium text-base-content/75 transition-colors hover:border-primary/35 hover:text-primary disabled:opacity-40"
+              className="glass-panel-nested inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium text-base-content/75 transition-colors hover:text-primary hover:bg-primary/10 disabled:opacity-40"
               disabled={currentPage === 1}
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
             >
@@ -145,7 +145,7 @@ export default function DynamicTable({ columns, rows, pageSize = 10 }: DynamicTa
             </button>
             <button
               type="button"
-              className="inline-flex items-center rounded-full border border-base-300/60 bg-base-100/85 px-2.5 py-1 text-xs font-medium text-base-content/75 transition-colors hover:border-primary/35 hover:text-primary disabled:opacity-40"
+              className="glass-panel-nested inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium text-base-content/75 transition-colors hover:text-primary hover:bg-primary/10 disabled:opacity-40"
               disabled={currentPage === pageCount}
               onClick={() => setPage((prev) => Math.min(pageCount, prev + 1))}
             >

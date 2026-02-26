@@ -46,14 +46,14 @@ export default function BarChart({ title, data, series, activeSeries }: BarChart
 
   if (visibleSeries.length === 0) {
     return (
-      <div className="rounded-xl border border-base-300/45 bg-base-100/60 p-4 text-sm text-base-content/70">
+      <div className="glass-panel-nested rounded-xl p-4 text-sm text-base-content/70">
         Select at least one series to display this breakdown chart.
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-base-300/45 bg-base-100/65 p-3 md:p-4 animate-fade-up-fast">
+    <div className="glass-panel-nested rounded-xl p-3 md:p-4 animate-fade-up-fast">
       <div className="text-xs text-base-content/60 uppercase tracking-wide mb-2">{title}</div>
       <div className="w-full h-[320px]">
         <ResponsiveContainer width="100%" height="100%">

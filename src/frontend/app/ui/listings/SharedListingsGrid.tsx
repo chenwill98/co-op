@@ -4,6 +4,7 @@ import { Property } from "@/app/lib/definitions";
 import { VotesMap } from "@/app/lib/dynamodb-shares";
 import SharedListingsCard from "./SharedListingsCard";
 import SharedListingsSummaryCard from "./SharedListingsSummaryCard";
+import EndOfListings from "./EndOfListings";
 import { useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -45,30 +46,37 @@ export default function SharedListingsGrid({
   }, [listings, votes]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-4 w-full">
-      <SharedListingsSummaryCard listings={listings} createdAt={createdAt} />
-      <AnimatePresence>
-        {sortedListings.map((listing, index) => (
-          <motion.div
-            key={listing.id}
-            layout
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          >
-            <SharedListingsCard
-              listing={listing}
-              votes={
-                votes[listing.fct_id] || {
-                  upvotes: 0,
-                  downvotes: 0,
-                  userVote: null,
+    <div className="pb-24">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-4 w-full">
+        <AnimatePresence>
+          {sortedListings.map((listing, index) => (
+            <motion.div
+              key={listing.id}
+              layout
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <SharedListingsCard
+                listing={listing}
+                votes={
+                  votes[listing.fct_id] || {
+                    upvotes: 0,
+                    downvotes: 0,
+                    userVote: null,
+                  }
                 }
-              }
-              animationIndex={isFirstRender.current ? index : undefined}
-              onVote={onVote}
-            />
-          </motion.div>
-        ))}
-      </AnimatePresence>
+                animationIndex={isFirstRender.current ? index : undefined}
+                onVote={onVote}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        {sortedListings.length > 0 && (
+          <div className="col-span-full min-h-[70vh]">
+            <EndOfListings />
+          </div>
+        )}
+      </div>
+      <SharedListingsSummaryCard listings={listings} createdAt={createdAt} />
     </div>
   );
 }

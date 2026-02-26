@@ -199,14 +199,14 @@ export default function AnalyticsChatBox() {
             {promptGroups.map((group) => (
               <div
                 key={group.title}
-                className="rounded-2xl border border-base-300/45 bg-base-100/70 p-4"
+                className="glass-panel-nested rounded-2xl p-4"
               >
                 <div className="text-xs uppercase tracking-wide text-base-content/60 mb-2">{group.title}</div>
                 <div className="flex flex-wrap gap-2">
                   {group.prompts.map((prompt) => (
                     <button
                       key={prompt}
-                      className="rounded-xl border border-base-300/60 bg-base-100/90 px-3 py-2 text-left text-sm text-base-content/80 transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                      className="glass-panel-nested rounded-xl px-3 py-2 text-left text-sm text-base-content/80 transition-all hover:border-primary/40 hover:text-primary hover:brightness-[0.96] disabled:opacity-50"
                       onClick={() => sendMessage(prompt)}
                       type="button"
                       disabled={loading}
@@ -220,13 +220,13 @@ export default function AnalyticsChatBox() {
           </div>
         )}
 
-        {error && <div className="alert alert-error mb-3 py-2">{error}</div>}
+        {error && <div className="glass-badge-error rounded-xl px-4 py-2 mb-3 text-sm">{error}</div>}
 
         <div className="mb-3 max-h-[58vh] space-y-4 overflow-y-auto pr-1">
           {renderedMessages}
 
           {loading && (
-            <div className="max-w-3xl rounded-2xl border border-base-300/45 bg-base-100/70 p-4">
+            <div className="max-w-3xl glass-panel-nested rounded-2xl p-4">
               <div className="flex items-center gap-2 text-sm text-base-content/70 mb-2">
                 <span className="loading loading-spinner loading-sm"></span>
                 Preparing visuals...
@@ -241,7 +241,7 @@ export default function AnalyticsChatBox() {
           <div ref={endRef} />
         </div>
 
-        <div className="sticky bottom-0 rounded-2xl border border-base-300/45 bg-base-100/85 p-3 backdrop-blur-sm">
+        <div className="sticky bottom-0 glass-panel-nested rounded-2xl p-3 backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -257,7 +257,7 @@ export default function AnalyticsChatBox() {
               disabled={loading}
             />
             <button
-              className="btn btn-primary btn-circle"
+              className="btn btn-circle bg-primary/80 text-primary-content border border-white/10 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(255,255,255,0.2),0_4px_12px_rgba(0,0,0,0.1)] hover:bg-primary/90"
               onClick={() => sendMessage(input)}
               disabled={loading || !input.trim()}
               type="button"

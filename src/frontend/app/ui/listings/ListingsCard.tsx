@@ -30,7 +30,7 @@ export default function ListingsCard({ listing, animationIndex, hideBookmark }: 
     <Link
         href={`/listings/${listing.id}`}
         key={listing.id}
-        className={`group card rounded-2xl border border-base-300/50 bg-base-100/80 backdrop-blur-lg shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_12px_40px_rgba(0,0,0,0.12)] transform transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 ${animationIndex !== undefined ? 'animate-fade-up-fast' : ''}`}
+        className={`group card rounded-2xl border border-base-300/50 bg-base-100/80 backdrop-blur-lg shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_12px_40px_rgba(0,0,0,0.12)] transform transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 snap-start scroll-mt-20 ${animationIndex !== undefined ? 'animate-fade-up-fast' : ''}`}
         style={animationIndex !== undefined ? { animationDelay: `${animationDelay}ms` } : undefined}
     >
       <figure className="aspect-[3/2] relative bg-primary/10 overflow-hidden">

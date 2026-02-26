@@ -3,12 +3,12 @@
 import { Property } from "@/app/lib/definitions";
 import { useSearchParams } from "next/navigation";
 import {
-  ChevronDownIcon,
   ShareIcon,
   ArrowTopRightOnSquareIcon,
   ArrowPathIcon,
   ClipboardDocumentIcon,
   CheckIcon,
+  BarsArrowUpIcon,
 } from "@heroicons/react/24/outline";
 import { useState, useEffect, useCallback, useMemo } from "react";
 
@@ -237,115 +237,128 @@ export default function SavedListingsSummaryCard({
     }
   }, [sortedListings]);
 
+  const priceRange = listings.length > 0
+    ? `$${Math.min(...listings.map((l) => l.price)).toLocaleString()} – $${Math.max(...listings.map((l) => l.price)).toLocaleString()}`
+    : null;
+
   return (
-    <div className="card glass-card col-span-1 md:col-span-2 lg:col-span-3 p-6 rounded-2xl relative z-20">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div>
-            <h2 className="text-2xl font-bold text-primary">
-              {listings.length}{" "}
-              {listings.length === 1 ? "Property" : "Properties"} Saved
-            </h2>
-            <p className="text-base-content/60">
-              {getSortText()}
-            </p>
+    <div className="fixed bottom-0 left-0 right-0 z-30 bg-transparent pointer-events-none">
+      <div className="container mx-auto pointer-events-auto w-full px-4 md:w-2/3 lg:w-3/5">
+        <div className="flex flex-row">
+          <div className="flex-grow p-4">
+            <div className="card bg-base-100/80 backdrop-blur-lg rounded-4xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.08)] mx-auto">
+              <div className="card-body p-3">
+                {/* Summary line */}
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  <span className="font-semibold text-primary">
+                    {listings.length} {listings.length === 1 ? "Property" : "Properties"} Saved
+                  </span>
+                  {priceRange && (
+                    <>
+                      <span className="text-base-content/40">&middot;</span>
+                      <span className="text-base-content/60">{priceRange}</span>
+                    </>
+                  )}
+                  {sortOption !== "original" && (
+                    <>
+                      <span className="text-base-content/40">&middot;</span>
+                      <span className="text-base-content/60">{getSortText()}</span>
+                    </>
+                  )}
+                </div>
+                {/* Divider */}
+                <div className="border-t border-base-300/50 mx-1 my-1" />
+                {/* Controls row */}
+                <div className="flex items-center justify-between">
+                  {/* Left: share/session/sync/URL bar */}
+                  <div className="flex items-center gap-2">
+                    {!cachedShare ? (
+                      <button
+                        className="btn btn-sm rounded-full glass-badge-primary hover:brightness-[0.82] active:scale-95 transition-all duration-150"
+                        onClick={handleShare}
+                        disabled={listings.length === 0 || isSharing}
+                      >
+                        {isSharing ? (
+                          <span className="loading loading-spinner loading-xs" />
+                        ) : (
+                          <ShareIcon className="w-4 h-4" />
+                        )}
+                        Share
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          className="btn btn-sm rounded-full glass-badge-primary hover:brightness-[0.82] active:scale-95 transition-all duration-150"
+                          onClick={handleGoToSession}
+                        >
+                          <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+                          Go to Session
+                        </button>
+                        {isCacheStale && (
+                          <button
+                            className="btn btn-sm rounded-full glass-badge-primary hover:brightness-[0.82] active:scale-95 transition-all duration-150"
+                            onClick={handleSync}
+                            disabled={isSyncing}
+                          >
+                            {isSyncing ? (
+                              <span className="loading loading-spinner loading-xs" />
+                            ) : (
+                              <ArrowPathIcon className="w-4 h-4" />
+                            )}
+                            Sync
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {/* Inline URL bar */}
+                    <div
+                      className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center gap-2 ${
+                        cachedShare
+                          ? "opacity-100"
+                          : "max-w-0 opacity-0"
+                      }`}
+                    >
+                      <input
+                        type="text"
+                        readOnly
+                        value={cachedShare?.url || ""}
+                        size={cachedShare?.url?.length || 20}
+                        className="input glass-input input-sm text-xs"
+                      />
+                      <button className="btn btn-sm rounded-full glass-badge-primary hover:brightness-[0.82] active:scale-95 transition-all duration-150 whitespace-nowrap" onClick={handleCopyUrl}>
+                        {copied ? (
+                          <>
+                            <CheckIcon className="w-3 h-3" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <ClipboardDocumentIcon className="w-3 h-3" />
+                            Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  {/* Right: sort circle button */}
+                  <div className="dropdown dropdown-top dropdown-end">
+                    <label tabIndex={0} className="btn btn-circle p-2">
+                      <BarsArrowUpIcon className="h-5 w-5" />
+                    </label>
+                    <ul tabIndex={0} className="dropdown-content menu glass-dropdown rounded-box z-[100] w-52 p-2">
+                      {Object.entries(sortConfigs).map(([key, config]) => (
+                        <li key={key} className={sortOption === key ? "bg-primary/15 rounded-lg font-medium text-primary" : ""}>
+                          <a onClick={() => handleSortChange(key as SortOption)}>
+                            {config.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        {listings.length > 0 && (
-          <div className="text-right text-base-content/60">
-            <p>Price Range:</p>
-            <p className="font-semibold text-primary">
-              ${Math.min(...listings.map((l) => l.price)).toLocaleString()} - $
-              {Math.max(...listings.map((l) => l.price)).toLocaleString()}
-            </p>
-          </div>
-        )}
-      </div>
-      {/* Client side filters */}
-      <div className="flex flex-row mt-4 gap-2">
-        <div className="dropdown dropdown-start">
-          <div tabIndex={0} role="button" className="btn btn-primary rounded-full">
-            {sortConfigs[sortOption].label}
-            <ChevronDownIcon className="w-4 h-4 ml-1" />
-          </div>
-          <ul tabIndex={0} className="dropdown-content menu glass-dropdown rounded-box z-[100] w-52 p-2">
-            {Object.entries(sortConfigs).map(([key, config]) => (
-              <li key={key} className={sortOption === key ? "bg-primary/20 rounded-lg border-l-2 border-primary font-medium" : ""}>
-                <a onClick={() => handleSortChange(key as SortOption)}>
-                  {config.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-        {/* Share / Go-to-Session / Sync buttons */}
-        {!cachedShare ? (
-          // No cached share — show Share button
-          <button
-            className="btn btn-outline btn-primary rounded-full"
-            onClick={handleShare}
-            disabled={listings.length === 0 || isSharing}
-          >
-            {isSharing ? (
-              <span className="loading loading-spinner loading-sm" />
-            ) : (
-              <ShareIcon className="w-4 h-4" />
-            )}
-            Share
-          </button>
-        ) : (
-          // Cached share exists — show Go to Session + optional Sync
-          <>
-            <button
-              className="btn btn-outline btn-primary rounded-full"
-              onClick={handleGoToSession}
-            >
-              <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-              Go to Session
-            </button>
-            {isCacheStale && (
-              <button
-                className="btn btn-outline btn-secondary rounded-full"
-                onClick={handleSync}
-                disabled={isSyncing}
-              >
-                {isSyncing ? (
-                  <span className="loading loading-spinner loading-sm" />
-                ) : (
-                  <ArrowPathIcon className="w-4 h-4" />
-                )}
-                Sync
-              </button>
-            )}
-          </>
-        )}
-        {/* Inline URL bar — slides out to the right */}
-        <div
-          className={`transition-all duration-300 ease-in-out overflow-hidden flex items-center gap-2 ${
-            cachedShare
-              ? "max-w-xl opacity-100"
-              : "max-w-0 opacity-0"
-          }`}
-        >
-          <input
-            type="text"
-            readOnly
-            value={cachedShare?.url || ""}
-            className="input input-bordered input-sm w-80 text-sm bg-base-200/60 font-mono"
-          />
-          <button className="btn btn-primary btn-sm whitespace-nowrap" onClick={handleCopyUrl}>
-            {copied ? (
-              <>
-                <CheckIcon className="w-4 h-4" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <ClipboardDocumentIcon className="w-4 h-4" />
-                Copy
-              </>
-            )}
-          </button>
         </div>
       </div>
     </div>

@@ -29,11 +29,7 @@ interface AnalyticsResultRendererProps {
 }
 
 const SERIES_COLORS = ['var(--color-primary)', 'var(--color-secondary)', 'var(--color-accent)'];
-const TOOLBAR_CLASS = 'flex flex-wrap items-center gap-1.5 rounded-xl border border-base-300/45 bg-base-100/70 p-2';
-const CHIP_BASE_CLASS =
-  'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors';
-const CHIP_ACTIVE_CLASS = 'border-primary/40 bg-primary/15 text-primary';
-const CHIP_IDLE_CLASS = 'border-base-300/60 bg-base-100/85 text-base-content/75 hover:border-primary/35 hover:text-primary';
+const TOOLBAR_CLASS = 'flex flex-wrap items-center gap-1.5 glass-panel-nested rounded-xl p-2';
 
 function toNumber(value: AnalyticsResultRow[string]): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -238,7 +234,7 @@ export default function AnalyticsResultRenderer({
 
   if (!hasRows) {
     return (
-      <div className="rounded-xl border border-base-300/50 bg-base-100/70 p-3 text-sm text-base-content/70">
+      <div className="glass-panel-nested rounded-xl p-3 text-sm text-base-content/70">
         No rows returned.
       </div>
     );
@@ -259,9 +255,7 @@ export default function AnalyticsResultRenderer({
             key={view}
             type="button"
             onClick={() => setSelectedView(view)}
-            className={`${CHIP_BASE_CLASS} ${
-              selectedView === view ? CHIP_ACTIVE_CLASS : CHIP_IDLE_CLASS
-            }`}
+            className={`glass-chip ${selectedView === view ? 'glass-chip-active' : ''}`}
           >
             {formatViewLabel(view)}
           </button>
@@ -275,9 +269,7 @@ export default function AnalyticsResultRenderer({
                 key={option}
                 type="button"
                 onClick={() => setTimeframe(option)}
-                className={`${CHIP_BASE_CLASS} ${
-                  timeframe === option ? CHIP_ACTIVE_CLASS : CHIP_IDLE_CLASS
-                }`}
+                className={`glass-chip ${timeframe === option ? 'glass-chip-active' : ''}`}
               >
                 {option}
               </button>
@@ -296,7 +288,7 @@ export default function AnalyticsResultRenderer({
                 key={series.key}
                 type="button"
                 onClick={() => toggleSeries(series.key)}
-                className={`${CHIP_BASE_CLASS} ${active ? CHIP_ACTIVE_CLASS : CHIP_IDLE_CLASS}`}
+                className={`glass-chip ${active ? 'glass-chip-active' : ''}`}
               >
                 <span
                   className="inline-block h-2 w-2 rounded-full mr-1"

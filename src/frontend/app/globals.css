@@ -59,6 +59,7 @@
 
 html {
   font-family: var(--font-sen), ui-sans-serif, system-ui, sans-serif;
+  scroll-snap-type: y proximity;
 }
 
 @keyframes fadeUp {
@@ -126,6 +127,12 @@ html {
 .page-gradient {
   background: radial-gradient(circle at top left, var(--color-base-300), transparent 45%),
               radial-gradient(circle at bottom right, var(--color-base-200), transparent 45%);
+}
+
+/* Sunken glass inputs — pressed-in feel for text fields inside glass containers */
+.glass-input {
+  @apply bg-base-200/50 border-none rounded-full
+         shadow-[inset_0_1px_3px_rgba(0,0,0,0.1),inset_0_1px_1px_rgba(0,0,0,0.06)];
 }
 
 /* Inner content panels - analytics-consistent styling */
@@ -271,11 +278,18 @@ select:focus,
   @apply ring-2 ring-primary/50 outline-none;
 }
 
-/* Disable focus ring/outline for the chat input only */
+/* Glass inputs handle their own focus state via inset shadow — no ring */
+.glass-input:focus,
+.glass-input:focus-visible {
+  @apply ring-0 outline-none
+         bg-base-200/60
+         shadow-[inset_0_1px_4px_rgba(0,0,0,0.12),inset_0_1px_2px_rgba(0,0,0,0.08)];
+}
+
+/* Disable focus ring/outline for the chat input only (shadow handled by .glass-input) */
 .chat-input:focus,
 .chat-input:focus-visible {
   @apply ring-0 outline-none;
-  box-shadow: none;
 }
 
 /* Lighter skeleton background while preserving shimmer animation */
@@ -340,6 +354,19 @@ a:focus-visible,
 }
 
 
+/* Interactive glass chip — toggle buttons inside toolbars */
+.glass-chip {
+  @apply inline-flex items-center gap-1 rounded-full border border-white/10
+         bg-base-100/85 px-2.5 py-1 text-xs font-medium
+         backdrop-blur-sm shadow-[inset_0_1px_1px_rgba(255,255,255,0.15),0_1px_3px_rgba(0,0,0,0.04)]
+         text-base-content/75 transition-all hover:text-primary hover:bg-primary/10;
+}
+
+.glass-chip-active {
+  @apply border-white/10 bg-primary/20 text-primary
+         shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_2px_6px_rgba(0,0,0,0.08)];
+}
+
 /* Card slot wrapper — wraps a card + vote footer into a cohesive unit */
 .card-slot {
   @apply rounded-3xl p-1 pb-0 bg-base-200/60 border border-base-300/40
@@ -347,4 +374,32 @@ a:focus-visible,
 }
 .card-slot-footer {
   @apply flex items-center justify-center gap-4 py-1 px-4;
+}
+
+/* Taxi easter egg — drives across the container and loops */
+@keyframes taxiDrive {
+  0% {
+    transform: translateX(-120px);
+  }
+  100% {
+    transform: translateX(calc(100vw + 120px));
+  }
+}
+
+.animate-taxi-drive {
+  animation: taxiDrive 14s linear infinite;
+}
+
+/* Smoke — two-frame toggle between ascii puff shapes */
+@keyframes smokeToggle {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.animate-smoke-toggle {
+  animation: smokeToggle 0.8s steps(1) infinite;
+}
+
+.animate-smoke-toggle-alt {
+  animation: smokeToggle 0.8s steps(1) infinite 0.4s;
 }

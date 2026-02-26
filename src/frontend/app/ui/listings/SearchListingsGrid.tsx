@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Property } from "@/app/lib/definitions";
 import ListingsCard from "./ListingsCard";
+import EndOfListings from "./EndOfListings";
 
 export default function ListingsGrid({
   listings,
@@ -65,6 +66,11 @@ export default function ListingsGrid({
           animationIndex={isExiting ? undefined : index}
         />
       ))}
+      {displayedListings.length > 0 && (
+        <div className="col-span-full min-h-[70vh]">
+          <EndOfListings />
+        </div>
+      )}
     </div>
   );
 }

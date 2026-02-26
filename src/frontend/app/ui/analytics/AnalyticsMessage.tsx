@@ -36,21 +36,21 @@ function AnalyticsMessage({
         <div
           className={`chat-bubble ${
             role === 'user'
-              ? 'chat-bubble-primary shadow-subtle'
-              : 'bg-primary/15 text-base-content shadow-subtle border border-base-300/30'
+              ? 'glass-chat-user'
+              : 'glass-chat-assistant'
           }`}
         >
           <p className="leading-relaxed">{text}</p>
         </div>
 
         {role === 'assistant' && result && renderHint && (
-          <div className="max-w-4xl rounded-2xl border border-base-300/45 bg-base-100/75 p-3 md:p-4">
+          <div className="max-w-4xl glass-panel-nested rounded-2xl p-3 md:p-4">
             {metadata.length > 0 && (
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 {metadata.map((item) => (
                   <span
                     key={item}
-                    className="inline-flex items-center rounded-full border border-base-300/60 bg-base-100/85 px-2 py-0.5 text-[11px] uppercase tracking-wide text-base-content/65"
+                    className="inline-flex items-center glass-panel-nested rounded-full px-2 py-0.5 text-[11px] uppercase tracking-wide text-base-content/65"
                   >
                     {item}
                   </span>

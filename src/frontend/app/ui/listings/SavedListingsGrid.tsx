@@ -2,6 +2,7 @@
 
 import { Property } from "@/app/lib/definitions";
 import ListingsCard from "./ListingsCard";
+import EndOfListings from "./EndOfListings";
 import SavedListingsSummaryCard from "./SavedListingsSummaryCard";
 import { useState, useEffect } from "react";
 
@@ -37,11 +38,18 @@ export default function ListingsGrid({
   }, [listings, displayedListings.length]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-4 w-full">
+    <div className="pb-24">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-4 w-full">
+        {displayedListings.map((listing, index) => (
+          <ListingsCard key={listing.id} listing={listing} animationIndex={index} />
+        ))}
+        {displayedListings.length > 0 && (
+          <div className="col-span-full min-h-[70vh]">
+            <EndOfListings />
+          </div>
+        )}
+      </div>
       <SavedListingsSummaryCard listings={listings} />
-      {displayedListings.map((listing, index) => (
-        <ListingsCard key={listing.id} listing={listing} animationIndex={index} />
-      ))}
     </div>
   );
 }
