@@ -101,6 +101,53 @@ model latest_properties_materialized {
   @@schema("real_estate")
 }
 
+model property_page_details {
+  id              String?   @db.VarChar(20)
+  status          String?   @db.VarChar(50)
+  listed_at       DateTime? @db.Date
+  closed_at       DateTime? @db.Date
+  days_on_market  Int?
+  available_from  DateTime? @db.Date
+  address         String?
+  price           Decimal?  @db.Decimal(10, 2)
+  borough         String?   @db.VarChar(50)
+  neighborhood    String?   @db.VarChar(100)
+  zipcode         String?   @db.VarChar(10)
+  property_type   String?   @db.VarChar(50)
+  sqft            Int?
+  bedrooms        Int?
+  bathrooms       Decimal?  @db.Decimal(3, 1)
+  type            String?   @db.VarChar(50)
+  latitude        Decimal?  @db.Decimal(9, 6)
+  longitude       Decimal?  @db.Decimal(9, 6)
+  amenities       String[]
+  built_in        Int?
+  building_id     String?   @db.VarChar(20)
+  agents          String[]
+  no_fee          Boolean?
+  thumbnail_image String?
+  loaded_datetime DateTime? @default(now()) @db.Timestamp(6)
+  brokers_fee     Decimal?  @db.Decimal(10, 2)
+  additional_fees Json?     @db.JsonB
+  url             String?   @db.VarChar(255)
+  date            DateTime  @default(now()) @db.Date
+  fct_id          String    @id @db.VarChar(100)
+  fct_price       Int?
+  ai_tags         String[]
+  analytics_tags  String[]
+  tag_list        String[]
+  relevance_score Decimal?  @db.Decimal(10, 4)
+  // Media columns
+  description         String?
+  description_summary String?
+  images              String[]
+  videos              String[]
+  floorplans          String[]
+
+  @@map("property_page_details")
+  @@schema("real_estate")
+}
+
 model neighborhoods {
   id        Int     @id
   name      String  @db.VarChar(255)

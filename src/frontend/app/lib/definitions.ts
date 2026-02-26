@@ -34,6 +34,11 @@ export type Property = {
     analytics_tags: string[];
     tag_list: string[];
     relevance_score: number | null;
+    description: string;
+    description_summary: string;
+    images: string[];
+    videos: string[];
+    floorplans: string[];
 }
 
 export interface Neighborhood {
@@ -76,17 +81,6 @@ export const propertyString = `Property = {
     tag_list: string[];
   }
 `
-
-export type PropertyDetails = {
-    id: string;
-    description: string;
-    entered_at: string;
-    floorplans: string[];
-    images: string[];
-    videos: string[];
-    tag_list?: string[];
-    description_summary: string;
-}
 
 export type PropertyNearestStations = {
   listing_id: string;
@@ -134,7 +128,7 @@ export type PropertyAnalyticsDetails = {
   price_neighborhood_percentile?: number;
 };
 
-export type CombinedPropertyDetails = Property & PropertyDetails & PropertyAnalyticsDetails & {
+export type CombinedPropertyDetails = Property & PropertyAnalyticsDetails & {
   closest_stations?: PropertyNearestStations[];
   nearest_pois?: PropertyNearestPois[];
 };

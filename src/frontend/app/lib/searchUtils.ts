@@ -22,6 +22,11 @@ export type RawProperty = {
   analytics_tags?: string[];
   tag_list?: string[];
   additional_fees?: unknown;
+  description?: string | null;
+  description_summary?: string | null;
+  images?: string[];
+  videos?: string[];
+  floorplans?: string[];
 };
 
 /**
@@ -55,6 +60,11 @@ export function formatRawProperty(property: RawProperty): Property {
     analytics_tags: property.analytics_tags ?? [],
     tag_list: resolveTagConflicts(property.ai_tags ?? [], property.analytics_tags ?? []),
     additional_fees: property.additional_fees ?? null,
+    description: property.description ?? '',
+    description_summary: property.description_summary ?? '',
+    images: property.images ?? [],
+    videos: property.videos ?? [],
+    floorplans: property.floorplans ?? [],
   } as Property;
 }
 

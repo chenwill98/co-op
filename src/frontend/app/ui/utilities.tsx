@@ -86,7 +86,7 @@ export function TagList({ category, tags, compact }: { category?: keyof typeof t
 
   if (compact) {
     return (
-      <div className="flex flex-nowrap gap-1 overflow-hidden pb-0.5">
+      <div className="flex flex-nowrap gap-1 overflow-x-clip overflow-y-visible">
         {displayTags.map(tag => {
           const info = getCompactTagInfo(tag);
           if (!info) return null;

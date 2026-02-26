@@ -50,7 +50,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
         {/* Left Column: Carousel, Description, Amenities, Building Units */}
         <div className="flex flex-col gap-4 lg:col-span-3">
-          <div className="glass-panel p-4 md:p-5">
+          <div className="glass-panel p-4 md:p-5 animate-fade-up-fast">
             {/* Breadcrumbs + Actions */}
             <div className="flex justify-between items-center mb-4">
               <nav className="breadcrumbs" aria-label="breadcrumbs">
@@ -84,16 +84,16 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             <ImageCarousel mediaItems={mediaItems} />
           </div>
           {/* Description Section */}
-          <div className="glass-panel p-4 md:p-5">
+          <div className="glass-panel p-4 md:p-5 animate-fade-up-fast" style={{ animationDelay: '75ms' }}>
             <ListingsDescriptionPanel listingDetails={listingDetails} />
           </div>
           {/* Amenities */}
-          <div className="glass-panel p-4 md:p-5">
+          <div className="glass-panel p-4 md:p-5 animate-fade-up-fast" style={{ animationDelay: '150ms' }}>
             <ListingsAmenitiesPanel listingDetails={listingDetails} />
           </div>
           {/* Building Units */}
           {listingDetails.building_id && (
-            <div className="glass-panel p-4 md:p-5">
+            <div className="glass-panel p-4 md:p-5 animate-fade-up-fast" style={{ animationDelay: '225ms' }}>
               <BuildingUnitsPanel
                 propertyId={listingDetails.id}
                 buildingId={listingDetails.building_id}
@@ -106,7 +106,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         {/* Right Column: Details, Pricing, Transportation, Location */}
         <div className="flex flex-col gap-4 lg:col-span-2">
           {/* Property Title + Timeline */}
-          <div className="glass-panel p-4 md:p-5">
+          <div className="glass-panel p-4 md:p-5 animate-fade-up-fast">
             <ListingsDetailsPanel
               listingDetails={listingDetails}
               neighborhoodContext={neighborhoodContext}
@@ -114,7 +114,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           </div>
 
           {/* Price, Fee Breakdown, Price History */}
-          <div className="glass-panel p-4 md:p-5">
+          <div className="glass-panel p-4 md:p-5 animate-fade-up-fast" style={{ animationDelay: '75ms' }}>
             <ListingsPricingPanel
               listingDetails={listingDetails}
               neighborhoodContext={neighborhoodContext}
@@ -122,12 +122,12 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           </div>
 
           {/* Transportation Info */}
-          <div className="glass-panel p-4 md:p-5">
+          <div className="glass-panel p-4 md:p-5 animate-fade-up-fast" style={{ animationDelay: '150ms' }}>
             <ListingsTransportationPanel listingDetails={listingDetails} />
           </div>
 
           {/* Location Info */}
-          <div className="glass-panel p-4 md:p-5">
+          <div className="glass-panel p-4 md:p-5 animate-fade-up-fast" style={{ animationDelay: '225ms' }}>
             <ListingsLocationPanel listingDetails={listingDetails} />
           </div>
         </div>

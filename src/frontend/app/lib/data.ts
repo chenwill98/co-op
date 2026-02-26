@@ -1,7 +1,7 @@
 // Import your database client/ORM here, e.g. Prisma
 import { Prisma } from '@prisma/client';
 import prisma from './prisma'; // Import the serverless-friendly Prisma client
-import { Property, PropertyDetails, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois, NeighborhoodContext } from './definitions';
+import { Property, CombinedPropertyDetails, propertyString, Neighborhood, PropertyAnalyticsDetails, PropertyNearestStations, PropertyNearestPois, NeighborhoodContext } from './definitions';
 import { tagCategories } from './tagUtils';
 import { type RawProperty, formatRawProperty } from './searchUtils';
 import { prompts } from './promptConfig';
@@ -154,37 +154,19 @@ export async function fetchPropertiesByIds(ids: string[]): Promise<Property[]> {
   return properties.map((p) => formatRawProperty(p as unknown as RawProperty));
 }
 
-export async function fetchPropertyDetailsById(id: string): Promise<PropertyDetails | null> {
-  try {
-    const result = await prisma.dim_property_details.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        description: true,
-        description_summary: true,
-        images: true,
-        videos: true,
-        floorplans: true,
-        tag_list: true,
-        loaded_datetime: true,
-      },
-    });
-
-    if (!result) return null;
-
-    return {
-      id: result.id,
-      description: result.description ?? '',
-      description_summary: result.description_summary ?? '',
-      images: result.images ?? [],
-      videos: result.videos ?? [],
-      floorplans: result.floorplans ?? [],
-      tag_list: result.tag_list,
-      entered_at: result.loaded_datetime?.toISOString() ?? '',
-    } as PropertyDetails;
-  } catch (error) {
-    throw error;
+/**
+ * Fetches a single property from the property_page_details materialized view,
+ * which includes media columns (description, images, videos, floorplans).
+ * Used by the listing detail page instead of separate property + details queries.
+ */
+async function fetchPropertyPageById(id: string): Promise<Property> {
+  const property = await prisma.property_page_details.findUnique({
+    where: { fct_id: id },
+  });
+  if (!property) {
+    throw new Error(`Property with fct_id ${id} not found.`);
   }
+  return formatRawProperty(property as unknown as RawProperty);
 }
 
 /**
@@ -338,29 +320,24 @@ export async function fetchNeighborhoodContext(neighborhood: string, bedrooms: n
 
 export async function fetchPropertyPage(id: string): Promise<CombinedPropertyDetails> {
   try {
+    const start = performance.now();
+
     const [
       property,
-      propertyDetails,
       propertyAnalytics,
       nearestStations,
       nearestPois
     ] = await Promise.all([
-      fetchPropertiesRDSById(id),
-      fetchPropertyDetailsById(id).then(details => details || {}),
-      fetchPropertyAnalyticsById(id).then(analytics => analytics || {}),
-      fetchPropertyNearestStationsById(id).then(stations => stations || []),
-      fetchPropertyNearestPoisById(id).then(pois => pois || [])
+      fetchPropertyPageById(id).then(r => { console.log(`[fetchPropertyPage] property_page_details: ${(performance.now() - start).toFixed(0)}ms`); return r; }),
+      fetchPropertyAnalyticsById(id).then(r => { console.log(`[fetchPropertyPage] analytics: ${(performance.now() - start).toFixed(0)}ms`); return r || {}; }),
+      fetchPropertyNearestStationsById(id).then(r => { console.log(`[fetchPropertyPage] stations: ${(performance.now() - start).toFixed(0)}ms`); return r || []; }),
+      fetchPropertyNearestPoisById(id).then(r => { console.log(`[fetchPropertyPage] pois: ${(performance.now() - start).toFixed(0)}ms`); return r || []; }),
     ]);
 
-    // Ensure property is not null or undefined before spreading
-    if (!property) {
-      throw new Error(`Property with fct_id ${id} not found via fetchPropertiesRDSById.`);
-    }
+    console.log(`[fetchPropertyPage] total: ${(performance.now() - start).toFixed(0)}ms`);
 
-    // Properly combine objects with stations in a closest_stations array property
     const propertyCombined = {
-      ...(propertyDetails as PropertyDetails),
-      ...property, // property is already of type Property, ensured by the check above
+      ...property,
       ...(propertyAnalytics as PropertyAnalyticsDetails),
       closest_stations: nearestStations as PropertyNearestStations[],
       nearest_pois: nearestPois as PropertyNearestPois[]

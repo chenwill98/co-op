@@ -152,9 +152,11 @@ export default function Page() {
             <div className="flex flex-row gap-3 items-center">
               <TypingInput onValueChange={(val) => setSearchText(val)} />
               <button
-                className="btn btn-primary text-primary-content text-base
-                  rounded-full px-6
-                  shadow-md hover:shadow-lg
+                className="btn bg-primary/80 text-primary-content text-base
+                  rounded-full px-6 border border-white/10
+                  backdrop-blur-sm
+                  shadow-[inset_0_1px_2px_rgba(255,255,255,0.2),0_4px_12px_rgba(0,0,0,0.1)]
+                  hover:bg-primary/90 hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.2),0_8px_24px_rgba(0,0,0,0.15)]
                   transition-all duration-200
                   hover:scale-[1.02] active:scale-[0.98]"
                 onClick={handleSearch}

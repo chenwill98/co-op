@@ -387,7 +387,7 @@ export default function ChatBox() {
           {label} • {displayText}
           <XMarkIcon
             onClick={() => animateRemoveFilter(filterKey)}
-            className="h-3 w-3 cursor-pointer hover:text-error"
+            className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
           />
         </span>
       );
@@ -406,7 +406,7 @@ export default function ChatBox() {
             className="ml-1"
             type="button"
           >
-            <XMarkIcon className="h-3 w-3 cursor-pointer hover:text-error" />
+            <XMarkIcon className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors" />
           </button>
         </span>
         <ul tabIndex={0} className="dropdown-content glass-dropdown rounded-box z-[100] p-2 text-xs max-h-48 overflow-y-auto min-w-max">
@@ -415,7 +415,7 @@ export default function ChatBox() {
               <span>{item}</span>
               <XMarkIcon
                 onClick={() => handleRemoveFromArrayFilter(filterKey, items[idx])}
-                className="h-3 w-3 cursor-pointer hover:text-error flex-shrink-0"
+                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors flex-shrink-0"
               />
             </li>
           ))}
@@ -457,7 +457,7 @@ export default function ChatBox() {
             {label} • {item}
             <XMarkIcon
               onClick={() => animateRemoveFromArrayFilter(key, originalArr[idx])}
-              className="h-3 w-3 cursor-pointer hover:text-error"
+              className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
             />
           </span>
         );
@@ -475,7 +475,7 @@ export default function ChatBox() {
               {label} • {min}
               <XMarkIcon
                 onClick={() => animateRemoveFilter(key)}
-                className="h-3 w-3 cursor-pointer hover:text-error"
+                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
               />
             </span>
           ];
@@ -486,7 +486,7 @@ export default function ChatBox() {
               {`Min ${label} • ${min}`}
               <XMarkIcon
                 onClick={() => animateRemoveFilter(key, 'min')}
-                className="h-3 w-3 cursor-pointer hover:text-error"
+                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
               />
             </span>
           ] : []),
@@ -495,7 +495,7 @@ export default function ChatBox() {
               {`Max ${label} • ${max}`}
               <XMarkIcon
                 onClick={() => animateRemoveFilter(key, 'max')}
-                className="h-3 w-3 cursor-pointer hover:text-error"
+                className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
               />
             </span>
           ] : [])
@@ -510,7 +510,7 @@ export default function ChatBox() {
         {label} • {String(val)}
         <XMarkIcon
           onClick={() => animateRemoveFilter(key)}
-          className="h-3 w-3 cursor-pointer hover:text-error"
+          className="h-3 w-3 cursor-pointer rounded-full box-content p-0.5 hover:bg-base-content/15 transition-colors"
         />
       </span>
     ];
@@ -611,7 +611,7 @@ export default function ChatBox() {
                             {suggestedQueries.map((query, idx) => (
                               <button
                                 key={idx}
-                                className="badge glass-badge-primary cursor-pointer hover:bg-primary/40 text-xs rounded-full"
+                                className="badge glass-badge-primary cursor-pointer hover:brightness-[0.82] active:scale-95 text-xs py-3 px-4 rounded-full transition-all duration-150"
                                 onClick={() => {
                                   setSuggestedQueries([]);
                                   fetchListings(query, true);
@@ -667,7 +667,7 @@ export default function ChatBox() {
                       </label>
                       <ul tabIndex={0} className="dropdown-content menu glass-dropdown rounded-box z-[100] w-52 p-2">
                         {Object.entries(sortConfigs).map(([key, config]) => (
-                          <li key={key} className={sort === key ? 'bg-primary/20 rounded-lg border-l-2 border-primary font-medium' : ''}>
+                          <li key={key} className={sort === key ? 'bg-primary/15 rounded-lg font-medium text-primary' : ''}>
                             <a onClick={() => handleSortChange(key)}>{config.label}</a>
                           </li>
                         ))}
