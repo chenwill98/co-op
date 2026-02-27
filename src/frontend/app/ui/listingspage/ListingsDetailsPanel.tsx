@@ -7,6 +7,7 @@ import ExpandButton from "@/app/ui/icons/ExpandButton";
 import PercentileCards from "@/app/ui/analytics/PercentileCards";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon";
 import DealScoreSummary from "@/app/ui/analytics/DealScoreSummary";
+import { compareToBaseline, formatComparisonLabel } from "@/app/lib/comparisonUtils";
 import {
   ClockIcon,
   CalendarDaysIcon,
@@ -64,16 +65,13 @@ function ListingTimeline({
 
     let domColor = 'text-base-content/70';
     let contextHint = '';
-    if (neighborhoodContext?.avg_days_on_market != null && neighborhoodContext.avg_days_on_market > 0) {
-      const avg = Math.round(neighborhoodContext.avg_days_on_market);
-      const bedroomLabel = listingDetails.bedrooms === 0 ? 'studio' : `${listingDetails.bedrooms}BR`;
-      contextHint = `avg for ${bedroomLabel}: ${avg}d`;
-      if (dom < avg * 0.75) {
-        domColor = 'text-success';
-      } else if (dom > avg * 1.5) {
-        domColor = 'text-error';
-      } else {
-        domColor = 'text-warning';
+    if (neighborhoodContext?.median_days_on_market != null && neighborhoodContext.median_days_on_market > 0) {
+      const median = Math.round(neighborhoodContext.median_days_on_market);
+      const label = formatComparisonLabel(listingDetails.bedrooms, listingDetails.neighborhood, FormatDisplayText);
+      contextHint = `${label}: ${median}d`;
+      const comparison = compareToBaseline(dom, median);
+      if (comparison) {
+        domColor = comparison.colorClass;
       }
     }
 
@@ -111,14 +109,25 @@ function ListingTimeline({
   }
 
   // Market velocity
-  if (neighborhoodContext?.avg_days_to_rent != null && neighborhoodContext.avg_days_to_rent > 0) {
-    const avgDaysToRent = Math.round(neighborhoodContext.avg_days_to_rent);
+  if (neighborhoodContext?.median_days_to_rent != null && neighborhoodContext.median_days_to_rent > 0) {
+    const medianDaysToRent = Math.round(neighborhoodContext.median_days_to_rent);
     const bedroomLabel = listingDetails.bedrooms === 0 ? 'studios' : `${listingDetails.bedrooms}BRs`;
+
+    // Color-code based on how this listing's DOM compares to typical rent time
+    let velocityColor = 'text-base-content/70';
+    if (listingDetails.days_on_market != null) {
+      const velocityComparison = compareToBaseline(listingDetails.days_on_market, medianDaysToRent);
+      if (velocityComparison) {
+        velocityColor = velocityComparison.colorClass;
+      }
+    }
+
     items.push(
       <TimelineRow
         key="velocity"
         icon={ArrowTrendingUpIcon}
-        label={`Similar ${bedroomLabel} rent within ~${avgDaysToRent}d`}
+        label={`Similar ${bedroomLabel} rent within ~${medianDaysToRent}d`}
+        color={velocityColor}
       />
     );
   }

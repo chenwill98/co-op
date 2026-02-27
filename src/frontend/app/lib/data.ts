@@ -9,6 +9,7 @@ import Anthropic from "@anthropic-ai/sdk";
 // Import the parser properly using ES module syntax
 import { parseClaudeResultsToPrismaSQL } from './claudeQueryParser';
 import { ChatHistory } from './definitions';
+import { toNum } from './dbUtils';
 
 export async function fetchPropertiesRDS(params: {
   text: string;
@@ -275,21 +276,21 @@ export async function fetchNeighborhoodContext(neighborhood: string, bedrooms: n
   try {
     type ContextRow = {
       median_price: { toNumber(): number } | number | null;
-      avg_days_on_market: { toNumber(): number } | number | null;
+      median_days_on_market: { toNumber(): number } | number | null;
       active_listing_count: bigint | number | null;
-      avg_days_to_rent: { toNumber(): number } | number | null;
+      median_days_to_rent: { toNumber(): number } | number | null;
     };
 
     const result = await prisma.$queryRaw<ContextRow[]>`
       SELECT
         percentile_cont(0.5) WITHIN GROUP (ORDER BY price) AS median_price,
-        AVG(days_on_market) AS avg_days_on_market,
+        percentile_cont(0.5) WITHIN GROUP (ORDER BY days_on_market) AS median_days_on_market,
         COUNT(*) AS active_listing_count,
-        (SELECT AVG(days_on_market)
+        (SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY days_on_market)
          FROM real_estate.dim_property_details
          WHERE neighborhood = ${neighborhood} AND bedrooms = ${bedrooms}
          AND status = 'closed' AND closed_at > NOW() - INTERVAL '90 days'
-        ) AS avg_days_to_rent
+        ) AS median_days_to_rent
       FROM real_estate.latest_properties_materialized
       WHERE neighborhood = ${neighborhood} AND bedrooms = ${bedrooms}
     `;
@@ -298,20 +299,11 @@ export async function fetchNeighborhoodContext(neighborhood: string, bedrooms: n
 
     const row = result[0];
 
-    const toNum = (val: unknown): number | null => {
-      if (val == null) return null;
-      if (typeof val === 'object' && val !== null && 'toNumber' in val) {
-        return (val as { toNumber(): number }).toNumber();
-      }
-      if (typeof val === 'bigint') return Number(val);
-      return typeof val === 'number' ? val : null;
-    };
-
     return {
       median_price: toNum(row.median_price),
-      avg_days_on_market: toNum(row.avg_days_on_market),
+      median_days_on_market: toNum(row.median_days_on_market),
       active_listing_count: toNum(row.active_listing_count),
-      avg_days_to_rent: toNum(row.avg_days_to_rent),
+      median_days_to_rent: toNum(row.median_days_to_rent),
     };
   } catch {
     return null;

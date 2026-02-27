@@ -10,7 +10,7 @@ interface DealDimension {
   level: ScoreLevel;
 }
 
-function getLevel(percentile: number | undefined | null): ScoreLevel | null {
+export function getLevel(percentile: number | undefined | null): ScoreLevel | null {
   if (percentile == null) return null;
   if (percentile >= 75) return 'great';
   if (percentile >= 50) return 'good';
@@ -52,7 +52,7 @@ export default function DealScoreSummary({
   const sizeLevel = getLevel(listingDetails.sqft_neighborhood_percentile);
   if (sizeLevel) {
     const descriptions: Record<ScoreLevel, string> = {
-      great: 'Very spacious for the price',
+      great: 'Very spacious for the area',
       good: 'Above average size',
       average: 'Average size',
       below: 'Below average size',

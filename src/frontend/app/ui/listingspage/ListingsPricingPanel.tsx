@@ -7,6 +7,7 @@ import ExpandButton from "@/app/ui/icons/ExpandButton";
 import PercentileCards from "@/app/ui/analytics/PercentileCards";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon";
 import PriceHistoryChart from "@/app/ui/listingspage/PriceHistoryChart";
+import { compareToBaseline, formatComparisonLabel, getSampleSizeWarning } from "@/app/lib/comparisonUtils";
 
 function parseAdditionalFees(raw: unknown): AdditionalFee[] {
   if (!raw) return [];
@@ -196,13 +197,16 @@ export default function ListingsPricingPanel({
   // Neighborhood median comparison
   const medianComparison = useMemo(() => {
     if (!neighborhoodContext?.median_price) return null;
-    const diff = listingDetails.price - neighborhoodContext.median_price;
-    const bedroomLabel = listingDetails.bedrooms === 0 ? 'studio' : `${listingDetails.bedrooms}BR`;
-    const neighborhood = FormatDisplayText(listingDetails.neighborhood);
+    const comparison = compareToBaseline(listingDetails.price, neighborhoodContext.median_price);
+    if (!comparison) return null;
+    const label = formatComparisonLabel(listingDetails.bedrooms, listingDetails.neighborhood, FormatDisplayText);
+    const sampleWarning = getSampleSizeWarning(neighborhoodContext.active_listing_count);
     return {
       median: neighborhoodContext.median_price,
-      diff,
-      label: `Median ${bedroomLabel} in ${neighborhood}`,
+      comparison,
+      label,
+      activeCount: neighborhoodContext.active_listing_count,
+      sampleWarning,
     };
   }, [neighborhoodContext, listingDetails.price, listingDetails.bedrooms, listingDetails.neighborhood]);
 
@@ -225,14 +229,16 @@ export default function ListingsPricingPanel({
       {/* Neighborhood median comparison */}
       {medianComparison && (
         <div className="text-sm text-base-content/70 mb-2">
-          {medianComparison.label}: ${medianComparison.median.toLocaleString()}
-          {medianComparison.diff !== 0 && (
-            <span className={medianComparison.diff < 0 ? 'text-success ml-1' : 'text-warning ml-1'}>
-              {medianComparison.diff < 0
-                ? `you save $${Math.abs(medianComparison.diff).toLocaleString()}/mo`
-                : `$${medianComparison.diff.toLocaleString()}/mo above median`
-              }
+          <span>{medianComparison.label}: ${medianComparison.median.toLocaleString()}</span>
+          {medianComparison.comparison.tier !== 'neutral' && (
+            <span className={`${medianComparison.comparison.colorClass} ml-1`}>
+              (${medianComparison.comparison.absDiff.toLocaleString()} {medianComparison.comparison.diff < 0 ? 'below' : 'above'})
             </span>
+          )}
+          {medianComparison.activeCount != null && (
+            <div className={`text-xs mt-0.5 ${medianComparison.sampleWarning ? 'text-warning/70' : 'text-base-content/50'}`}>
+              {medianComparison.sampleWarning ?? `Based on ${medianComparison.activeCount} active listings`}
+            </div>
           )}
         </div>
       )}

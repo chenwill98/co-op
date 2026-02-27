@@ -147,9 +147,9 @@ export type PriceHistoryPoint = {
 
 export type NeighborhoodContext = {
   median_price: number | null;
-  avg_days_on_market: number | null;
+  median_days_on_market: number | null;
   active_listing_count: number | null;
-  avg_days_to_rent: number | null;
+  median_days_to_rent: number | null;
 };
 
 export type ChatMessage = { role: "user" | "assistant"; message?: string; tool?: string };

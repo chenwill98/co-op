@@ -268,11 +268,12 @@ html {
   transform: scale(0.98);
 }
 
-/* Global focus ring for accessibility */
-input:not(.unstyled):focus,
+/* Global focus ring for text inputs only — excludes DaisyUI controls
+   (tabs, theme toggles, swaps) that handle their own focus styles */
+input:not(.unstyled):not(.tab):not(.theme-controller):not([class*="swap"]):focus,
 textarea:not(.unstyled):focus,
 select:not(.unstyled):focus,
-.input:not(.unstyled):focus,
+.input:not(.unstyled):not(.glass-input):focus,
 .textarea:not(.unstyled):focus,
 .select:not(.unstyled):focus {
   @apply ring-2 ring-primary/50 outline-none;
@@ -315,10 +316,15 @@ select:not(.unstyled):focus,
   @apply transition-transform hover:scale-105;
 }
 
-/* Focus ring for all interactive elements */
-button:focus-visible,
-a:focus-visible,
-[role="button"]:focus-visible {
+/* Focus ring — keyboard-only, suppressed on mouse click.
+   DaisyUI components handle their own focus styles; this catches
+   custom buttons/links that don't. Uses :focus-visible so it only
+   fires on keyboard navigation, but Chrome still triggers it on
+   some click targets (tabs, role="button"). We scope narrowly to
+   avoid fighting DaisyUI: only plain <a> and <button> WITHOUT
+   a DaisyUI class get the ring. */
+button:not(.btn):not(.tab):focus-visible,
+a:not(.btn):not(.tab):focus-visible {
   @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-base-100;
 }
 

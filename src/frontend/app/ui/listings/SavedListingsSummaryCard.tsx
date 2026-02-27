@@ -258,7 +258,7 @@ export default function SavedListingsSummaryCard({
                         readOnly
                         value={cachedShare?.url || ""}
                         size={cachedShare?.url?.length || 20}
-                        className="input unstyled glass-input input-sm text-xs"
+                        className="input glass-input input-sm text-xs"
                       />
                       <button className="btn btn-sm rounded-full glass-badge-primary hover:brightness-[0.82] active:scale-95 transition-all duration-150 whitespace-nowrap" onClick={handleCopyUrl}>
                         {copied ? (
