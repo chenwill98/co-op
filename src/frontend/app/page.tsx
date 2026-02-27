@@ -34,7 +34,6 @@ const taglines = [
   "The apartment hunt, minus the existential crisis.",
 
   // The absurd
-  "We put the NYC in 'the L train is fine.'",
   "$300 energy bill, but actually has working heat and AC.",
   "Floors that are mostly level.",
   "Your toilet and kitchen can be in different rooms.",

@@ -155,12 +155,12 @@ export async function fetchPropertiesByIds(ids: string[]): Promise<Property[]> {
 }
 
 /**
- * Fetches a single property from the property_page_details materialized view,
+ * Fetches a single property from the latest_properties_all_details_materialized view,
  * which includes media columns (description, images, videos, floorplans).
  * Used by the listing detail page instead of separate property + details queries.
  */
 async function fetchPropertyPageById(id: string): Promise<Property> {
-  const property = await prisma.property_page_details.findUnique({
+  const property = await prisma.latest_properties_all_details_materialized.findUnique({
     where: { fct_id: id },
   });
   if (!property) {
@@ -328,7 +328,7 @@ export async function fetchPropertyPage(id: string): Promise<CombinedPropertyDet
       nearestStations,
       nearestPois
     ] = await Promise.all([
-      fetchPropertyPageById(id).then(r => { console.log(`[fetchPropertyPage] property_page_details: ${(performance.now() - start).toFixed(0)}ms`); return r; }),
+      fetchPropertyPageById(id).then(r => { console.log(`[fetchPropertyPage] all_details_materialized: ${(performance.now() - start).toFixed(0)}ms`); return r; }),
       fetchPropertyAnalyticsById(id).then(r => { console.log(`[fetchPropertyPage] analytics: ${(performance.now() - start).toFixed(0)}ms`); return r || {}; }),
       fetchPropertyNearestStationsById(id).then(r => { console.log(`[fetchPropertyPage] stations: ${(performance.now() - start).toFixed(0)}ms`); return r || []; }),
       fetchPropertyNearestPoisById(id).then(r => { console.log(`[fetchPropertyPage] pois: ${(performance.now() - start).toFixed(0)}ms`); return r || []; }),

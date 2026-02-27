@@ -5,12 +5,11 @@ import { useSearchParams } from "next/navigation";
 import {
   ShareIcon,
   ArrowTopRightOnSquareIcon,
-  ArrowPathIcon,
   ClipboardDocumentIcon,
   CheckIcon,
   BarsArrowUpIcon,
 } from "@heroicons/react/24/outline";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 // Sort options
 type SortOption = "original" | "newest" | "price-low" | "price-high";
@@ -42,10 +41,6 @@ function setShareCache(cache: ShareCache) {
   localStorage.setItem(SHARE_CACHE_KEY, JSON.stringify(cache));
 }
 
-function clearShareCache() {
-  localStorage.removeItem(SHARE_CACHE_KEY);
-}
-
 export default function SavedListingsSummaryCard({
   listings,
 }: {
@@ -56,7 +51,6 @@ export default function SavedListingsSummaryCard({
   const [sortOption, setSortOption] = useState<SortOption>("original");
   const [sortedListings, setSortedListings] = useState<Property[]>(listings);
   const [isSharing, setIsSharing] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [cachedShare, setCachedShare] = useState<ShareCache | null>(null);
 
@@ -64,20 +58,6 @@ export default function SavedListingsSummaryCard({
   useEffect(() => {
     setCachedShare(getShareCache());
   }, []);
-
-  // Current listing IDs (sorted for stable comparison)
-  const currentIds = useMemo(
-    () => [...listings.map((l) => l.fct_id)].sort(),
-    [listings]
-  );
-
-  // Check if cached share matches current listings
-  const isCacheStale = useMemo(() => {
-    if (!cachedShare) return false;
-    const cachedIds = [...cachedShare.propertyIds].sort();
-    if (cachedIds.length !== currentIds.length) return true;
-    return cachedIds.some((id, i) => id !== currentIds[i]);
-  }, [cachedShare, currentIds]);
 
   const handleShare = async () => {
     if (listings.length === 0 || isSharing) return;
@@ -102,6 +82,11 @@ export default function SavedListingsSummaryCard({
       setShareCache(cache);
       setCachedShare(cache);
 
+      // Notify SavedListingsGrid that a session was created
+      window.dispatchEvent(
+        new CustomEvent("share-created", { detail: cache })
+      );
+
       // Auto-copy to clipboard
       try {
         await navigator.clipboard.writeText(fullUrl);
@@ -122,40 +107,6 @@ export default function SavedListingsSummaryCard({
       window.open(cachedShare.url, "_blank");
     }
   }, [cachedShare]);
-
-  const handleSync = useCallback(async () => {
-    if (!cachedShare || isSyncing) return;
-    setIsSyncing(true);
-    try {
-      const propertyIds = listings.map((l) => l.fct_id);
-      const res = await fetch(`/api/shares/${cachedShare.shareId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ propertyIds }),
-      });
-      if (!res.ok) {
-        if (res.status === 404) {
-          // Share expired or deleted — clear cache
-          clearShareCache();
-          setCachedShare(null);
-          return;
-        }
-        throw new Error("Failed to sync share");
-      }
-
-      // Update cache with new property IDs
-      const updatedCache: ShareCache = {
-        ...cachedShare,
-        propertyIds,
-      };
-      setShareCache(updatedCache);
-      setCachedShare(updatedCache);
-    } catch (error) {
-      console.error("Error syncing share:", error);
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [cachedShare, isSyncing, listings]);
 
   const handleCopyUrl = useCallback(async () => {
     if (!cachedShare) return;
@@ -243,7 +194,7 @@ export default function SavedListingsSummaryCard({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 bg-transparent pointer-events-none">
-      <div className="container mx-auto pointer-events-auto w-full px-4 md:w-2/3 lg:w-3/5">
+      <div className="container mx-auto pointer-events-auto w-full px-4 md:w-2/3 lg:w-3/5 max-w-3xl">
         <div className="flex flex-row">
           <div className="flex-grow p-4">
             <div className="card bg-base-100/80 backdrop-blur-lg rounded-4xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.08)] mx-auto">
@@ -286,29 +237,13 @@ export default function SavedListingsSummaryCard({
                         Share
                       </button>
                     ) : (
-                      <>
-                        <button
-                          className="btn btn-sm rounded-full glass-badge-primary hover:brightness-[0.82] active:scale-95 transition-all duration-150"
-                          onClick={handleGoToSession}
-                        >
-                          <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-                          Go to Session
-                        </button>
-                        {isCacheStale && (
-                          <button
-                            className="btn btn-sm rounded-full glass-badge-primary hover:brightness-[0.82] active:scale-95 transition-all duration-150"
-                            onClick={handleSync}
-                            disabled={isSyncing}
-                          >
-                            {isSyncing ? (
-                              <span className="loading loading-spinner loading-xs" />
-                            ) : (
-                              <ArrowPathIcon className="w-4 h-4" />
-                            )}
-                            Sync
-                          </button>
-                        )}
-                      </>
+                      <button
+                        className="btn btn-sm rounded-full glass-badge-primary hover:brightness-[0.82] active:scale-95 transition-all duration-150"
+                        onClick={handleGoToSession}
+                      >
+                        <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+                        Go to Session
+                      </button>
                     )}
                     {/* Inline URL bar */}
                     <div
@@ -323,7 +258,7 @@ export default function SavedListingsSummaryCard({
                         readOnly
                         value={cachedShare?.url || ""}
                         size={cachedShare?.url?.length || 20}
-                        className="input glass-input input-sm text-xs"
+                        className="input unstyled glass-input input-sm text-xs"
                       />
                       <button className="btn btn-sm rounded-full glass-badge-primary hover:brightness-[0.82] active:scale-95 transition-all duration-150 whitespace-nowrap" onClick={handleCopyUrl}>
                         {copied ? (

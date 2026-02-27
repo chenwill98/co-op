@@ -30,7 +30,7 @@ export async function GET(
     };
 
     const units = await prisma.$queryRaw<UnitRow[]>`
-      SELECT id, address, price, bedrooms, bathrooms, sqft, no_fee, thumbnail_image
+      SELECT id, address, price, bedrooms, bathrooms, sqft, no_fee, images[1] as thumbnail_image
       FROM real_estate.latest_properties_materialized
       WHERE building_id = ${property.building_id} AND fct_id != ${id}
       ORDER BY price ASC

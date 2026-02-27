@@ -448,7 +448,7 @@ export async function parseClaudeResultsToPrismaSQL(
   } else {
     // If no tags, use a simpler query
     baseQuery = Prisma.sql`
-      SELECT * 
+      SELECT *
       FROM "real_estate"."latest_properties_materialized"
       ${Prisma.raw(whereClause)}
     `;

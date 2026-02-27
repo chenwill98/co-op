@@ -22,6 +22,7 @@ export default function ListingsGrid({
     if (!prevIds || listings.length === 0) {
       setDisplayedListings(listings);
       prevIdsRef.current = newIds;
+      if (listings.length > 0) window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -39,11 +40,13 @@ export default function ListingsGrid({
     if (isSameSet) {
       setDisplayedListings(listings);
       prevIdsRef.current = newIds;
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
     // Different listings — exit animation, then swap
     setIsExiting(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
     const timer = setTimeout(() => {
       setDisplayedListings(listings);
       setIsExiting(false);
@@ -60,11 +63,16 @@ export default function ListingsGrid({
       }`}
     >
       {displayedListings.map((listing, index) => (
-        <ListingsCard
+        <div
           key={listing.id}
-          listing={listing}
-          animationIndex={isExiting ? undefined : index}
-        />
+          className="snap-start scroll-mt-20"
+          style={index >= 15 ? { contentVisibility: "auto", containIntrinsicSize: "auto 420px" } : undefined}
+        >
+          <ListingsCard
+            listing={listing}
+            animationIndex={isExiting || index >= 15 ? undefined : index}
+          />
+        </div>
       ))}
       {displayedListings.length > 0 && (
         <div className="col-span-full min-h-[70vh]">

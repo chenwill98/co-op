@@ -59,6 +59,7 @@ export function formatRawProperty(property: RawProperty): Property {
     ai_tags: property.ai_tags ?? [],
     analytics_tags: property.analytics_tags ?? [],
     tag_list: resolveTagConflicts(property.ai_tags ?? [], property.analytics_tags ?? []),
+    thumbnail_image: property.images?.[0] ?? null,
     additional_fees: property.additional_fees ?? null,
     description: property.description ?? '',
     description_summary: property.description_summary ?? '',

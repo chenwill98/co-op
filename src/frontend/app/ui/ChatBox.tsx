@@ -4,7 +4,7 @@ import { getDisplayTag } from '@/app/lib/tagUtils';
 import { netEffectivePrice } from '@/app/lib/searchUtils';
 import { getRandomLoadingMessage } from '@/app/lib/loadingMessages';
 import { formatAmenityName } from './utilities';
-import { ArrowUpIcon, ArrowPathIcon, BarsArrowUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowUpIcon, ArrowPathIcon, BarsArrowUpIcon, XMarkIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useListingsContext } from '@/app/context/ListingsContext';
 import type { ClaudeResponse } from '@/app/lib/claudeQueryParser';
@@ -39,6 +39,9 @@ export default function ChatBox() {
   // Collapse state for chat
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Keyboard hint visibility (animated enter key indicator)
+  const [kbdVisible, setKbdVisible] = useState(false);
 
   // Summary line state: pulse animation on count change + random empty-state message
   const previousCountRef = useRef<number>(listings.length);
@@ -518,7 +521,7 @@ export default function ChatBox() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 bg-transparent pointer-events-none">
-      <div className="container mx-auto pointer-events-auto w-full px-4 md:w-2/3 lg:w-3/5">
+      <div className="container mx-auto pointer-events-auto w-full px-4 md:w-2/3 lg:w-3/5 max-w-3xl">
         <div className="flex flex-row">
           <div className="flex-grow p-4">
             <div ref={cardRef} className="card bg-base-100/80 backdrop-blur-lg rounded-4xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.08)] mx-auto">
@@ -655,16 +658,24 @@ export default function ChatBox() {
 
                   {/* Input area */}
                   <div className="flex flex-row items-center relative gap-2">
-                    <input
-                      type="text"
-                      placeholder="Search for apartments... (e.g., '2br in Chelsea under $4000')"
-                      className="input chat-input glass-input w-full text-sm placeholder:text-base-content/50 placeholder:transition-opacity placeholder:duration-200 focus:placeholder:opacity-40"
-                      value={textInput}
-                      onChange={e => setTextInput(e.target.value)}
-                      onKeyDown={handleInputKeyDown}
-                      onFocus={() => setIsCollapsed(false)}
-                      disabled={loading}
-                    />
+                    <label className="flex items-center gap-2 w-full h-10 px-3 bg-base-200/30 rounded-full cursor-text transition-all duration-200 group/input">
+                      <MagnifyingGlassIcon className="h-5 w-5 opacity-50 group-focus-within/input:opacity-70 group-focus-within/input:text-primary transition-all duration-200" />
+                      <input
+                        type="text"
+                        placeholder="Search for apartments..."
+                        className="unstyled bg-transparent grow text-sm text-base-content caret-primary placeholder:text-base-content/50 focus:outline-none focus:ring-0"
+                        value={textInput}
+                        onChange={e => setTextInput(e.target.value)}
+                        onKeyDown={handleInputKeyDown}
+                        onFocus={() => {
+                          setIsCollapsed(false);
+                          setTimeout(() => setKbdVisible(true), 50);
+                        }}
+                        onBlur={() => setKbdVisible(false)}
+                        disabled={loading}
+                      />
+                      <kbd className={`kbd kbd-sm transition-all duration-300 ease-in ${kbdVisible ? 'opacity-70 scale-100' : 'opacity-0 scale-95'}`}>enter</kbd>
+                    </label>
 
                     {/* Sort Dropdown */}
                     <div className="dropdown dropdown-top dropdown-end">

@@ -42,7 +42,7 @@ export default function SavedListingsPage() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="flex flex-col items-center justify-center glass-card rounded-2xl p-10 animate-fade-up-fast max-w-md">
-              <div className="w-20 h-20 mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="w-20 h-20 mb-4 rounded-full glass-panel-nested flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-primary">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
                 </svg>
@@ -51,7 +51,7 @@ export default function SavedListingsPage() {
               <p className="text-center text-base-content/60 mb-6">
                 Bookmark properties you like by clicking the heart icon, and they&apos;ll appear here for easy access.
               </p>
-              <Link href="/listings" className="btn btn-lg btn-primary">
+              <Link href="/listings" className="btn btn-lg bg-primary/80 text-primary-content border border-white/10 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(255,255,255,0.2),0_4px_12px_rgba(0,0,0,0.1)] hover:bg-primary/90">
                 Browse Listings
               </Link>
             </div>

@@ -57,7 +57,7 @@ export default function SharedListingsSummaryCard({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 bg-transparent pointer-events-none">
-      <div className="container mx-auto pointer-events-auto w-full px-4 md:w-2/3 lg:w-3/5">
+      <div className="container mx-auto pointer-events-auto w-full px-4 md:w-2/3 lg:w-3/5 max-w-3xl">
         <div className="flex flex-row">
           <div className="flex-grow p-4">
             <div className="card bg-base-100/80 backdrop-blur-lg rounded-4xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_8px_32px_rgba(0,0,0,0.08)] mx-auto">

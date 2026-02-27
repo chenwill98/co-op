@@ -84,7 +84,7 @@ model latest_properties_materialized {
   building_id     String?   @db.VarChar(20)
   agents          String[]
   no_fee          Boolean?
-  thumbnail_image String?
+  images          String[]
   loaded_datetime DateTime? @default(now()) @db.Timestamp(6)
   brokers_fee     Decimal?  @db.Decimal(10, 2)
   additional_fees Json? @db.JsonB
@@ -101,7 +101,7 @@ model latest_properties_materialized {
   @@schema("real_estate")
 }
 
-model property_page_details {
+model latest_properties_all_details_materialized {
   id              String?   @db.VarChar(20)
   status          String?   @db.VarChar(50)
   listed_at       DateTime? @db.Date
@@ -125,7 +125,7 @@ model property_page_details {
   building_id     String?   @db.VarChar(20)
   agents          String[]
   no_fee          Boolean?
-  thumbnail_image String?
+  images          String[]
   loaded_datetime DateTime? @default(now()) @db.Timestamp(6)
   brokers_fee     Decimal?  @db.Decimal(10, 2)
   additional_fees Json?     @db.JsonB
@@ -137,14 +137,13 @@ model property_page_details {
   analytics_tags  String[]
   tag_list        String[]
   relevance_score Decimal?  @db.Decimal(10, 4)
-  // Media columns
+  // Media columns (from dim_property_details, not on latest_properties_materialized)
   description         String?
   description_summary String?
-  images              String[]
   videos              String[]
   floorplans          String[]
 
-  @@map("property_page_details")
+  @@map("latest_properties_all_details_materialized")
   @@schema("real_estate")
 }
 
