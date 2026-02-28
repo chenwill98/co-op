@@ -128,6 +128,8 @@ function useImageCycler(images: string[] | undefined, thumbnailImage: string | n
     }
   }, [crossfade]);
 
+  const stopTransitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const stop = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -143,19 +145,53 @@ function useImageCycler(images: string[] | undefined, thumbnailImage: string | n
     }
     isActiveRef.current = false;
     pendingRef.current = false;
-    slotLoadedRef.current = { A: true, B: false };
-    slotSrcRef.current = { A: fallback, B: fallback };
-    // Reset to thumbnail
-    setSlotA({ src: fallback, visible: true });
-    setSlotB({ src: fallback, visible: false });
-    activeSlotRef.current = 'A';
+    setIsActive(false);
+
+    // If already showing thumbnail or can't cycle, reset immediately
+    if (!canCycle || indexRef.current === 0) {
+      slotLoadedRef.current = { A: true, B: false };
+      slotSrcRef.current = { A: fallback, B: fallback };
+      setSlotA({ src: fallback, visible: true });
+      setSlotB({ src: fallback, visible: false });
+      activeSlotRef.current = 'A';
+      indexRef.current = 0;
+      setCurrentIndex(0);
+      return;
+    }
+
+    // Crossfade the hidden slot back to thumbnail
+    const activeSlot = activeSlotRef.current;
+    if (activeSlot === 'A') {
+      slotSrcRef.current.B = fallback;
+      setSlotB({ src: fallback, visible: true });
+      setSlotA(prev => ({ ...prev, visible: false }));
+    } else {
+      slotSrcRef.current.A = fallback;
+      setSlotA({ src: fallback, visible: true });
+      setSlotB(prev => ({ ...prev, visible: false }));
+    }
     indexRef.current = 0;
     setCurrentIndex(0);
-    setIsActive(false);
-  }, [fallback]);
+
+    // After transition completes, reset to clean state
+    stopTransitionRef.current = setTimeout(() => {
+      stopTransitionRef.current = null;
+      slotLoadedRef.current = { A: true, B: false };
+      slotSrcRef.current = { A: fallback, B: fallback };
+      setSlotA({ src: fallback, visible: true });
+      setSlotB({ src: fallback, visible: false });
+      activeSlotRef.current = 'A';
+    }, 500);
+  }, [fallback, canCycle]);
 
   const start = useCallback(() => {
     if (!canCycle) return;
+
+    // Cancel any pending stop transition
+    if (stopTransitionRef.current) {
+      clearTimeout(stopTransitionRef.current);
+      stopTransitionRef.current = null;
+    }
 
     isActiveRef.current = true;
     setIsActive(true);
@@ -181,6 +217,7 @@ function useImageCycler(images: string[] | undefined, thumbnailImage: string | n
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (srcTimeoutRef.current) clearTimeout(srcTimeoutRef.current);
+      if (stopTransitionRef.current) clearTimeout(stopTransitionRef.current);
     };
   }, []);
 
@@ -233,11 +270,11 @@ export default function ListingsCard({ listing, animationIndex, hideBookmark, vo
         key={listing.id}
         className={`group card rounded-2xl border border-base-300/50 bg-base-100 shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.12),0_12px_40px_rgba(0,0,0,0.12)] transition-[translate,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-primary/20 ${animationIndex !== undefined ? 'animate-fade-up-fast' : ''}`}
         style={animationIndex !== undefined ? { animationDelay: `${animationDelay}ms` } : undefined}
+        onMouseEnter={() => { if (!showMap) start(); }}
+        onMouseLeave={stop}
     >
       <figure
         className="aspect-[3/2] relative bg-primary/10 overflow-hidden"
-        onMouseEnter={() => { if (!showMap) start(); }}
-        onMouseLeave={stop}
       >
         <div className="overflow-hidden rounded relative w-full h-full">
           {/* Map layer (z-1): always show for cards without a thumbnail, or when map toggled */}
@@ -309,8 +346,8 @@ export default function ListingsCard({ listing, animationIndex, hideBookmark, vo
           </div>
         )}
         {/* Dot indicator — bottom center, between bookmark and map button */}
-        {isActive && canCycle && !showMap && (
-          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-10 flex gap-1.5 items-center">
+        {canCycle && !showMap && (
+          <div className={`absolute bottom-2.5 left-1/2 -translate-x-1/2 z-10 flex gap-1.5 items-center transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-0'}`}>
             {Array.from({ length: imageCount }, (_, i) => (
               <div
                 key={i}
@@ -323,7 +360,7 @@ export default function ListingsCard({ listing, animationIndex, hideBookmark, vo
         )}
         {/* Bottom left overlay buttons */}
         {voteState ? (
-          <div className="absolute left-2 bottom-2 z-10">
+          <div className="absolute left-2 bottom-2 z-10" onMouseEnter={stop} onMouseLeave={() => { if (!showMap) start(); }}>
             <VoteButtons
               votes={{
                 upvotes: voteState.upvotes,
@@ -336,7 +373,7 @@ export default function ListingsCard({ listing, animationIndex, hideBookmark, vo
           </div>
         ) : (
           !hideBookmark && (
-            <div className="absolute left-2 bottom-2 z-10 flex items-center gap-1.5">
+            <div className="absolute left-2 bottom-2 z-10 flex items-center gap-1.5" onMouseEnter={stop} onMouseLeave={() => { if (!showMap) start(); }}>
               <BookmarkIcon property={listing} onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -352,7 +389,7 @@ export default function ListingsCard({ listing, animationIndex, hideBookmark, vo
           )
         )}
         {listing.thumbnail_image && staticMapUrl && (
-          <div className="absolute right-2 bottom-2 z-10">
+          <div className="absolute right-2 bottom-2 z-10" onMouseEnter={stop} onMouseLeave={() => { if (!showMap) start(); }}>
             <MapButton
               showingMap={showMap}
               onToggleMap={(e) => {

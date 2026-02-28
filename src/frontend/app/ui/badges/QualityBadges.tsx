@@ -90,7 +90,7 @@ export default function QualityBadges({ tags, mode, dimension }: QualityBadgesPr
           return (
             <div
               key={tag}
-              className="badge badge-sm glass-badge-primary rounded-full text-[0.65rem] leading-tight py-0.5 h-auto min-h-0 px-1.5 gap-0.5 flex-shrink-0"
+              className="badge badge-sm glass-badge-primary rounded-full text-[0.6rem] leading-tight py-0.5 h-auto min-h-0 px-1 gap-0.5 flex-shrink-0"
               title={tag}
             >
               <span>{config.emoji}</span>
