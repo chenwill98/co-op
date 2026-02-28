@@ -1,12 +1,14 @@
 'use client';
 
 import { CombinedPropertyDetails, AdditionalFee, NeighborhoodContext } from "@/app/lib/definitions";
-import { TagList, FormatDisplayText } from "@/app/ui/utilities";
+import { FormatDisplayText } from "@/app/ui/utilities";
 import { useState, useMemo, useRef } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 import PercentileCards from "@/app/ui/analytics/PercentileCards";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon";
 import PriceHistoryChart from "@/app/ui/listingspage/PriceHistoryChart";
+import QualityBadges from "@/app/ui/badges/QualityBadges";
+import FeatureTags from "@/app/ui/badges/FeatureTags";
 import { compareToBaseline, formatComparisonLabel, getSampleSizeWarning } from "@/app/lib/comparisonUtils";
 
 function parseAdditionalFees(raw: unknown): AdditionalFee[] {
@@ -212,9 +214,14 @@ export default function ListingsPricingPanel({
 
   return (
     <div className="flex flex-col">
-      <h2 className="text-xl font-semibold text-base-content mb-1">Price</h2>
-      <div className="flex flex-wrap gap-1 mb-2">
-        <TagList category="Price" tags={listingDetails.tag_list || []} />
+      <div className="flex items-center gap-2 mb-1 flex-wrap">
+        <h2 className="text-xl font-semibold text-base-content">Price</h2>
+        <QualityBadges tags={listingDetails.tag_list || []} mode="inline" dimension="price" />
+      </div>
+
+      {/* Price event tags (price-drop, price-increase) */}
+      <div className="flex flex-wrap gap-1 mb-1">
+        <FeatureTags category="Price" tags={listingDetails.tag_list || []} />
       </div>
 
       {/* Base price */}

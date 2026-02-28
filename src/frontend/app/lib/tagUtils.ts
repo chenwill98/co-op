@@ -47,12 +47,12 @@ export const tagCategories = {
     {name: 'good-deal', display: 'Good Deal 👍', source: ['Analysis'], rank: 1},
     {name: 'fair-deal', display: 'Fair Deal 👌', source: ['Analysis'], rank: 1},
     {name: 'poor-deal', display: 'Poor Deal 👎', source: ['Analysis'], rank: 1},
+    {name: 'great-price', display: 'Great Price 💰', source: ['Analysis'], rank: 1},
+    {name: 'good-price', display: 'Good Price 👍', source: ['Analysis'], rank: 1},
+    {name: 'fair-price', display: 'Fair Price 👌', source: ['Analysis'], rank: 1},
+    {name: 'poor-price', display: 'Poor Price 👎', source: ['Analysis'], rank: 1},
     {name: 'price-drop', display: 'Price Drop 📉', source: ['Analysis'], rank: 1},
     {name: 'price-increase', display: 'Price Increase 📈', source: ['Analysis'], rank: 1},
-    {name: 'poor-price', display: 'Overpriced 💸', source: ['Analysis'], rank: 1},
-    {name: 'fair-price', display: 'Average Price 🆗', source: ['Analysis'], rank: 1},
-    {name: 'good-price', display: 'Good Price 👍', source: ['Analysis'], rank: 1},
-    {name: 'great-price', display: 'Great Price 🤑', source: ['Analysis'], rank: 1},
   ],
   'Features': [
     {name: 'spacious', display: 'Spacious 🏡', source: ['AI', 'Analysis'], rank: 2},
@@ -243,6 +243,71 @@ export function convertPropertiesTags(properties: Property[], toDisplay: boolean
   if (!properties || properties.length === 0) {
     return properties;
   }
-  
+
   return properties.map(property => convertPropertyTags(property, toDisplay) as Property);
+}
+
+// --- Quality tag system ---
+
+export type QualityTier = 'great' | 'good' | 'fair' | 'low';
+
+export interface QualityTagInfo {
+  tier: QualityTier;
+  dimension: string;
+  /** Display label for the dimension (e.g., "deal", "subway", "Spacious") */
+  label: string;
+}
+
+/**
+ * Registry of quality tags → tier + dimension.
+ * Quality tags are tiered (great/good/fair/low) across measurable dimensions.
+ * Feature tags (binary: present or not) are everything else.
+ */
+const qualityTagRegistry = new Map<string, QualityTagInfo>([
+  // Deal
+  ['great-deal',          { tier: 'great', dimension: 'deal',      label: 'deal' }],
+  ['good-deal',           { tier: 'good',  dimension: 'deal',      label: 'deal' }],
+  ['fair-deal',           { tier: 'fair',  dimension: 'deal',      label: 'deal' }],
+  ['poor-deal',           { tier: 'low',   dimension: 'deal',      label: 'deal' }],
+  // Price
+  ['great-price',         { tier: 'great', dimension: 'price',     label: 'price' }],
+  ['good-price',          { tier: 'good',  dimension: 'price',     label: 'price' }],
+  ['fair-price',          { tier: 'fair',  dimension: 'price',     label: 'price' }],
+  ['poor-price',          { tier: 'low',   dimension: 'price',     label: 'price' }],
+  // Amenities
+  ['great-amenities',     { tier: 'great', dimension: 'amenities', label: 'amenities' }],
+  ['good-amenities',      { tier: 'good',  dimension: 'amenities', label: 'amenities' }],
+  ['fair-amenities',      { tier: 'fair',  dimension: 'amenities', label: 'amenities' }],
+  ['poor-amenities',      { tier: 'low',   dimension: 'amenities', label: 'amenities' }],
+  // Subway access
+  ['great-subway-access', { tier: 'great', dimension: 'subway',    label: 'subway' }],
+  ['good-subway-access',  { tier: 'good',  dimension: 'subway',    label: 'subway' }],
+  ['fair-subway-access',  { tier: 'fair',  dimension: 'subway',    label: 'subway' }],
+  ['poor-subway-access',  { tier: 'low',   dimension: 'subway',    label: 'subway' }],
+  // Location
+  ['great-location',      { tier: 'great', dimension: 'location',  label: 'location' }],
+  ['good-location',       { tier: 'good',  dimension: 'location',  label: 'location' }],
+  ['fair-location',       { tier: 'fair',  dimension: 'location',  label: 'location' }],
+  ['poor-location',       { tier: 'low',   dimension: 'location',  label: 'location' }],
+  // Size (evocative labels instead of "{tier} size")
+  ['spacious',            { tier: 'great', dimension: 'size',      label: 'Spacious' }],
+  ['average-size',        { tier: 'fair',  dimension: 'size',      label: 'Avg Size' }],
+  ['cramped',             { tier: 'low',   dimension: 'size',      label: 'Cramped' }],
+]);
+
+/** Ordered dimension priority for badge display */
+export const dimensionPriority = ['deal', 'price', 'amenities', 'subway', 'size', 'location'];
+
+/**
+ * Returns true if the tag is a quality tag (tiered across a dimension).
+ */
+export function isQualityTag(tag: string): boolean {
+  return qualityTagRegistry.has(tag);
+}
+
+/**
+ * Returns the quality tier info for a tag, or null if it's not a quality tag.
+ */
+export function getQualityTier(tag: string): QualityTagInfo | null {
+  return qualityTagRegistry.get(tag) ?? null;
 }

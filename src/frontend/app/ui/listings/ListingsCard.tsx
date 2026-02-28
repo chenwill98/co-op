@@ -2,7 +2,8 @@ import { Property } from "@/app/lib/definitions";
 import Link from "next/link";
 import Image from 'next/image';
 import { netEffectivePrice } from "@/app/lib/searchUtils";
-import { FormatDisplayText, TagList } from "@/app/ui/utilities";
+import { FormatDisplayText } from "@/app/ui/utilities";
+import QualityBadges from "@/app/ui/badges/QualityBadges";
 import BookmarkIcon from "@/app/ui/icons/BookmarkIcon";
 import MapButton from "@/app/ui/icons/MapButton";
 import VoteButtons from "@/app/ui/icons/VoteButtons";
@@ -364,8 +365,8 @@ export default function ListingsCard({ listing, animationIndex, hideBookmark, vo
         )}
       </figure>
       <div className="card-body flex flex-col p-3 gap-1">
-        {/* Tags — single line, compact */}
-        <TagList tags={listing.tag_list || []} compact />
+        {/* Quality badges — single line, compact */}
+        <QualityBadges tags={listing.tag_list || []} mode="compact" />
 
         {/* Price — net effective (base + monthly broker fee) */}
         <div className="flex flex-row items-baseline gap-2">

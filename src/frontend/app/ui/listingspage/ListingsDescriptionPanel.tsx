@@ -3,7 +3,8 @@
 import { CombinedPropertyDetails } from "@/app/lib/definitions";
 import { useState } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
-import { TagList } from "@/app/ui/utilities";
+import FeatureTags from "@/app/ui/badges/FeatureTags";
+import QualityBadges from "@/app/ui/badges/QualityBadges";
 
 export default function ListingsDescriptionPanel({ listingDetails }: { listingDetails: CombinedPropertyDetails }) {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -12,11 +13,12 @@ export default function ListingsDescriptionPanel({ listingDetails }: { listingDe
     };
     return (
         <div className="flex flex-col gap-2">
-            <h2 className="text-xl font-semibold text-base-content">
-              Description Summary
-            </h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-semibold text-base-content">Description Summary</h2>
+              <QualityBadges tags={listingDetails.tag_list || []} mode="inline" dimension="size" />
+            </div>
             <div className="flex flex-wrap gap-1">
-                <TagList category="Features" tags={listingDetails.tag_list || []} />
+                <FeatureTags category="Features" tags={listingDetails.tag_list || []} />
             </div>
             <p className="text-base-content/80 leading-relaxed text-sm">
               {listingDetails.description_summary}

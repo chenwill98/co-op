@@ -4,8 +4,8 @@ import BookmarkIcon from "@/app/ui/icons/BookmarkIcon";
 import {
   LinkIcon
 } from "@heroicons/react/24/solid";
-import Link from "next/link";
 import ImageCarousel from "@/app/ui/listingspage/ImageCarousel";
+import BreadcrumbNav from "@/app/ui/listingspage/BreadcrumbNav";
 import ListingsDetailsPanel from "@/app/ui/listingspage/ListingsDetailsPanel";
 import ListingsPricingPanel from "@/app/ui/listingspage/ListingsPricingPanel";
 import ListingsAmenitiesPanel from "@/app/ui/listingspage/ListingsAmentitiesPanel";
@@ -13,7 +13,7 @@ import ListingsLocationPanel from "@/app/ui/listingspage/ListingsLocationPanel";
 import ListingsTransportationPanel from "@/app/ui/listingspage/ListingsTransportationPanel";
 import ListingsDescriptionPanel from "@/app/ui/listingspage/ListingsDescriptionPanel";
 import BuildingUnitsPanel from "@/app/ui/listingspage/BuildingUnitsPanel";
-import { FormatDisplayText } from "@/app/ui/utilities";
+
 
 interface PropertyPageProps {
   params: Promise<{ id: string }>;
@@ -53,32 +53,14 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
           <div className="glass-panel p-4 md:p-5 animate-fade-up-fast">
             {/* Breadcrumbs + Actions */}
             <div className="flex justify-between items-center mb-4">
-              <nav className="breadcrumbs" aria-label="breadcrumbs">
-                <ul className="flex items-center">
-                  <li>
-                    <Link
-                      href={`/listings?borough=${FormatDisplayText(listingDetails.borough)}`}
-                      className="bg-primary/10 text-primary rounded-full text-xs py-1 px-3 hover:bg-primary/20"
-                    >
-                      {FormatDisplayText(listingDetails.borough)}
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      href={`/listings?borough=${FormatDisplayText(listingDetails.borough)}&neighborhood=${FormatDisplayText(listingDetails.neighborhood)}`}
-                      className="bg-primary/10 text-primary rounded-full text-xs py-1 px-3 hover:bg-primary/20"
-                    >
-                      {FormatDisplayText(listingDetails.neighborhood)}
-                    </Link>
-                  </li>
-                  <li className="text-primary text-xs">
-                      {listingDetails.address}
-                  </li>
-                </ul>
-              </nav>
+              <BreadcrumbNav
+                borough={listingDetails.borough}
+                neighborhood={listingDetails.neighborhood}
+                address={listingDetails.address}
+              />
               <div className="flex flex-row gap-5 items-center">
+                <a href={listingDetails.url} className="glass-chip py-2 px-4 text-sm" target="_blank" rel="noopener noreferrer">StreetEasy <LinkIcon className="h-4 w-4"/></a>
                 <BookmarkIcon property={listingDetails} />
-                <a href={listingDetails.url} className="btn rounded-full bg-primary/10 text-primary hover:bg-primary/20 border-0" target="_blank" rel="noopener noreferrer">StreetEasy <LinkIcon className="h-4 w-4 text-primary"/></a>
               </div>
             </div>
             <ImageCarousel mediaItems={mediaItems} />

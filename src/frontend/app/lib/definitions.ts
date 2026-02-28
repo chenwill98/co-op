@@ -126,6 +126,7 @@ export type PropertyAnalyticsDetails = {
   amenity_neighborhood_percentile?: number;
   sqft_neighborhood_percentile?: number;
   price_neighborhood_percentile?: number;
+  absolute_price_modifier?: number;
 };
 
 export type CombinedPropertyDetails = Property & PropertyAnalyticsDetails & {

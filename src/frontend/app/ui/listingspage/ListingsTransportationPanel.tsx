@@ -6,7 +6,8 @@ import SubwayIcon from "@/app/ui/icons/SubwayIcon";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon"; 
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
-import { TagList } from "@/app/ui/utilities";
+import FeatureTags from "@/app/ui/badges/FeatureTags";
+import QualityBadges from "@/app/ui/badges/QualityBadges";
 import PercentileCards from "@/app/ui/analytics/PercentileCards";
 
 export default function ListingsTransportationPanel({
@@ -78,7 +79,10 @@ export default function ListingsTransportationPanel({
 
   return (
     <div className="flex flex-col gap-1">
-      <h2 className="text-xl font-semibold text-base-content">Transportation</h2>
+      <div className="flex items-center gap-2 flex-wrap">
+        <h2 className="text-xl font-semibold text-base-content">Transportation</h2>
+        <QualityBadges tags={listingDetails.tag_list || []} mode="inline" dimension="subway" />
+      </div>
       <div className="flex flex-col gap-4">
         <div className="flex-1">
           {/* Display subway lines */}
@@ -87,7 +91,7 @@ export default function ListingsTransportationPanel({
                 Nearby Subway Lines
               </h3>
               <div className="flex flex-wrap gap-1 mb-2">
-                <TagList category="Transportation" tags={listingDetails.tag_list || []} />
+                <FeatureTags category="Transportation" tags={listingDetails.tag_list || []} />
               </div>
               
               {/* Simple grid for subway stations */}

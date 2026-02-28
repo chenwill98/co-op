@@ -2,7 +2,8 @@
 
 import React, { useMemo, useState } from "react";
 import { CombinedPropertyDetails } from "@/app/lib/definitions";
-import { TagList } from "@/app/ui/utilities";
+import FeatureTags from "@/app/ui/badges/FeatureTags";
+import QualityBadges from "@/app/ui/badges/QualityBadges";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon";
 import ListingsPOIMap from "./ListingsPOIMap";
@@ -143,11 +144,12 @@ export default function ListingsLocationPanel({ listingDetails }: { listingDetai
 
     return (
         <div className="flex flex-col gap-1">
-            <h2 className="text-xl font-semibold text-base-content">
-                Location
-            </h2>
+            <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xl font-semibold text-base-content">Location</h2>
+                <QualityBadges tags={listingDetails.tag_list || []} mode="inline" dimension="location" />
+            </div>
             <div className="flex flex-wrap gap-1">
-                <TagList category="Location" tags={listingDetails.tag_list || []} />
+                <FeatureTags category="Location" tags={listingDetails.tag_list || []} />
             </div>
             <h3 className="text-xs uppercase tracking-wide text-base-content/60 mb-2">
                 Closest Locations

@@ -51,7 +51,7 @@ export default function SavedListingsPage() {
               <p className="text-center text-base-content/60 mb-6">
                 Bookmark properties you like by clicking the heart icon, and they&apos;ll appear here for easy access.
               </p>
-              <Link href="/listings" className="btn btn-lg bg-primary/80 text-primary-content border border-white/10 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(255,255,255,0.2),0_4px_12px_rgba(0,0,0,0.1)] hover:bg-primary/90">
+              <Link href="/listings" className="btn btn-lg rounded-full bg-primary/80 text-primary-content border border-white/10 backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(255,255,255,0.2),0_4px_12px_rgba(0,0,0,0.1)] hover:bg-primary/90">
                 Browse Listings
               </Link>
             </div>

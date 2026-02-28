@@ -1,12 +1,14 @@
 'use client';
 
 import { CombinedPropertyDetails, NeighborhoodContext } from "@/app/lib/definitions";
-import { TagList, FormatDisplayText } from "@/app/ui/utilities";
+import { FormatDisplayText } from "@/app/ui/utilities";
+import QualityBadges from "@/app/ui/badges/QualityBadges";
+import FeatureTags from "@/app/ui/badges/FeatureTags";
+import RelevanceScoreBreakdown from "@/app/ui/analytics/RelevanceScoreBreakdown";
 import { useState } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 import PercentileCards from "@/app/ui/analytics/PercentileCards";
 import TooltipIcon from "@/app/ui/icons/TooltipIcon";
-import DealScoreSummary from "@/app/ui/analytics/DealScoreSummary";
 import { compareToBaseline, formatComparisonLabel } from "@/app/lib/comparisonUtils";
 import {
   ClockIcon,
@@ -163,15 +165,18 @@ export default function ListingsDetailsPanel({
         {listingDetails.address}
       </h1>
 
-      {/* Subtitle */}
-      <p className="text-sm text-base-content">
-        {FormatDisplayText(listingDetails.property_type || '')} in {FormatDisplayText(listingDetails.neighborhood)},{" "}
-        {FormatDisplayText(listingDetails.borough)} &mdash; {listingDetails.zipcode}
-      </p>
+      {/* Subtitle + deal badge */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <p className="text-sm text-base-content">
+          {FormatDisplayText(listingDetails.property_type || '')} in {FormatDisplayText(listingDetails.neighborhood)},{" "}
+          {FormatDisplayText(listingDetails.borough)} &mdash; {listingDetails.zipcode}
+        </p>
+        <QualityBadges tags={listingDetails.tag_list || []} mode="inline" dimension="deal" />
+      </div>
 
-      {/* Tags */}
+      {/* Feature tags (popularity, etc.) */}
       <div className="flex flex-wrap gap-1 mt-1">
-        <TagList category="Popularity" tags={listingDetails.tag_list || []} />
+        <FeatureTags category="Popularity" tags={listingDetails.tag_list || []} />
       </div>
 
       {/* Specs Grid */}
@@ -200,11 +205,8 @@ export default function ListingsDetailsPanel({
         <ListingTimeline listingDetails={listingDetails} neighborhoodContext={neighborhoodContext} />
       </div>
 
-      {/* Deal Summary */}
-      <DealScoreSummary listingDetails={listingDetails} />
-
-      {/* Expand for Sq Footage Analytics */}
-      <div className="mt-1">
+      {/* Expand for Property Insights + Relevance Score */}
+      <div className="mt-2">
         <ExpandButton isExpanded={isExpanded} onToggle={toggleExpanded} expandedText="Hide Property Insights" collapsedText="Show Property Insights" />
       </div>
       <div
@@ -223,6 +225,17 @@ export default function ListingsDetailsPanel({
           boroughPercentile={listingDetails.sqft_borough_percentile ?? null}
           neighborhoodPercentile={listingDetails.sqft_neighborhood_percentile ?? null}
         />
+
+        {/* Relevance Score Breakdown */}
+        {listingDetails.relevance_score != null && (
+          <div className="mt-4">
+            <div className="flex flex-row items-center gap-2 mb-2">
+              <h3 className="text-xs uppercase tracking-wide text-base-content/60">Relevance Score</h3>
+              <TooltipIcon tooltipText="Composite quality score (0–5.5) combining price competitiveness, size, amenities, subway access, and location. Higher is better." />
+            </div>
+            <RelevanceScoreBreakdown listingDetails={listingDetails} />
+          </div>
+        )}
       </div>
     </div>
   );

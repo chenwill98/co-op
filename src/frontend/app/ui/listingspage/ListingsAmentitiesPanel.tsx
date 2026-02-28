@@ -1,7 +1,9 @@
 'use client';
 
 import { CombinedPropertyDetails } from "@/app/lib/definitions";
-import { TagList, formatAmenityName } from "@/app/ui/utilities";
+import { formatAmenityName } from "@/app/ui/utilities";
+import FeatureTags from "@/app/ui/badges/FeatureTags";
+import QualityBadges from "@/app/ui/badges/QualityBadges";
 import { useState } from "react";
 import ExpandButton from "@/app/ui/icons/ExpandButton";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
@@ -52,9 +54,10 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
 
     return (
         <div className="flex flex-col gap-2">
-            <h2 className="text-xl font-semibold text-base-content">
-                Amenities
-            </h2>
+            <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xl font-semibold text-base-content">Amenities</h2>
+                <QualityBadges tags={listingDetails.tag_list || []} mode="inline" dimension="amenities" />
+            </div>
             <div className="flex flex-row items-center gap-2">
                 <h3 className="text-xs uppercase tracking-wide text-base-content/60">
                     Key Amenities
@@ -62,7 +65,7 @@ export default function ListingsAmentitiesPanel({ listingDetails }: { listingDet
                 <TooltipIcon tooltipText="Key amenities are the most important features of a property that are typically highlighted in the description summary." />
             </div>
             <div className="flex flex-wrap gap-1">
-                <TagList category="Amenities" tags={listingDetails.tag_list || []} />
+                <FeatureTags category="Amenities" tags={listingDetails.tag_list || []} />
             </div>
             {/* Primary amenities */}
             <div className="grid grid-cols-4 gap-4 mt-2">
